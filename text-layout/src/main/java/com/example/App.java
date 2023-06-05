@@ -3,6 +3,7 @@ package com.example;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
+import javafx.scene.text.FontSmoothingType;
 import javafx.stage.Stage;
 import com.sun.javafx.geom.Point2D;
 import com.sun.javafx.geom.RectBounds;
@@ -40,6 +41,7 @@ public class App extends Application {
 
         GraphicsContext gc = canvas.getGraphicsContext2D();
         gc.clearRect(0, 0, width, height);
+        gc.setFontSmoothingType(FontSmoothingType.LCD);
 
         TextSpan[] textSpans = createTextSpans();
         textLayout.setWrapWidth((float) width);
