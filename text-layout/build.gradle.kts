@@ -23,7 +23,8 @@ application {
         "--add-exports", "javafx.graphics/com.sun.javafx.tk=ALL-UNNAMED",
         "--add-exports", "javafx.graphics/com.sun.javafx.scene.text=ALL-UNNAMED",
         "--add-exports", "javafx.graphics/com.sun.javafx.geom=ALL-UNNAMED",
-        )
+        "--add-exports", "javafx.graphics/com.sun.javafx.text=ALL-UNNAMED"
+    )
 }
 
 javafx {

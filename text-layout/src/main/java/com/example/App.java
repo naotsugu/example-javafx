@@ -1,5 +1,6 @@
 package com.example;
 
+import com.sun.javafx.text.TextRun;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
@@ -51,7 +52,7 @@ public class App extends Application {
         int offset = 0;
 
         for (TextLine line : textLayout.getLines()) {
-            for (GlyphList run : line.getRuns()) {
+            for (TextRun run : (TextRun[]) line.getRuns()) {
 
                 Point2D location = run.getLocation();
                 double baselineOffset = -run.getLineBounds().getMinY();
@@ -66,9 +67,8 @@ public class App extends Application {
                 }
 
                 int start = offset;
-                offset += run.getCharOffset(run.getGlyphCount());
-                String str = currentSpan.getText().substring(start, offset).replace("\n", "");
-
+                offset += run.getLength();
+                String str = currentSpan.getText().substring(start, offset);
                 gc.fillText(str, location.x, baselineOffset + location.y);
             }
         }
