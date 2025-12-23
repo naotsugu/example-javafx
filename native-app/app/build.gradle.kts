@@ -1,7 +1,7 @@
 plugins {
     application
     id("org.openjfx.javafxplugin") version "0.1.0"
-    id("org.graalvm.buildtools.native") version "0.10.5"
+    id("org.graalvm.buildtools.native") version "0.11.1"
 }
 
 repositories {
@@ -15,8 +15,9 @@ dependencies {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(23)
-        vendor.set(JvmVendorSpec.GRAAL_VM)
+        languageVersion = JavaLanguageVersion.of(25)
+        vendor = JvmVendorSpec.GRAAL_VM
+        nativeImageCapable = true
     }
 }
 
@@ -29,6 +30,6 @@ tasks.named<Test>("test") {
 }
 
 javafx {
-    version = "23.0.2"
+    version = "25"
     modules("javafx.controls")
 }

@@ -8,8 +8,6 @@ repositories {
 }
 
 dependencies {
-    testImplementation(libs.junit.jupiter)
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 java {
@@ -24,10 +22,6 @@ application {
         "-Djavafx.enablePreview=true",
         "--enable-native-access=javafx.graphics",
     )
-}
-
-tasks.named<Test>("test") {
-    useJUnitPlatform()
 }
 
 javafx {
