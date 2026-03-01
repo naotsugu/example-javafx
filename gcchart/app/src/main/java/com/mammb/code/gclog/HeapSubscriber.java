@@ -20,16 +20,18 @@ public class HeapSubscriber extends Aggregator<HeapAggregation> {
 
     private void extract(GCEvent event) {
         DateTimeStamp timeStamp = event.getDateTimeStamp();
+        if (timeStamp == null || !timeStamp.hasDateStamp()) return;
+
         MemoryPoolSummary heep = switch (event) {
             case G1GCPauseEvent e -> e.getHeap();
             case GenerationalGCPauseEvent e -> e.getHeap();
             default -> null;
         };
-        if (heep == null || timeStamp == null) return;
-        aggregation().addSize(timeStamp.toMilliseconds(), heep.getSizeBeforeCollection());
-        aggregation().addUsed(timeStamp.toMilliseconds(), heep.getOccupancyBeforeCollection());
-        aggregation().addSize(timeStamp.toMilliseconds(), heep.getSizeAfterCollection());
-        aggregation().addUsed(timeStamp.toMilliseconds(), heep.getOccupancyAfterCollection());
+        if (heep == null) return;
+        aggregation().addSize(timeStamp.toEpochInMillis(), heep.getSizeBeforeCollection());
+        aggregation().addUsed(timeStamp.toEpochInMillis(), heep.getOccupancyBeforeCollection());
+        aggregation().addSize(timeStamp.toEpochInMillis(), heep.getSizeAfterCollection());
+        aggregation().addUsed(timeStamp.toEpochInMillis(), heep.getOccupancyAfterCollection());
     }
 
 }

@@ -12,6 +12,8 @@ public class GcLog {
 
     private List<HeapAggregation.DataPoint> sizeSeries = new ArrayList<>();
     private List<HeapAggregation.DataPoint> usedSeries = new ArrayList<>();
+    private long timeMin = 0;
+    private long timeMax = 0;
 
     public GcLog() {
     }
@@ -28,9 +30,25 @@ public class GcLog {
                 sizeSeries.addAll(a.sizeSeries());
                 usedSeries.addAll(a.usedSeries());
             });
+
+            var stats1 = sizeSeries.stream().map(HeapAggregation.DataPoint::dateTime)
+                    .mapToLong(Double::longValue).summaryStatistics();
+            var stats2 = usedSeries.stream().map(HeapAggregation.DataPoint::dateTime)
+                    .mapToLong(Double::longValue).summaryStatistics();
+            timeMin = Math.min(stats1.getMin(), stats2.getMin());
+            timeMax = Math.max(stats1.getMax(), stats2.getMax());
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public long timeMin() {
+        return timeMin;
+    }
+
+    public long timeMax() {
+        return timeMax;
     }
 
     public void acceptSize(BiConsumer<Number, Number> consumer) {

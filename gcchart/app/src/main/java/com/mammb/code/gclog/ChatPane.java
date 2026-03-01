@@ -95,7 +95,10 @@ public class ChatPane extends StackPane {
         usedSeries.setName("Used heap");
         gcLog.acceptUsed((t, v) -> usedSeries.getData().add(new XYChart.Data<>(t, v)));
 
-        var areaChart =  new AreaChart<>(new NumberAxis(), new NumberAxis());
+        var xAxis = new NumberAxis(gcLog.timeMin(), gcLog.timeMax(), (double) (gcLog.timeMax() - gcLog.timeMin()) / 10);
+        xAxis.setTickLabelFormatter(new DateLabelFormatter());
+        var yAxis = new NumberAxis();
+        var areaChart =  new AreaChart<>(xAxis, yAxis);
         areaChart.setCreateSymbols(false);
         areaChart.getData().add(sizeSeries);
         areaChart.getData().add(usedSeries);
