@@ -1,0 +1,10 @@
+[versions]
+junit-jupiter = "5.12.1"
+gctoolkit = "3.7.0"
+atlantafx-base = "2.1.0"
+
+[libraries]
+gctoolkit-parser = { module = "com.microsoft.gctoolkit:gctoolkit-parser", version.ref = "gctoolkit" }
+gctoolkit-vertx = { module = "com.microsoft.gctoolkit:gctoolkit-vertx", version.ref = "gctoolkit" }
+atlantafx-base = { module = "io.github.mkpaz:atlantafx-base", version.ref = "atlantafx-base" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
