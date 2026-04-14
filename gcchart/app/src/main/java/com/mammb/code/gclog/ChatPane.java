@@ -14,6 +14,7 @@ import javafx.scene.layout.StackPane;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.List;
 
 public class ChatPane extends StackPane {
@@ -95,7 +96,7 @@ public class ChatPane extends StackPane {
         usedSeries.setName("Used heap");
         gcLog.acceptUsed((t, v) -> usedSeries.getData().add(new XYChart.Data<>(t, v)));
 
-        var xAxis = new NumberAxis(gcLog.timeMin(), gcLog.timeMax(), (double) (gcLog.timeMax() - gcLog.timeMin()) / 10);
+        var xAxis = new NumberAxis(gcLog.timeMin(), gcLog.timeMax(), niceTickUnit(gcLog.timeMax() - gcLog.timeMin()));
         xAxis.setTickLabelFormatter(new DateLabelFormatter());
         var yAxis = new NumberAxis();
         var areaChart =  new AreaChart<>(xAxis, yAxis);
@@ -104,6 +105,18 @@ public class ChatPane extends StackPane {
         areaChart.getData().add(usedSeries);
 
         return areaChart;
+    }
+
+    private double niceTickUnit(double range) {
+        final List<Double> ticks = List.of(
+                1000d, 2000d, 5000d,
+                10000d, 15000d, 30000d,
+                60000d, 120000d, 300000d, 600000d,
+                900000d, 1800000d, 3600000d);
+        double raw = range / 10;
+        return ticks.stream()
+                .min(Comparator.comparingDouble(d -> Math.abs(d - raw)))
+                .orElse(raw);
     }
 
 }
