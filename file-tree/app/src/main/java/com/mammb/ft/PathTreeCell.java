@@ -1,6 +1,8 @@
 package com.mammb.ft;
 
 import javafx.scene.control.TreeCell;
+import javafx.scene.shape.SVGPath;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -16,7 +18,9 @@ public class PathTreeCell extends TreeCell<Path> {
             setGraphic(null);
         } else {
             setText(converter.toString(item));
-            setGraphic(Files.isDirectory(item) ? Icon.folder() : Icon.file());
+            SVGPath icon = Files.isDirectory(item) ? Icon.folder() : Icon.file();
+            icon.getStyleClass().add("glyph-icon");
+            setGraphic(icon);
         }
     }
 }

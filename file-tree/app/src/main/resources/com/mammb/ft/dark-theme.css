@@ -1,0 +1,36 @@
+.root {
+    -fx-base: #333333;
+    -fx-background: #333333;
+    -fx-control-inner-background: #444444;
+    -fx-accent: #007bff;
+    -fx-focus-color: #007bff;
+}
+
+.tree-cell {
+    -fx-text-fill: #dddddd;
+}
+
+.tree-cell:selected {
+    -fx-background-color: -fx-accent;
+    -fx-text-fill: white;
+}
+
+.tree-cell .glyph-icon {
+    -fx-fill: #dddddd;
+}
+
+.tree-cell:selected .glyph-icon {
+    -fx-fill: white;
+}
+
+.split-pane-divider {
+    -fx-background-color: #555555;
+}
+
+.text-area {
+    -fx-text-fill: #dddddd;
+}
+
+.text-area .content {
+    -fx-background-color: -fx-control-inner-background;
+}
