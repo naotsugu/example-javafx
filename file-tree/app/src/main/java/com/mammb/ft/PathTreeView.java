@@ -1,5 +1,7 @@
 package com.mammb.ft;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
@@ -9,14 +11,35 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class PathTreeView extends TreeView<Path> {
 
+    private final List<Consumer<Path>> selectActions = new ArrayList<>();
+    private final BooleanProperty compactFolders =
+            new SimpleBooleanProperty(this, "compactFolders", true);
+
     public PathTreeView() {
-        super(new PathTreeItem(Paths.get(System.getProperty("user.dir"))));
+        super(new PathTreeItem(Paths.get(System.getProperty("user.dir")), true));
         setCellFactory(_ -> new PathTreeCell());
+        getSelectionModel().selectedItemProperty().addListener(
+            (_, _, item) -> {
+                if (item != null && !selectActions.isEmpty()) {
+                    selectActions.forEach(action -> action.accept(item.getValue()));
+                }
+            });
+
+        compactFolders.addListener((_, _, newValue) -> {
+            PathTreeItem newRoot = new PathTreeItem(getRoot().getValue(), newValue);
+            newRoot.setExpanded(true);
+            setRoot(newRoot);
+        });
+
         getRoot().setExpanded(true);
         getRoot().expandedProperty().addListener((_, _, expanded) -> {
             if (expanded && getRoot() instanceof PathTreeItem item) {
@@ -25,14 +48,32 @@ public class PathTreeView extends TreeView<Path> {
         });
     }
 
+    public boolean isCompactFolders() {
+        return compactFolders.get();
+    }
+
+    public BooleanProperty compactFoldersProperty() {
+        return compactFolders;
+    }
+
+    public void setCompactFolders(boolean compactFolders) {
+        this.compactFolders.set(compactFolders);
+    }
+
+    public void addSelectAction(Consumer<Path> action) {
+        selectActions.add(action);
+    }
+
     static class PathTreeItem extends TreeItem<Path> {
 
         private boolean loaded = false;
         private final boolean isDirectory;
+        private final boolean compact;
 
-        public PathTreeItem(Path value) {
+        public PathTreeItem(Path value, boolean compact) {
             super(value);
             this.isDirectory = Files.isDirectory(value);
+            this.compact = compact;
         }
 
         @Override
@@ -47,13 +88,61 @@ public class PathTreeView extends TreeView<Path> {
                 if (isDirectory) {
                     try (Stream<Path> stream = Files.list(getValue())) {
                         stream.sorted(Comparator.comparing(p -> p.getFileName().toString()))
-                            .forEach(path -> super.getChildren().add(new PathTreeItem(path)));
+                            .forEach(path -> {
+                                if (Files.isDirectory(path) && compact) {
+                                    super.getChildren().add(buildCompressedTreeItem(path));
+                                } else {
+                                    super.getChildren().add(new PathTreeItem(path, compact));
+                                }
+                            });
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
                 }
             }
             return super.getChildren();
+        }
+
+        private TreeItem<Path> buildCompressedTreeItem(Path path) {
+            List<Path> chain = new ArrayList<>();
+            chain.add(path);
+
+            Path current = path;
+            while (true) {
+                try (Stream<Path> stream = Files.list(current)) {
+                    List<Path> children = stream.toList();
+                    if (children.size() == 1 && Files.isDirectory(children.getFirst())) {
+                        current = children.getFirst();
+                        chain.add(current);
+                    } else {
+                        break;
+                    }
+                } catch (IOException e) {
+                    break;
+                }
+            }
+
+            if (chain.size() > 1) {
+                String displayPath = chain.stream()
+                        .map(p -> p.getFileName().toString())
+                        .collect(Collectors.joining("/"));
+                return new CompactedPathTreeItem(current, displayPath, compact);
+            } else {
+                return new PathTreeItem(path, compact);
+            }
+        }
+    }
+
+    static class CompactedPathTreeItem extends PathTreeItem {
+        private final String displayPath;
+
+        public CompactedPathTreeItem(Path value, String displayPath, boolean compact) {
+            super(value, compact);
+            this.displayPath = displayPath;
+        }
+
+        public String getDisplayPath() {
+            return displayPath;
         }
     }
 
@@ -66,7 +155,12 @@ public class PathTreeView extends TreeView<Path> {
                 setText(null);
                 setGraphic(null);
             } else {
-                setText(item.getFileName().toString());
+                TreeItem<Path> treeItem = getTreeItem();
+                if (treeItem instanceof CompactedPathTreeItem) {
+                    setText(((CompactedPathTreeItem) treeItem).getDisplayPath());
+                } else {
+                    setText(item.getFileName().toString());
+                }
                 setGraphic(Files.isDirectory(item) ? folder() : file());
             }
         }

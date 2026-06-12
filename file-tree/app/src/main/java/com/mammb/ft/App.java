@@ -14,15 +14,9 @@ public class App extends Application {
     @Override
     public void start(Stage stage) {
 
-        PathTreeView treeView = new PathTreeView();
         ContentArea contentArea = new ContentArea();
-
-        treeView.getSelectionModel().selectedItemProperty().addListener(
-            (_, _, item) -> {
-                if (item != null) {
-                    contentArea.display(item.getValue());
-                }
-            });
+        PathTreeView treeView = new PathTreeView();
+        treeView.addSelectAction(contentArea::display);
 
         SplitPane splitPane = new SplitPane();
         splitPane.getItems().addAll(treeView, contentArea);
