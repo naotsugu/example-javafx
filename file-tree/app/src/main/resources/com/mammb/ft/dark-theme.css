@@ -15,11 +15,11 @@
     -fx-text-fill: white;
 }
 
-.tree-cell .glyph-icon {
+.tree-cell .icon {
     -fx-fill: #dddddd;
 }
 
-.tree-cell:selected .glyph-icon {
+.tree-cell:selected .icon {
     -fx-fill: white;
 }
 

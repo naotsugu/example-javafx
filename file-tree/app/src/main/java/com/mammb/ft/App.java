@@ -1,12 +1,11 @@
 package com.mammb.ft;
 
+import javafx.application.Application;
 import javafx.application.ColorScheme;
 import javafx.application.Platform;
-import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.SplitPane;
 import javafx.stage.Stage;
-
 import java.util.Objects;
 
 @SuppressWarnings("restriction")
@@ -15,13 +14,13 @@ public class App extends Application {
     @Override
     public void start(Stage stage) {
 
-        FileTreeView treeView = new FileTreeView();
+        PathTreeView treeView = new PathTreeView();
         ContentArea contentArea = new ContentArea();
 
         treeView.getSelectionModel().selectedItemProperty().addListener(
-            (observable, oldValue, newValue) -> {
-                if (newValue != null) {
-                    contentArea.display(newValue.getValue());
+            (_, _, item) -> {
+                if (item != null) {
+                    contentArea.display(item.getValue());
                 }
             });
 
