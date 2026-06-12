@@ -90,7 +90,7 @@ public class PathTreeView extends TreeView<Path> {
                         stream.sorted(Comparator.comparing(p -> p.getFileName().toString()))
                             .forEach(path -> {
                                 if (Files.isDirectory(path) && compact) {
-                                    super.getChildren().add(buildCompressedTreeItem(path));
+                                    super.getChildren().add(buildCompactTreeItem(path));
                                 } else {
                                     super.getChildren().add(new PathTreeItem(path, compact));
                                 }
@@ -103,7 +103,7 @@ public class PathTreeView extends TreeView<Path> {
             return super.getChildren();
         }
 
-        private TreeItem<Path> buildCompressedTreeItem(Path path) {
+        private TreeItem<Path> buildCompactTreeItem(Path path) {
             List<Path> chain = new ArrayList<>();
             chain.add(path);
 
@@ -126,17 +126,17 @@ public class PathTreeView extends TreeView<Path> {
                 String displayPath = chain.stream()
                         .map(p -> p.getFileName().toString())
                         .collect(Collectors.joining("/"));
-                return new CompactedPathTreeItem(current, displayPath, compact);
+                return new CompactPathTreeItem(current, displayPath, compact);
             } else {
                 return new PathTreeItem(path, compact);
             }
         }
     }
 
-    static class CompactedPathTreeItem extends PathTreeItem {
+    static class CompactPathTreeItem extends PathTreeItem {
         private final String displayPath;
 
-        public CompactedPathTreeItem(Path value, String displayPath, boolean compact) {
+        public CompactPathTreeItem(Path value, String displayPath, boolean compact) {
             super(value, compact);
             this.displayPath = displayPath;
         }
@@ -156,8 +156,8 @@ public class PathTreeView extends TreeView<Path> {
                 setGraphic(null);
             } else {
                 TreeItem<Path> treeItem = getTreeItem();
-                if (treeItem instanceof CompactedPathTreeItem) {
-                    setText(((CompactedPathTreeItem) treeItem).getDisplayPath());
+                if (treeItem instanceof CompactPathTreeItem compact) {
+                    setText(compact.getDisplayPath());
                 } else {
                     setText(item.getFileName().toString());
                 }
