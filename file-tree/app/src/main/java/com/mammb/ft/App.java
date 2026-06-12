@@ -6,6 +6,8 @@ import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.SplitPane;
 import javafx.stage.Stage;
+
+import java.nio.file.Paths;
 import java.util.Objects;
 
 @SuppressWarnings("restriction")
@@ -15,7 +17,9 @@ public class App extends Application {
     public void start(Stage stage) {
 
         ContentArea contentArea = new ContentArea();
-        PathTreeView treeView = new PathTreeView();
+        PathTreeView treeView = new PathTreeView(
+                Paths.get(System.getProperty("user.home")),
+                Paths.get(System.getProperty("user.dir")));
         treeView.addSelectAction(contentArea::display);
 
         SplitPane splitPane = new SplitPane();

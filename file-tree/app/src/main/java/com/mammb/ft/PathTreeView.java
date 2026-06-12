@@ -3,17 +3,32 @@ package com.mammb.ft;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.ObservableList;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DataFormat;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
 import javafx.scene.shape.SVGPath;
+
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -25,27 +40,68 @@ public class PathTreeView extends TreeView<Path> {
             new SimpleBooleanProperty(this, "compactFolders", true);
 
     public PathTreeView() {
-        super(new PathTreeItem(Paths.get(System.getProperty("user.dir")), true));
-        setCellFactory(_ -> new PathTreeCell());
+        this(Paths.get(System.getProperty("user.dir")));
+    }
+
+    public PathTreeView(Path... roots) {
+        super(new TreeItem<>());
+        setShowRoot(false);
+
+        for (Path root : roots) {
+            addRoot(root);
+        }
+
+        setCellFactory(param -> new PathTreeCell());
         getSelectionModel().selectedItemProperty().addListener(
             (_, _, item) -> {
-                if (item != null && !selectActions.isEmpty()) {
+                if (item != null && item.getValue() != null && !selectActions.isEmpty()) {
                     selectActions.forEach(action -> action.accept(item.getValue()));
                 }
             });
 
         compactFolders.addListener((_, _, newValue) -> {
-            PathTreeItem newRoot = new PathTreeItem(getRoot().getValue(), newValue);
-            newRoot.setExpanded(true);
-            setRoot(newRoot);
-        });
-
-        getRoot().setExpanded(true);
-        getRoot().expandedProperty().addListener((_, _, expanded) -> {
-            if (expanded && getRoot() instanceof PathTreeItem item) {
-                item.getChildren();
+            List<Path> currentRoots = getRoot().getChildren().stream()
+                    .map(TreeItem::getValue).toList();
+            getRoot().getChildren().clear();
+            for (Path rootPath : currentRoots) {
+                PathTreeItem newRoot = new PathTreeItem(rootPath, newValue);
+                newRoot.setExpanded(true);
+                getRoot().getChildren().add(newRoot);
             }
         });
+
+        // Drag and Drop to add new roots
+        setOnDragOver(event -> {
+            if (event.getGestureSource() != this && event.getDragboard().hasFiles()) {
+                event.acceptTransferModes(TransferMode.COPY);
+            }
+            event.consume();
+        });
+
+        setOnDragDropped(event -> {
+            Dragboard db = event.getDragboard();
+            boolean success = false;
+            if (db.hasFiles()) {
+                List<Path> existingRoots = getRoot().getChildren().stream()
+                        .map(TreeItem::getValue)
+                        .toList();
+
+                db.getFiles().stream()
+                        .map(File::toPath)
+                        .filter(Files::isDirectory)
+                        .filter(p -> !existingRoots.contains(p)) // Avoid duplicates
+                        .forEach(this::addRoot);
+                success = true;
+            }
+            event.setDropCompleted(success);
+            event.consume();
+        });
+    }
+
+    public void addRoot(Path path) {
+        PathTreeItem item = new PathTreeItem(path, isCompactFolders());
+        item.setExpanded(true);
+        getRoot().getChildren().add(item);
     }
 
     public boolean isCompactFolders() {
@@ -148,12 +204,91 @@ public class PathTreeView extends TreeView<Path> {
 
 
     static class PathTreeCell extends TreeCell<Path> {
+
+        private final ContextMenu rootContextMenu = new ContextMenu();
+        private final ContextMenu dirContextMenu = new ContextMenu();
+        private final ContextMenu fileContextMenu = new ContextMenu();
+
+        public PathTreeCell() {
+            // Root context menu
+            MenuItem removeRootItem = new MenuItem("Remove");
+            removeRootItem.setOnAction(event -> getTreeView().getRoot().getChildren().remove(getTreeItem()));
+            rootContextMenu.getItems().add(removeRootItem);
+
+            // Common items
+            MenuItem copyItem = new MenuItem("Copy");
+            copyItem.setOnAction(event -> copyPath());
+            MenuItem pasteItem = new MenuItem("Paste");
+            pasteItem.setOnAction(event -> pastePath());
+            MenuItem renameItem = new MenuItem("Rename");
+            renameItem.setOnAction(event -> renamePath());
+            MenuItem deleteItem = new MenuItem("Delete");
+            deleteItem.setOnAction(event -> deletePath());
+
+            // Directory context menu
+            MenuItem newFileItem = new MenuItem("New File");
+            newFileItem.setOnAction(event -> createNew("file"));
+            MenuItem newDirItem = new MenuItem("New Directory");
+            newDirItem.setOnAction(event -> createNew("dir"));
+            dirContextMenu.getItems().addAll(copyItem, pasteItem, new SeparatorMenuItem(), newFileItem, newDirItem, new SeparatorMenuItem(), renameItem, deleteItem);
+
+            // File context menu
+            fileContextMenu.getItems().addAll(copyItem, new SeparatorMenuItem(), renameItem, deleteItem);
+
+            // Drag and Drop handlers
+            setOnDragDetected(event -> {
+                if (getItem() == null) return;
+                Dragboard dragboard = startDragAndDrop(TransferMode.MOVE);
+                ClipboardContent content = new ClipboardContent();
+                content.put(DataFormat.FILES, List.of(getItem().toFile()));
+                dragboard.setContent(content);
+                event.consume();
+            });
+
+            setOnDragOver(event -> {
+                if (event.getGestureSource() != this && event.getDragboard().hasFiles()) {
+                    Path targetPath = getItem();
+                    if (targetPath != null && Files.isDirectory(targetPath)) {
+                        event.acceptTransferModes(TransferMode.MOVE);
+                    }
+                }
+                event.consume();
+            });
+
+            setOnDragDropped(event -> {
+                Dragboard db = event.getDragboard();
+                boolean success = false;
+                if (db.hasFiles()) {
+                    Path targetDir = getItem();
+                    Path sourcePath = db.getFiles().getFirst().toPath();
+                    try {
+                        Path newPath = targetDir.resolve(sourcePath.getFileName());
+                        Files.move(sourcePath, newPath);
+                        success = true;
+                    } catch (IOException e) {
+                        showError("Move Failed", "Could not move " + sourcePath.getFileName() + ": " + e.getMessage());
+                    }
+                }
+                event.setDropCompleted(success);
+                event.consume();
+            });
+
+            setOnDragDone(event -> {
+                if (event.getTransferMode() == TransferMode.MOVE) {
+                    getTreeItem().getParent().getChildren().remove(getTreeItem());
+                }
+                event.consume();
+            });
+        }
+
+
         @Override
         protected void updateItem(Path item, boolean empty) {
             super.updateItem(item, empty);
             if (empty || item == null) {
                 setText(null);
                 setGraphic(null);
+                setContextMenu(null);
             } else {
                 TreeItem<Path> treeItem = getTreeItem();
                 if (treeItem instanceof CompactPathTreeItem compact) {
@@ -162,7 +297,128 @@ public class PathTreeView extends TreeView<Path> {
                     setText(item.getFileName().toString());
                 }
                 setGraphic(Files.isDirectory(item) ? folder() : file());
+
+                // Set context menu
+                if (treeItem.getParent() == getTreeView().getRoot()) {
+                    setContextMenu(rootContextMenu);
+                } else if (Files.isDirectory(item)) {
+                    setContextMenu(dirContextMenu);
+                } else {
+                    setContextMenu(fileContextMenu);
+                }
             }
+        }
+
+        private void copyPath() {
+            ClipboardContent content = new ClipboardContent();
+            content.put(DataFormat.FILES, List.of(getItem().toFile()));
+            Clipboard.getSystemClipboard().setContent(content);
+        }
+
+        private void pastePath() {
+            Path targetDir = getItem();
+            if (!Files.isDirectory(targetDir)) return;
+
+            Clipboard clipboard = Clipboard.getSystemClipboard();
+            if (!clipboard.hasFiles()) return;
+
+            for (File file : clipboard.getFiles()) {
+                try {
+                    Path sourcePath = file.toPath();
+                    Path destPath = targetDir.resolve(sourcePath.getFileName());
+                    Files.copy(sourcePath, destPath, StandardCopyOption.REPLACE_EXISTING);
+
+                    // Add to tree
+                    TreeItem<Path> newItem = new PathTreeItem(destPath, ((PathTreeView) getTreeView()).isCompactFolders());
+                    getTreeItem().getChildren().add(newItem);
+
+                } catch (IOException e) {
+                    showError("Paste Failed", "Could not paste " + file.getName() + ": " + e.getMessage());
+                }
+            }
+            getTreeItem().getChildren().sort(Comparator.comparing(t -> t.getValue().getFileName().toString()));
+        }
+
+
+        private void createNew(String type) {
+            Path parentPath = getItem();
+            if (!Files.isDirectory(parentPath)) return;
+
+            TextInputDialog dialog = new TextInputDialog("Untitled");
+            dialog.setTitle("Create New " + (type.equals("file") ? "File" : "Directory"));
+            dialog.setHeaderText("Enter the name:");
+            dialog.setContentText("Name:");
+
+            Optional<String> result = dialog.showAndWait();
+            result.ifPresent(name -> {
+                try {
+                    Path newPath = parentPath.resolve(name);
+                    if (type.equals("file")) {
+                        Files.createFile(newPath);
+                    } else {
+                        Files.createDirectory(newPath);
+                    }
+                    // Add to tree
+                    TreeItem<Path> newItem = new PathTreeItem(newPath, ((PathTreeView) getTreeView()).isCompactFolders());
+                    getTreeItem().getChildren().add(newItem);
+                    getTreeItem().getChildren().sort(Comparator.comparing(t -> t.getValue().getFileName().toString()));
+                } catch (IOException e) {
+                    showError("Creation failed", "Could not create " + name + ": " + e.getMessage());
+                }
+            });
+        }
+
+        private void renamePath() {
+            Path path = getItem();
+            TextInputDialog dialog = new TextInputDialog(path.getFileName().toString());
+            dialog.setTitle("Rename");
+            dialog.setHeaderText("Enter new name for " + path.getFileName());
+            dialog.setContentText("New Name:");
+
+            Optional<String> result = dialog.showAndWait();
+            result.ifPresent(newName -> {
+                try {
+                    Path newPath = path.resolveSibling(newName);
+                    Files.move(path, newPath);
+                    getTreeItem().setValue(newPath);
+                } catch (IOException e) {
+                    showError("Rename failed", "Could not rename " + path.getFileName() + ": " + e.getMessage());
+                }
+            });
+        }
+
+        private void deletePath() {
+            Path path = getItem();
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Delete Confirmation");
+            alert.setHeaderText("Delete " + path.getFileName() + "?");
+            alert.setContentText("Are you sure you want to delete this " + (Files.isDirectory(path) ? "directory and its contents?" : "file?"));
+
+            Optional<ButtonType> result = alert.showAndWait();
+            if (result.isPresent() && result.get() == ButtonType.OK) {
+                try {
+                    if (Files.isDirectory(path)) {
+                        try (Stream<Path> walk = Files.walk(path)) {
+                            walk.sorted(Comparator.reverseOrder()).forEach(p -> {
+                                try { Files.delete(p); } catch (IOException e) { /* ignore */ }
+                            });
+                        }
+                    } else {
+                        Files.delete(path);
+                    }
+                    getTreeItem().getParent().getChildren().remove(getTreeItem());
+                } catch (IOException e) {
+                    showError("Delete failed", "Could not delete " + path.getFileName() + ": " + e.getMessage());
+                }
+            }
+        }
+
+        private void showError(String title, String message) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle(title);
+            alert.setHeaderText(null);
+            alert.setContentText(message);
+            alert.showAndWait();
         }
     }
 
