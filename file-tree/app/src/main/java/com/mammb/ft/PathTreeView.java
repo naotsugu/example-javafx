@@ -21,7 +21,6 @@ import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.TransferMode;
 import javafx.scene.shape.SVGPath;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -44,12 +43,13 @@ import java.util.stream.Stream;
  */
 public class PathTreeView extends TreeView<Path> {
 
+    private static final System.Logger log = System.getLogger(PathTreeView.class.getName());
+
     private final List<Consumer<Path>> selectActions = new ArrayList<>();
-    private final BooleanProperty compactFolders =
-            new SimpleBooleanProperty(this, "compactFolders", true);
+    private final BooleanProperty compactFolders = new SimpleBooleanProperty(this, "compactFolders", true);
     private final HostServices hostServices;
 
-    /** The currently "cut" item, managed at the TreeView level to avoid static state. */
+    /** the currently "cut" item, managed at the TreeView level to avoid static state. */
     private TreeItem<Path> cutItem = null;
 
     public PathTreeView(HostServices hostServices, Path... roots) {
@@ -57,29 +57,24 @@ public class PathTreeView extends TreeView<Path> {
         this.hostServices = hostServices;
         setShowRoot(false);
         setEditable(true);
+        for (Path root : roots) addRoot(root);
 
-        for (Path root : roots) {
-            addRoot(root);
-        }
-
-        setCellFactory(param -> new PathTreeCell(this));
+        setCellFactory(_ -> new PathTreeCell(this));
         getSelectionModel().selectedItemProperty().addListener(
             (_, _, item) -> {
                 if (item != null && item.getValue() != null && !selectActions.isEmpty()) {
                     selectActions.forEach(action -> action.accept(item.getValue()));
                 }
             });
-
         compactFolders.addListener((_, _, _) -> refreshAllRoots());
 
-        // Allow adding new roots by dropping directories onto the TreeView's empty space
+        // allow adding new roots by dropping directories onto the TreeView's empty space
         setOnDragOver(event -> {
             if (event.getGestureSource() != this && event.getDragboard().hasFiles()) {
                 event.acceptTransferModes(TransferMode.COPY);
             }
             event.consume();
         });
-
         setOnDragDropped(event -> {
             Dragboard db = event.getDragboard();
             boolean success = false;
@@ -104,14 +99,15 @@ public class PathTreeView extends TreeView<Path> {
         for (TreeItem<Path> item : existingRoots) {
             Path existingPath = item.getValue();
             if (path.startsWith(existingPath)) {
-                return; // The new path is a subdirectory of an existing root, so ignore it.
+                // the new path is a subdirectory of an existing root, so ignore it
+                return;
             }
             if (existingPath.startsWith(path)) {
-                getRoot().getChildren().remove(item); // An existing root is a subdirectory of the new path, so remove it.
+                // an existing root is a subdirectory of the new path, so remove it
+                getRoot().getChildren().remove(item);
             }
         }
         PathTreeItem item = new PathTreeItem(path, isCompactFolders());
-        item.setExpanded(true);
         getRoot().getChildren().add(item);
         getRoot().getChildren().sort(Comparator.comparing(t -> t.getValue().getFileName().toString()));
     }
@@ -120,20 +116,20 @@ public class PathTreeView extends TreeView<Path> {
      * Refreshes all root nodes while preserving the expansion state of the tree.
      */
     public void refreshAllRoots() {
-        // 1. Store the current expansion state of all nodes.
+        // store the current expansion state of all nodes
         Map<Path, Boolean> expansionStates = new HashMap<>();
         for (TreeItem<Path> item : getRoot().getChildren()) {
             if (item instanceof PathTreeItem pathItem) {
                 pathItem.storeExpansionState(expansionStates);
             }
         }
-        // 2. Refresh the content of all root nodes.
+        // refresh the content of all root nodes
         for (TreeItem<Path> item : getRoot().getChildren()) {
             if (item instanceof PathTreeItem pathItem) {
                 pathItem.refresh(isCompactFolders());
             }
         }
-        // 3. Restore the expansion state.
+        // restore the expansion state
         for (TreeItem<Path> item : getRoot().getChildren()) {
             if (item instanceof PathTreeItem pathItem) {
                 pathItem.restoreExpansionState(expansionStates);
@@ -168,6 +164,8 @@ public class PathTreeView extends TreeView<Path> {
     public HostServices getHostServices() {
         return hostServices;
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * A TreeItem that represents a Path and loads its children on demand.
@@ -221,16 +219,14 @@ public class PathTreeView extends TreeView<Path> {
                         }
                     });
             } catch (IOException e) {
-                // In a real application, this should be handled more gracefully.
-                throw new RuntimeException(e);
+                log.log(System.Logger.Level.ERROR, e);
             }
         }
 
-        private TreeItem<Path> buildCompactTreeItem(Path path) {
+        private TreeItem<Path> buildCompactTreeItem(final Path path) {
             List<Path> chain = new ArrayList<>();
             chain.add(path);
             Path current = path;
-            Path startOfChain = path;
 
             while (true) {
                 try (Stream<Path> stream = Files.list(current)) {
@@ -250,7 +246,7 @@ public class PathTreeView extends TreeView<Path> {
                 String displayPath = chain.stream()
                         .map(p -> p.getFileName().toString())
                         .collect(Collectors.joining("/"));
-                return new CompactPathTreeItem(current, displayPath, compact, startOfChain);
+                return new CompactPathTreeItem(current, displayPath, compact, path);
             } else {
                 return new PathTreeItem(path, compact);
             }
@@ -271,7 +267,7 @@ public class PathTreeView extends TreeView<Path> {
         /** Recursively restores the expansion state of this node and its children. */
         void restoreExpansionState(Map<Path, Boolean> states) {
             if (!isLeaf()) {
-                // Restore state, defaulting to false if not found.
+                // restore state, defaulting to false if not found
                 setExpanded(states.getOrDefault(getValue(), false));
                 for (TreeItem<Path> child : getChildren()) {
                     if (child instanceof PathTreeItem pathChild) {
@@ -332,11 +328,10 @@ public class PathTreeView extends TreeView<Path> {
             setGraphic(textField);
             textField.requestFocus();
 
-            // Use Platform.runLater to ensure the text field is fully rendered before selecting text.
             Platform.runLater(() -> {
                 int dotIndex = name.lastIndexOf('.');
-                // For files, select only the name without the extension. For directories, select all.
                 if (Files.isRegularFile(getItem()) && dotIndex > 0) {
+                    // for files, select only the name without the extension. For directories, select all
                     textField.selectRange(0, dotIndex);
                 } else {
                     textField.selectAll();
@@ -347,7 +342,9 @@ public class PathTreeView extends TreeView<Path> {
         @Override
         public void cancelEdit() {
             super.cancelEdit();
-            setText(getTreeItem() instanceof CompactPathTreeItem c ? c.getDisplayPath() : getItem().getFileName().toString());
+            setText(getTreeItem() instanceof CompactPathTreeItem c
+                ? c.getDisplayPath()
+                : getItem().getFileName().toString());
             setGraphic(getTreeItem().getGraphic());
         }
 
@@ -355,7 +352,7 @@ public class PathTreeView extends TreeView<Path> {
         protected void updateItem(Path item, boolean empty) {
             super.updateItem(item, empty);
 
-            // Apply or remove the 'cut' style class based on the global cut state.
+            // apply or remove the 'cut' style class based on the global cut state
             getStyleClass().remove("cut");
             if (getTreeItem() != null && getTreeItem() == ((PathTreeView) getTreeView()).getCutItem()) {
                 getStyleClass().add("cut");
@@ -414,8 +411,8 @@ public class PathTreeView extends TreeView<Path> {
 
                 menu.getItems().add(new SeparatorMenuItem());
                 menu.getItems().addAll(
-                    createMenuItem("New File", () -> fileOperationHandler.createNew(treeItem, "file")),
-                    createMenuItem("New Directory", () -> fileOperationHandler.createNew(treeItem, "dir")),
+                    createMenuItem("New File", () -> fileOperationHandler.createNew(treeItem, true)),
+                    createMenuItem("New Directory", () -> fileOperationHandler.createNew(treeItem, false)),
                     pasteItem
                 );
                 menu.getItems().add(new SeparatorMenuItem());
@@ -426,14 +423,14 @@ public class PathTreeView extends TreeView<Path> {
             }
 
             menu.getItems().add(new SeparatorMenuItem());
-            menu.getItems().add(createMenuItem("Open in System Explorer", () -> fileOperationHandler.openInExplorer(treeItem)));
+            menu.getItems().add(createMenuItem("Open in System", () -> fileOperationHandler.openInExplorer(treeItem)));
 
             return menu;
         }
 
         private MenuItem createMenuItem(String text, Runnable action) {
             MenuItem item = new MenuItem(text);
-            item.setOnAction(event -> action.run());
+            item.setOnAction(_ -> action.run());
             return item;
         }
     }
@@ -453,20 +450,20 @@ public class PathTreeView extends TreeView<Path> {
             try {
                 Path newPath = item.getValue().resolveSibling(newName);
                 Files.move(item.getValue(), newPath);
-                item.setValue(newPath); // This is safe as commitEdit is not called here.
+                item.setValue(newPath); // this is safe as commitEdit is not called here
             } catch (IOException e) {
                 showError("Rename Failed", "Could not rename: " + e.getMessage());
             }
         }
 
-        void createNew(TreeItem<Path> parentItem, String type) {
+        void createNew(TreeItem<Path> parentItem, boolean isFile) {
             Path parentPath = parentItem.getValue();
             if (!Files.isDirectory(parentPath)) return;
 
-            Path newPath = findUniquePath(parentPath, "Untitled");
+            Path newPath = findUniquePath(parentPath, isFile ? "Untitled.txt" : "Untitled");
 
             try {
-                if (type.equals("file")) {
+                if (isFile) {
                     Files.createFile(newPath);
                 } else {
                     Files.createDirectory(newPath);
@@ -490,8 +487,9 @@ public class PathTreeView extends TreeView<Path> {
             Path path = item.getValue();
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
             alert.setTitle("Delete Confirmation");
-            alert.setHeaderText("Delete " + path.getFileName() + "?");
-            alert.setContentText("Are you sure you want to delete this " + (Files.isDirectory(path) ? "directory and its contents?" : "file?"));
+            alert.setHeaderText(null);
+            alert.setGraphic(null);
+            alert.setContentText("Are you sure you want to delete " + path.getFileName() + "?");
 
             Optional<ButtonType> result = alert.showAndWait();
             if (result.isPresent() && result.get() == ButtonType.OK) {
@@ -521,7 +519,8 @@ public class PathTreeView extends TreeView<Path> {
             content.put(DataFormat.FILES, List.of(item.getValue().toFile()));
             content.put(DATA_FORMAT_CUT, true);
             Clipboard.getSystemClipboard().setContent(content);
-            treeView.refresh(); // Refresh to apply the "cut" style
+            // refresh to apply the "cut" style
+            treeView.refresh();
         }
 
         void copy(TreeItem<Path> item) {
@@ -640,6 +639,7 @@ public class PathTreeView extends TreeView<Path> {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle(title);
             alert.setHeaderText(null);
+            alert.setGraphic(null);
             alert.setContentText(message);
             alert.showAndWait();
         }
