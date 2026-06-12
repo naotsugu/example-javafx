@@ -18,7 +18,7 @@ public class App extends Application {
 
         ContentArea contentArea = new ContentArea();
         PathTreeView treeView = new PathTreeView(
-                Paths.get(System.getProperty("user.home")),
+                getHostServices(), // Pass HostServices
                 Paths.get(System.getProperty("user.dir")));
         treeView.addSelectAction(contentArea::display);
 

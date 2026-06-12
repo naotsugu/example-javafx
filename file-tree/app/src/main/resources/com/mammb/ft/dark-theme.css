@@ -1,36 +1,16 @@
 .root {
-    -fx-base: #333333;
-    -fx-background: #333333;
-    -fx-control-inner-background: #444444;
-    -fx-accent: #007bff;
-    -fx-focus-color: #007bff;
+    -fx-base: #3c3f41;
+    -fx-background: #2b2b2b;
+    -fx-control-inner-background: #3c3f41;
+    -fx-focus-color: #466ab5;
+    -fx-accent: #466ab5;
 }
-
-.tree-cell {
-    -fx-text-fill: #dddddd;
+.icon {
+    -fx-fill: -fx-text-background-color;
 }
-
-.tree-cell:selected {
-    -fx-background-color: -fx-accent;
-    -fx-text-fill: white;
+.tree-cell.drag-over {
+    -fx-background-color: -fx-focus-color;
 }
-
-.tree-cell .icon {
-    -fx-fill: #dddddd;
-}
-
-.tree-cell:selected .icon {
-    -fx-fill: white;
-}
-
-.split-pane-divider {
-    -fx-background-color: #555555;
-}
-
-.text-area {
-    -fx-text-fill: #dddddd;
-}
-
-.text-area .content {
-    -fx-background-color: -fx-control-inner-background;
+.tree-cell.cut {
+    -fx-opacity: 0.5;
 }
