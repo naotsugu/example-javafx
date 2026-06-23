@@ -15,7 +15,8 @@ public class App extends Application {
 
     @Override
     public void start(Stage stage) {
-        Scene scene = new Scene(new Label("label"), 800, 600);
+        MultiTabView multiTabView = new MultiTabView(new Label("label"));
+        Scene scene = new Scene(multiTabView, 800, 600);
         stage.setScene(scene);
         stage.setTitle("Tabs");
         stage.show();
