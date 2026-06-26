@@ -1,24 +1,24 @@
 package com.mammb.tabs;
 
 import javafx.geometry.Orientation;
+import javafx.scene.Node;
 import javafx.scene.control.SplitPane;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.TilePane;
 
-public class TileNode extends StackPane {
+public class TreeNode extends StackPane {
 
-    private TileNode parent;
+    private TreeNode parent;
 
     private SplitPane children;
     private Orientation orientation;
 
-    public TileNode(TileNode parent, Content content) {
+    public TreeNode(TreeNode parent, Node content) {
         this.parent = parent;
-        getChildren().setAll(new TilePane(this, content));
+        getChildren().add(new LeafPane(this, content));
     }
 
-    public static TileNode rootOf(Content content) {
-        return new TileNode(null, content);
+    public static TreeNode rootOf(Node content) {
+        return new TreeNode(null, content);
     }
 
     public boolean isRoot() {

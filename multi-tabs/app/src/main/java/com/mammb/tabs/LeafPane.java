@@ -1,20 +1,22 @@
 package com.mammb.tabs;
 
+import javafx.scene.Node;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Rectangle;
 
-public class TilePane extends StackPane {
+public class LeafPane extends StackPane {
 
     private final TabPane tabPane = new TabPane();
     private final Rectangle marker = new Rectangle();
-    private TileNode parent;
+    private TreeNode parent;
 
-    public TilePane(TileNode parent, Content content) {
+    public LeafPane(TreeNode parent, Node content) {
+        getChildren().add(tabPane);
+        this.parent = parent;
         var tab = new Tab("", content);
         tabPane.getTabs().add(tab);
-        this.parent = parent;
     }
 
 }
