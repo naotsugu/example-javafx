@@ -9,12 +9,15 @@ public class TreeNode extends StackPane {
 
     private TreeNode parent;
 
+    private LeafPane pane;
+
     private SplitPane children;
     private Orientation orientation;
 
     public TreeNode(TreeNode parent, Node content) {
         this.parent = parent;
-        getChildren().add(new LeafPane(this, content));
+        this.pane = new LeafPane(this, content);
+        getChildren().add(pane);
     }
 
     public static TreeNode rootOf(Node content) {
