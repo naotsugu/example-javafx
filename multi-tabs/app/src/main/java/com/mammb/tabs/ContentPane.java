@@ -1,22 +1,25 @@
 package com.mammb.tabs;
 
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.Node;
 import javafx.scene.layout.StackPane;
 
-public class ContentPane extends StackPane implements Content {
-    private String name;
-    public ContentPane(Node... children) {
+public class ContentPane extends StackPane {
+
+    private final SimpleObjectProperty<String> nameProperty = new SimpleObjectProperty<>();
+
+    public ContentPane(Node child, String name) {
         super();
-        getChildren().addAll(children);
+        nameProperty.set(name);
+        getChildren().add(child);
     }
 
-    public static ContentPane of(Node... children) {
-        return new ContentPane(children);
+    public static ContentPane of(Node child, String name) {
+        return new ContentPane(child, name);
     }
 
-    @Override
-    public String name() {
-        return name;
-    }
+    public ReadOnlyObjectProperty<String> nameProperty() { return nameProperty; }
+
 }
 

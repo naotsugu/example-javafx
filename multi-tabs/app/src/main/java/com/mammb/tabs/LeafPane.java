@@ -1,6 +1,5 @@
 package com.mammb.tabs;
 
-import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.shape.Rectangle;
@@ -14,8 +13,7 @@ public class LeafPane extends StackPane {
     public LeafPane(TreeNode parent, ContentPane content) {
         getChildren().add(tabPane);
         this.parent = parent;
-        var tab = new Tab("", content);
+        var tab = new ContentTab(content);
         tabPane.getTabs().add(tab);
     }
-
 }

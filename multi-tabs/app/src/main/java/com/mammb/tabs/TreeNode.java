@@ -1,7 +1,6 @@
 package com.mammb.tabs;
 
 import javafx.geometry.Orientation;
-import javafx.scene.Node;
 import javafx.scene.control.SplitPane;
 import javafx.scene.layout.StackPane;
 
@@ -14,13 +13,13 @@ public class TreeNode extends StackPane {
     private SplitPane children;
     private Orientation orientation;
 
-    public TreeNode(TreeNode parent, Node content) {
+    public TreeNode(TreeNode parent, ContentPane content) {
         this.parent = parent;
         this.pane = new LeafPane(this, content);
         getChildren().add(pane);
     }
 
-    public static TreeNode rootOf(Node content) {
+    public static TreeNode rootOf(ContentPane content) {
         return new TreeNode(null, content);
     }
 

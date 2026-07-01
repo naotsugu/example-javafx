@@ -1,0 +1,52 @@
+package com.mammb.tabs;
+
+import javafx.scene.Node;
+import javafx.scene.SnapshotParameters;
+import javafx.scene.control.Label;
+import javafx.scene.control.Tab;
+import javafx.scene.image.Image;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DataFormat;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.TransferMode;
+import javafx.scene.paint.Color;
+import java.util.Objects;
+
+public class ContentTab extends Tab {
+
+    private static final DataFormat tabMove = new DataFormat("SplitTabPane:tabMove");
+
+    public ContentTab(ContentPane content) {
+        super();
+        var label = new Label(content.nameProperty().get());
+        setGraphic(label);
+        label.setOnDragDetected(this::handleTabDragDetected);
+    }
+
+    private void handleTabDragDetected(MouseEvent e) {
+        if (e.getSource() instanceof Label label) {
+            Dragboard db = label.startDragAndDrop(TransferMode.MOVE);
+            ClipboardContent cc = new ClipboardContent();
+            cc.put(tabMove, String.valueOf(System.identityHashCode(label)));
+            Image image = tabImage(label);
+            db.setDragView(image, image.getWidth() / 2, image.getHeight() / 2);
+            db.setContent(cc);
+        }
+    }
+
+    private static Image tabImage(Node node) {
+        node = tabNode(node);
+        var snapshotParams = new SnapshotParameters();
+        snapshotParams.setFill(Color.TRANSPARENT);
+        return node.snapshot(snapshotParams, null);
+    }
+
+    private static Node tabNode(Node node) {
+        for (;;) {
+            node = node.getParent();
+            if (Objects.equals(node.getClass().getSimpleName(), "TabHeaderSkin"))
+                return node;
+        }
+    }
+}
