@@ -23,7 +23,7 @@ public class LeafPane extends StackPane {
         marker = new Rectangle();
         marker.setFill(Color.TRANSPARENT);
         marker.setStroke(Color.DARKORANGE);
-        marker.setStrokeWidth(3.0);
+        marker.setStrokeWidth(1.5);
         marker.setManaged(false);
 
         getChildren().addAll(tabPane, marker);
@@ -44,9 +44,10 @@ public class LeafPane extends StackPane {
         if (!db.hasContent(ContentTab.tabMove) || dragged == null) return;
         e.acceptTransferModes(TransferMode.MOVE);
 
-        Bounds bounds = tabPane.getLayoutBounds();
-        marker.setX(0.0);
-        marker.setY(0.0);
+        Bounds bounds = innerBounds();
+
+        marker.setX(bounds.getMinX());
+        marker.setY(bounds.getMinY());
         marker.setWidth(bounds.getWidth());
         marker.setHeight(bounds.getHeight());
         marker.setVisible(true);
@@ -69,6 +70,16 @@ public class LeafPane extends StackPane {
 
     private void handleDragExited(DragEvent e) {
         marker.setVisible(false);
+    }
+
+    private Bounds innerBounds() {
+        Bounds bounds = getLayoutBounds();
+        return new BoundingBox(
+            bounds.getMinX() + marker.getStrokeWidth(),
+            bounds.getMinY() + marker.getStrokeWidth(),
+            bounds.getWidth()  - (marker.getStrokeWidth() * 2),
+            bounds.getHeight() - (marker.getStrokeWidth() * 2)
+        );
     }
 
     private enum DropPoint { HEADER, TOP, RIGHT, BOTTOM, LEFT, ANY }
