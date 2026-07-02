@@ -45,7 +45,6 @@ public class LeafPane extends StackPane {
         e.acceptTransferModes(TransferMode.MOVE);
 
         Bounds bounds = innerBounds();
-
         marker.setX(bounds.getMinX());
         marker.setY(bounds.getMinY());
         marker.setWidth(bounds.getWidth());
