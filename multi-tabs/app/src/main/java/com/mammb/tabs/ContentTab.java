@@ -12,16 +12,19 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.paint.Color;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ContentTab extends Tab {
 
-    private static final DataFormat tabMove = new DataFormat("SplitTabPane:tabMove");
+    static final AtomicReference<ContentTab> dragged = new AtomicReference<>();
+    static final DataFormat tabMove = new DataFormat("ContentTab:tabMove");
 
     public ContentTab(ContentPane content) {
         super();
+        setContent(content);
         var label = new Label(content.nameProperty().get());
-        setGraphic(label);
         label.setOnDragDetected(this::handleTabDragDetected);
+        setGraphic(label);
     }
 
     private void handleTabDragDetected(MouseEvent e) {
@@ -29,6 +32,7 @@ public class ContentTab extends Tab {
             Dragboard db = label.startDragAndDrop(TransferMode.MOVE);
             ClipboardContent cc = new ClipboardContent();
             cc.put(tabMove, String.valueOf(System.identityHashCode(label)));
+            dragged.set(this);
             Image image = tabImage(label);
             db.setDragView(image, image.getWidth() / 2, image.getHeight() / 2);
             db.setContent(cc);
@@ -43,10 +47,10 @@ public class ContentTab extends Tab {
     }
 
     private static Node tabNode(Node node) {
-        for (;;) {
-            node = node.getParent();
-            if (Objects.equals(node.getClass().getSimpleName(), "TabHeaderSkin"))
-                return node;
+        for (Node n = node; n != null; n = n.getParent()) {
+            if (Objects.equals(n.getClass().getSimpleName(), "TabHeaderSkin"))
+                return n;
         }
+        return node;
     }
 }
