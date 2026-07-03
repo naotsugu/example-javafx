@@ -18,7 +18,8 @@ public class LeafPane extends StackPane {
 
     private final Context context;
     private final TabPane tabPane = new TabPane();
-    private final Rectangle marker;
+
+    private final DropMarker dropMarker = new DropMarker();
     private TreeNode parent;
 
     public LeafPane(Context context, TreeNode parent, ContentPane content) {
@@ -26,89 +27,89 @@ public class LeafPane extends StackPane {
         this.context = context;
         this.parent = parent;
 
-        marker = new Rectangle();
-        marker.setFill(Color.TRANSPARENT);
-        marker.setStroke(Color.DARKORANGE);
-        marker.setStrokeWidth(1.5);
-        marker.setManaged(false);
-
-        getChildren().addAll(tabPane, marker);
+        getChildren().addAll(tabPane, dropMarker);
         var tab = new TabContent(context, content);
         tabPane.getTabs().add(tab);
 
         setOnDragOver(this::handleDragOver);
-//        setOnDragDropped(this::handleDragDropped);
-       setOnDragExited(this::handleDragExited);
+        setOnDragDropped(this::handleDragDropped);
+        setOnDragExited(this::handleDragExited);
 //        setOnDragDone(this::handleDragDone);
+    }
+    private void handleDragDropped(DragEvent e) {
+
     }
 
     private void handleDragOver(DragEvent e) {
 
-        marker.setVisible(false);
+        dropMarker.clear();
+        boolean dragOnTabHeader = dragOnTabHeader(e);
+
+        if (e.getDragboard().hasFiles() && dragOnTabHeader) {
+            Node tabHeaderArea = tabHeaderArea();
+            Bounds bounds = innerBounds(screenToLocal(
+                tabHeaderArea.localToScreen(tabHeaderArea.getBoundsInLocal())));
+            dropMarker.show(bounds);
+            e.acceptTransferModes(TransferMode.COPY);
+            e.consume();
+            return;
+        }
+
         Dragboard db = e.getDragboard();
         TabContent dragged = context.dragged();
         if (!db.hasContent(TabContent.tabMoveFormat) || dragged == null) return;
         e.acceptTransferModes(TransferMode.MOVE);
 
-        if (dragOnHeader(e)) {
+        if (dragOnTabHeader) {
             int insertionIndex = insertionIndex(e);
             int tabIndex = Math.min(tabPane.getTabs().size() - 1, insertionIndex);
             Node tabNode = ((TabContent) tabPane.getTabs().get(tabIndex)).tabNode();
-            Bounds ins = screenToLocal(tabNode.localToScreen(tabNode.getBoundsInLocal()));
-            marker.setX((insertionIndex > tabIndex) ? ins.getMaxX() : ins.getMinX());
-            marker.setY(ins.getMinY());
-            marker.setHeight(ins.getHeight());
-            marker.setWidth(2);
-            marker.setVisible(true);
+            Bounds tabBounds = screenToLocal(tabNode.localToScreen(tabNode.getBoundsInLocal()));
+            Bounds bounds = new BoundingBox(
+                (insertionIndex > tabIndex) ? tabBounds.getMaxX() : tabBounds.getMinX(),
+                tabBounds.getMinY(),
+                dropMarker.getStrokeWidth(),
+                tabBounds.getHeight()
+            );
+            dropMarker.show(bounds);
             e.consume();
             return;
         }
 
-        Bounds bounds = innerBounds();
-        marker.setX(bounds.getMinX());
-        marker.setY(bounds.getMinY());
-        marker.setWidth(bounds.getWidth());
-        marker.setHeight(bounds.getHeight());
-        marker.setVisible(true);
-        switch (dragSide(e).orElse(null)) {
-            case LEFT -> marker.setWidth(bounds.getWidth() / 2);
-            case TOP -> marker.setHeight(bounds.getHeight() / 2);
-            case RIGHT -> {
-                marker.setX(bounds.getCenterX());
-                marker.setWidth(bounds.getWidth() / 2);
-            }
-            case BOTTOM -> {
-                marker.setY(bounds.getCenterY());
-                marker.setHeight(bounds.getHeight() / 2);
-            }
-            case null -> {}
-        }
+        Bounds bounds = innerBounds(getLayoutBounds());
+        Side side = dragOnSide(e).orElse(null);
+        dropMarker.show(bounds, side);
+
         e.consume();
     }
 
     private void handleDragExited(DragEvent e) {
-        marker.setVisible(false);
+        dropMarker.clear();
     }
 
-    private Bounds innerBounds() {
-        Bounds bounds = getLayoutBounds();
+
+    private Bounds innerBounds(Bounds bounds) {
         return new BoundingBox(
-            bounds.getMinX() + marker.getStrokeWidth(),
-            bounds.getMinY() + marker.getStrokeWidth(),
-            bounds.getWidth()  - (marker.getStrokeWidth() * 2),
-            bounds.getHeight() - (marker.getStrokeWidth() * 2)
+            bounds.getMinX() + dropMarker.getStrokeWidth(),
+            bounds.getMinY() + dropMarker.getStrokeWidth(),
+            bounds.getWidth()  - (dropMarker.getStrokeWidth() * 2),
+            bounds.getHeight() - (dropMarker.getStrokeWidth() * 2)
         );
     }
 
 
-    private boolean dragOnHeader(DragEvent e) {
-        Node headerArea = tabPane.lookup(".tab-header-area");
+    private boolean dragOnTabHeader(DragEvent e) {
+        Node headerArea = tabHeaderArea();
         if (headerArea == null) return false;
         return headerArea.localToScreen(headerArea.getBoundsInLocal())
             .contains(e.getScreenX(), e.getScreenY());
     }
 
-    private Optional<Side> dragSide(DragEvent e) {
+    private Node tabHeaderArea() {
+        return tabPane.lookup(".tab-header-area");
+    }
+
+    private Optional<Side> dragOnSide(DragEvent e) {
         Bounds paneBounds = localToScreen(getBoundsInLocal());
         double w = paneBounds.getWidth() / 3;
         double h = paneBounds.getHeight() / 3;
