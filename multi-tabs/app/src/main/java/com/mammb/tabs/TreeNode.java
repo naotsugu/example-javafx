@@ -6,6 +6,7 @@ import javafx.scene.layout.StackPane;
 
 public class TreeNode extends StackPane {
 
+    private final Context context;
     private TreeNode parent;
 
     private LeafPane pane;
@@ -13,14 +14,15 @@ public class TreeNode extends StackPane {
     private SplitPane children;
     private Orientation orientation;
 
-    public TreeNode(TreeNode parent, ContentPane content) {
+    public TreeNode(Context context, TreeNode parent, ContentPane content) {
+        this.context = context;
         this.parent = parent;
-        this.pane = new LeafPane(this, content);
+        this.pane = new LeafPane(context, this, content);
         getChildren().add(pane);
     }
 
-    public static TreeNode rootOf(ContentPane content) {
-        return new TreeNode(null, content);
+    public static TreeNode rootOf(Context context, ContentPane content) {
+        return new TreeNode(context, null, content);
     }
 
     public boolean isRoot() {

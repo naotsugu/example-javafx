@@ -12,15 +12,15 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.paint.Color;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class ContentTab extends Tab {
 
-    static final AtomicReference<ContentTab> dragged = new AtomicReference<>();
     static final DataFormat tabMove = new DataFormat("ContentTab:tabMove");
+    private final Context context;
 
-    public ContentTab(ContentPane content) {
+    public ContentTab(Context context, ContentPane content) {
         super();
+        this.context = context;
         setContent(content);
         var label = new Label(content.nameProperty().get());
         label.setOnDragDetected(this::handleTabDragDetected);
@@ -32,7 +32,7 @@ public class ContentTab extends Tab {
             Dragboard db = label.startDragAndDrop(TransferMode.MOVE);
             ClipboardContent cc = new ClipboardContent();
             cc.put(tabMove, String.valueOf(System.identityHashCode(label)));
-            dragged.set(this);
+            context.dragged(this);
             Image image = tabImage(label);
             db.setDragView(image, image.getWidth() / 2, image.getHeight() / 2);
             db.setContent(cc);

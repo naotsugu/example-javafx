@@ -3,7 +3,6 @@ package com.mammb.tabs;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.scene.Node;
-import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
@@ -14,11 +13,15 @@ import javafx.scene.shape.Rectangle;
 
 public class LeafPane extends StackPane {
 
+    private final Context context;
     private final TabPane tabPane = new TabPane();
     private final Rectangle marker;
     private TreeNode parent;
 
-    public LeafPane(TreeNode parent, ContentPane content) {
+    public LeafPane(Context context, TreeNode parent, ContentPane content) {
+
+        this.context = context;
+        this.parent = parent;
 
         marker = new Rectangle();
         marker.setFill(Color.TRANSPARENT);
@@ -27,8 +30,7 @@ public class LeafPane extends StackPane {
         marker.setManaged(false);
 
         getChildren().addAll(tabPane, marker);
-        this.parent = parent;
-        var tab = new ContentTab(content);
+        var tab = new ContentTab(context, content);
         tabPane.getTabs().add(tab);
 
         setOnDragOver(this::handleDragOver);
@@ -40,7 +42,7 @@ public class LeafPane extends StackPane {
     private void handleDragOver(DragEvent e) {
         marker.setVisible(false);
         Dragboard db = e.getDragboard();
-        ContentTab dragged = ContentTab.dragged.get();
+        ContentTab dragged = context.dragged();
         if (!db.hasContent(ContentTab.tabMove) || dragged == null) return;
         e.acceptTransferModes(TransferMode.MOVE);
 
@@ -84,6 +86,7 @@ public class LeafPane extends StackPane {
     private enum DropPoint { HEADER, TOP, RIGHT, BOTTOM, LEFT, ANY }
 
     private static DropPoint dropPoint(Node node, DragEvent e) {
+
         Bounds paneBounds = node.localToScreen(node.getBoundsInLocal());
         double w = paneBounds.getWidth() / 4;
         double h = paneBounds.getHeight() / 4;
