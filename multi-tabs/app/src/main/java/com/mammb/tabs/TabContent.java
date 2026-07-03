@@ -13,12 +13,13 @@ import javafx.scene.input.TransferMode;
 import javafx.scene.paint.Color;
 import java.util.Objects;
 
-public class ContentTab extends Tab {
+public class TabContent extends Tab {
 
-    static final DataFormat tabMove = new DataFormat("ContentTab:tabMove");
+    static final DataFormat tabMoveFormat = new DataFormat(TabContent.class.getSimpleName() + ":tabMove");
+
     private final Context context;
 
-    public ContentTab(Context context, ContentPane content) {
+    public TabContent(Context context, ContentPane content) {
         super();
         this.context = context;
         setContent(content);
@@ -31,7 +32,7 @@ public class ContentTab extends Tab {
         if (e.getSource() instanceof Label label) {
             Dragboard db = label.startDragAndDrop(TransferMode.MOVE);
             ClipboardContent cc = new ClipboardContent();
-            cc.put(tabMove, String.valueOf(System.identityHashCode(label)));
+            cc.put(tabMoveFormat, String.valueOf(System.identityHashCode(label)));
             context.dragged(this);
             Image image = tabImage(label);
             db.setDragView(image, image.getWidth() / 2, image.getHeight() / 2);

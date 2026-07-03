@@ -2,6 +2,7 @@ package com.mammb.tabs;
 
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
+import javafx.geometry.Side;
 import javafx.scene.Node;
 import javafx.scene.control.TabPane;
 import javafx.scene.input.DragEvent;
@@ -10,6 +11,7 @@ import javafx.scene.input.TransferMode;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import java.util.Optional;
 
 public class LeafPane extends StackPane {
 
@@ -30,7 +32,7 @@ public class LeafPane extends StackPane {
         marker.setManaged(false);
 
         getChildren().addAll(tabPane, marker);
-        var tab = new ContentTab(context, content);
+        var tab = new TabContent(context, content);
         tabPane.getTabs().add(tab);
 
         setOnDragOver(this::handleDragOver);
@@ -40,11 +42,14 @@ public class LeafPane extends StackPane {
     }
 
     private void handleDragOver(DragEvent e) {
+
         marker.setVisible(false);
         Dragboard db = e.getDragboard();
-        ContentTab dragged = context.dragged();
-        if (!db.hasContent(ContentTab.tabMove) || dragged == null) return;
+        TabContent dragged = context.dragged();
+        if (!db.hasContent(TabContent.tabMoveFormat) || dragged == null) return;
         e.acceptTransferModes(TransferMode.MOVE);
+
+
 
         Bounds bounds = innerBounds();
         marker.setX(bounds.getMinX());
@@ -52,11 +57,10 @@ public class LeafPane extends StackPane {
         marker.setWidth(bounds.getWidth());
         marker.setHeight(bounds.getHeight());
         marker.setVisible(true);
-        var dropPoint = dropPoint(this, e);
-        switch (dropPoint) {
+        var side = dragSide(this, e);
+        switch (side.orElse(null)) {
             case LEFT -> marker.setWidth(bounds.getWidth() / 2);
             case TOP -> marker.setHeight(bounds.getHeight() / 2);
-            case ANY -> e.acceptTransferModes(TransferMode.NONE);
             case RIGHT -> {
                 marker.setX(bounds.getCenterX());
                 marker.setWidth(bounds.getWidth() / 2);
@@ -65,6 +69,7 @@ public class LeafPane extends StackPane {
                 marker.setY(bounds.getCenterY());
                 marker.setHeight(bounds.getHeight() / 2);
             }
+            case null -> {}
         }
         e.consume();
     }
@@ -83,46 +88,36 @@ public class LeafPane extends StackPane {
         );
     }
 
-    private enum DropPoint { HEADER, TOP, RIGHT, BOTTOM, LEFT, ANY }
-
-    private static DropPoint dropPoint(Node node, DragEvent e) {
-
+    private static Optional<Side> dragSide(Node node, DragEvent e) {
         Bounds paneBounds = node.localToScreen(node.getBoundsInLocal());
-        double w = paneBounds.getWidth() / 4;
-        double h = paneBounds.getHeight() / 4;
+        double w = paneBounds.getWidth() / 3;
+        double h = paneBounds.getHeight() / 3;
         if (new BoundingBox(
-            paneBounds.getMinX(),
-            paneBounds.getMinY(),
-            paneBounds.getWidth(),
-            25 * 2).contains(e.getScreenX(), e.getScreenY())) {
-            return DropPoint.HEADER;
-        } else if (new BoundingBox(
             paneBounds.getMaxX() - w,
             paneBounds.getMinY() + h,
             w,
             paneBounds.getHeight() - h * 2).contains(e.getScreenX(), e.getScreenY())) {
-            return DropPoint.RIGHT;
+            return Optional.of(Side.RIGHT);
         } else if (new BoundingBox(
             paneBounds.getMinX() + w,
             paneBounds.getMaxY() - h,
             paneBounds.getWidth() - w * 2,
             h).contains(e.getScreenX(), e.getScreenY())) {
-            return DropPoint.BOTTOM;
+            return Optional.of(Side.BOTTOM);
         } else if (new BoundingBox(
             paneBounds.getMinX(),
             paneBounds.getMinY() + h,
             w,
             paneBounds.getHeight() - h * 2).contains(e.getScreenX(), e.getScreenY())) {
-            return DropPoint.LEFT;
+            return Optional.of(Side.LEFT);
         } else if (new BoundingBox(
             paneBounds.getMinX() + w,
             paneBounds.getMinY(),
             paneBounds.getWidth() - w * 2,
             h).contains(e.getScreenX(), e.getScreenY())) {
-            return DropPoint.TOP;
-        } else {
-            return DropPoint.ANY;
+            return Optional.of(Side.TOP);
         }
+        return Optional.empty();
     }
 
 }

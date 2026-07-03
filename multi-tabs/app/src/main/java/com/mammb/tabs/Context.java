@@ -3,13 +3,13 @@ package com.mammb.tabs;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class Context {
-    private final AtomicReference<ContentTab> dragged = new AtomicReference<>();
+    private final AtomicReference<TabContent> dragged = new AtomicReference<>();
 
-    public void dragged(ContentTab contentTab) {
-        dragged.set(contentTab);
+    public void dragged(TabContent tabContent) {
+        dragged.set(tabContent);
     }
 
-    public ContentTab dragged() {
+    public TabContent dragged() {
         return dragged.get();
     }
 
