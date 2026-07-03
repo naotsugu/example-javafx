@@ -4,6 +4,7 @@ import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Side;
 import javafx.scene.Node;
+import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
@@ -49,7 +50,19 @@ public class LeafPane extends StackPane {
         if (!db.hasContent(TabContent.tabMoveFormat) || dragged == null) return;
         e.acceptTransferModes(TransferMode.MOVE);
 
-
+        if (dragOnHeader(e)) {
+            int insertionIndex = insertionIndex(e);
+            int tabIndex = Math.min(tabPane.getTabs().size() - 1, insertionIndex);
+            Node tabNode = ((TabContent) tabPane.getTabs().get(tabIndex)).tabNode();
+            Bounds ins = screenToLocal(tabNode.localToScreen(tabNode.getBoundsInLocal()));
+            marker.setX((insertionIndex > tabIndex) ? ins.getMaxX() : ins.getMinX());
+            marker.setY(ins.getMinY());
+            marker.setHeight(ins.getHeight());
+            marker.setWidth(2);
+            marker.setVisible(true);
+            e.consume();
+            return;
+        }
 
         Bounds bounds = innerBounds();
         marker.setX(bounds.getMinX());
@@ -57,8 +70,7 @@ public class LeafPane extends StackPane {
         marker.setWidth(bounds.getWidth());
         marker.setHeight(bounds.getHeight());
         marker.setVisible(true);
-        var side = dragSide(this, e);
-        switch (side.orElse(null)) {
+        switch (dragSide(e).orElse(null)) {
             case LEFT -> marker.setWidth(bounds.getWidth() / 2);
             case TOP -> marker.setHeight(bounds.getHeight() / 2);
             case RIGHT -> {
@@ -88,8 +100,16 @@ public class LeafPane extends StackPane {
         );
     }
 
-    private static Optional<Side> dragSide(Node node, DragEvent e) {
-        Bounds paneBounds = node.localToScreen(node.getBoundsInLocal());
+
+    private boolean dragOnHeader(DragEvent e) {
+        Node headerArea = tabPane.lookup(".tab-header-area");
+        if (headerArea == null) return false;
+        return headerArea.localToScreen(headerArea.getBoundsInLocal())
+            .contains(e.getScreenX(), e.getScreenY());
+    }
+
+    private Optional<Side> dragSide(DragEvent e) {
+        Bounds paneBounds = localToScreen(getBoundsInLocal());
         double w = paneBounds.getWidth() / 3;
         double h = paneBounds.getHeight() / 3;
         if (new BoundingBox(
@@ -119,5 +139,19 @@ public class LeafPane extends StackPane {
         }
         return Optional.empty();
     }
+
+    private int insertionIndex(DragEvent e) {
+        int insertion = 0;
+        for (Tab tab : tabPane.getTabs()) {
+            Node tabNode = ((TabContent) tab).tabNode();
+            Bounds bounds = tabNode.localToScreen(tabNode.getBoundsInLocal());
+            if (e.getScreenX() < bounds.getCenterX()) {
+                return insertion;
+            }
+            insertion++;
+        }
+        return insertion;
+    }
+
 
 }

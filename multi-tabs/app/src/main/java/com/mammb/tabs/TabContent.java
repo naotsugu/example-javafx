@@ -34,24 +34,23 @@ public class TabContent extends Tab {
             ClipboardContent cc = new ClipboardContent();
             cc.put(tabMoveFormat, String.valueOf(System.identityHashCode(label)));
             context.dragged(this);
-            Image image = tabImage(label);
+            Image image = tabImage();
             db.setDragView(image, image.getWidth() / 2, image.getHeight() / 2);
             db.setContent(cc);
         }
     }
 
-    private static Image tabImage(Node node) {
-        node = tabNode(node);
+    private Image tabImage() {
         var snapshotParams = new SnapshotParameters();
         snapshotParams.setFill(Color.TRANSPARENT);
-        return node.snapshot(snapshotParams, null);
+        return tabNode().snapshot(snapshotParams, null);
     }
 
-    private static Node tabNode(Node node) {
-        for (Node n = node; n != null; n = n.getParent()) {
+    Node tabNode() {
+        for (Node n = getGraphic(); n != null; n = n.getParent()) {
             if (Objects.equals(n.getClass().getSimpleName(), "TabHeaderSkin"))
                 return n;
         }
-        return node;
+        return getGraphic();
     }
 }
