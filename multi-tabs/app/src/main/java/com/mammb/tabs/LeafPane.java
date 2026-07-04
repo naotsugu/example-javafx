@@ -4,16 +4,14 @@ import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Side;
 import javafx.scene.Node;
+import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.StackPane;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
 import java.io.File;
-import java.util.Objects;
 import java.util.Optional;
 
 public class LeafPane extends StackPane {
@@ -85,9 +83,12 @@ public class LeafPane extends StackPane {
         Dragboard db = e.getDragboard();
         boolean dragOnTabHeader = dragOnTabHeader(e);
         if (e.getDragboard().hasFiles() && dragOnTabHeader) {
-            var path = db.getFiles().stream().filter(File::canRead).findFirst().map(File::toPath).orElse(null);
             // TODO
-            System.out.println("path: " + path);
+            db.getFiles().stream().filter(File::canRead)
+                .map(File::toPath)
+                .map(path -> new ContentPane(new Label(path.toString()), path.getFileName().toString()))
+                .map(contentPane -> new TabContent(context, contentPane))
+                .forEach(tab -> tabPane.getTabs().add(tab));
             e.setDropCompleted(true);
             e.consume();
             return;
@@ -98,6 +99,7 @@ public class LeafPane extends StackPane {
 
         TabPane from = dragged.getTabPane();
         if (dragOnTabHeader) {
+            // TODO
             from.getTabs().remove(dragged);
             tabPane.getTabs().add(dragged);
             e.setDropCompleted(true);
