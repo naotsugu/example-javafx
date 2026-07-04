@@ -36,7 +36,6 @@ public class LeafPane extends StackPane {
         setOnDragOver(this::handleDragOver);
         setOnDragDropped(this::handleDragDropped);
         setOnDragExited(this::handleDragExited);
-//        setOnDragDone(this::handleDragDone);
     }
 
     private void handleDragOver(DragEvent e) {
@@ -88,38 +87,31 @@ public class LeafPane extends StackPane {
         if (e.getDragboard().hasFiles() && dragOnTabHeader) {
             var path = db.getFiles().stream().filter(File::canRead).findFirst().map(File::toPath).orElse(null);
             // TODO
+            System.out.println("path: " + path);
             e.setDropCompleted(true);
+            e.consume();
             return;
         }
 
         TabContent dragged = context.dragged();
         if (!db.hasContent(TabContent.tabMoveFormat) || dragged == null) return;
 
+        TabPane from = dragged.getTabPane();
         if (dragOnTabHeader) {
-            if (Objects.equals(dragged.getTabPane(), tabPane)) {
-
-            } else {
-
-            }
+            from.getTabs().remove(dragged);
+            tabPane.getTabs().add(dragged);
+            e.setDropCompleted(true);
+            e.consume();
+            return;
         }
 
         Side side = dragOnSide(e).orElse(null);
-        if (Objects.equals(dragged.getTabPane(), tabPane)) {
-            switch (side) {
-                case TOP    -> {}
-                case RIGHT  -> {}
-                case BOTTOM -> {}
-                case LEFT   -> {}
-                case null   -> {}
-            }
-        } else {
-            switch (side) {
-                case TOP    -> {}
-                case RIGHT  -> {}
-                case BOTTOM -> {}
-                case LEFT   -> {}
-                case null   -> {}
-            }
+        switch (side) {
+            case TOP    -> {}
+            case RIGHT  -> {}
+            case BOTTOM -> {}
+            case LEFT   -> {}
+            case null   -> {}
         }
         e.consume();
     }

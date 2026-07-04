@@ -7,6 +7,7 @@ import javafx.scene.control.Tab;
 import javafx.scene.image.Image;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DataFormat;
+import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
@@ -25,6 +26,7 @@ public class TabContent extends Tab {
         setContent(content);
         var label = new Label(content.nameProperty().get());
         label.setOnDragDetected(this::handleTabDragDetected);
+        label.setOnDragDone(this::handleDragDone);
         setGraphic(label);
     }
 
@@ -38,6 +40,11 @@ public class TabContent extends Tab {
             db.setDragView(image, image.getWidth() / 2, image.getHeight() / 2);
             db.setContent(cc);
         }
+    }
+
+    private void handleDragDone(DragEvent e) {
+        // TODO
+        System.out.println("handleDragDone " + e);
     }
 
     private Image tabImage() {
