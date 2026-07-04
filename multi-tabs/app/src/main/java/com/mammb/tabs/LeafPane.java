@@ -12,6 +12,8 @@ import javafx.scene.input.TransferMode;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import java.io.File;
+import java.util.Objects;
 import java.util.Optional;
 
 public class LeafPane extends StackPane {
@@ -35,9 +37,6 @@ public class LeafPane extends StackPane {
         setOnDragDropped(this::handleDragDropped);
         setOnDragExited(this::handleDragExited);
 //        setOnDragDone(this::handleDragDone);
-    }
-    private void handleDragDropped(DragEvent e) {
-
     }
 
     private void handleDragOver(DragEvent e) {
@@ -79,7 +78,49 @@ public class LeafPane extends StackPane {
         Bounds bounds = innerBounds(getLayoutBounds());
         Side side = dragOnSide(e).orElse(null);
         dropMarker.show(bounds, side);
+        e.consume();
+    }
 
+    private void handleDragDropped(DragEvent e) {
+        dropMarker.clear();
+        Dragboard db = e.getDragboard();
+        boolean dragOnTabHeader = dragOnTabHeader(e);
+        if (e.getDragboard().hasFiles() && dragOnTabHeader) {
+            var path = db.getFiles().stream().filter(File::canRead).findFirst().map(File::toPath).orElse(null);
+            // TODO
+            e.setDropCompleted(true);
+            return;
+        }
+
+        TabContent dragged = context.dragged();
+        if (!db.hasContent(TabContent.tabMoveFormat) || dragged == null) return;
+
+        if (dragOnTabHeader) {
+            if (Objects.equals(dragged.getTabPane(), tabPane)) {
+
+            } else {
+
+            }
+        }
+
+        Side side = dragOnSide(e).orElse(null);
+        if (Objects.equals(dragged.getTabPane(), tabPane)) {
+            switch (side) {
+                case TOP    -> {}
+                case RIGHT  -> {}
+                case BOTTOM -> {}
+                case LEFT   -> {}
+                case null   -> {}
+            }
+        } else {
+            switch (side) {
+                case TOP    -> {}
+                case RIGHT  -> {}
+                case BOTTOM -> {}
+                case LEFT   -> {}
+                case null   -> {}
+            }
+        }
         e.consume();
     }
 
