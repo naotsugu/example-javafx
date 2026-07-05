@@ -47,8 +47,7 @@ public class TabContent extends Tab {
     }
 
     private void handleDragDone(DragEvent e) {
-        // TODO
-        System.out.println("handleDragDone " + e);
+        getTabPane().getTabs().remove(this);
     }
 
     private Image tabImage() {
