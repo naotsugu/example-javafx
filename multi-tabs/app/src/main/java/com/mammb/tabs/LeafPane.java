@@ -68,6 +68,7 @@ public class LeafPane extends StackPane {
                 tabBounds.getHeight()
             );
             dropMarker.show(bounds);
+            e.acceptTransferModes(TransferMode.MOVE);
             e.consume();
             return;
         }
@@ -75,6 +76,7 @@ public class LeafPane extends StackPane {
         Bounds bounds = innerBounds(getLayoutBounds());
         Side side = dragOnSide(e).orElse(null);
         dropMarker.show(bounds, side);
+        e.acceptTransferModes(TransferMode.MOVE);
         e.consume();
     }
 
@@ -83,7 +85,6 @@ public class LeafPane extends StackPane {
         Dragboard db = e.getDragboard();
         boolean dragOnTabHeader = dragOnTabHeader(e);
         if (e.getDragboard().hasFiles() && dragOnTabHeader) {
-            // TODO
             db.getFiles().stream().filter(File::canRead)
                 .map(File::toPath)
                 .map(path -> new ContentPane(new Label(path.toString()), path.getFileName().toString()))
@@ -99,8 +100,6 @@ public class LeafPane extends StackPane {
 
         TabPane from = dragged.getTabPane();
         if (dragOnTabHeader) {
-            // TODO
-            from.getTabs().remove(dragged);
             tabPane.getTabs().add(dragged);
             e.setDropCompleted(true);
             e.consume();
@@ -108,13 +107,7 @@ public class LeafPane extends StackPane {
         }
 
         Side side = dragOnSide(e).orElse(null);
-        switch (side) {
-            case TOP    -> {}
-            case RIGHT  -> {}
-            case BOTTOM -> {}
-            case LEFT   -> {}
-            case null   -> {}
-        }
+        parent.add(dragged.content(), this, side);
         e.consume();
     }
 
@@ -136,8 +129,9 @@ public class LeafPane extends StackPane {
     private boolean dragOnTabHeader(DragEvent e) {
         Node headerArea = tabHeaderArea();
         if (headerArea == null) return false;
-        return headerArea.localToScreen(headerArea.getBoundsInLocal())
-            .contains(e.getScreenX(), e.getScreenY());
+        double gap = 20;
+        return headerArea.getLayoutBounds()
+            .contains(Math.max(0, e.getX() - gap), Math.max(0, e.getY() - gap));
     }
 
     private Node tabHeaderArea() {

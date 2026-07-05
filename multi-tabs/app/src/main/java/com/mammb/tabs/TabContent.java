@@ -30,6 +30,10 @@ public class TabContent extends Tab {
         setGraphic(label);
     }
 
+    ContentPane content() {
+        return (ContentPane) getContent();
+    }
+
     private void handleTabDragDetected(MouseEvent e) {
         if (e.getSource() instanceof Label label) {
             Dragboard db = label.startDragAndDrop(TransferMode.MOVE);
