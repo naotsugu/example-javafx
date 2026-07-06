@@ -18,11 +18,11 @@ public class TabContent extends Tab {
 
     static final DataFormat tabMoveFormat = new DataFormat(TabContent.class.getSimpleName() + ":tabMove");
 
-    private final Context context;
+    private final Context ctx;
 
-    public TabContent(Context context, ContentPane content) {
+    public TabContent(Context ctx, ContentPane content) {
         super();
-        this.context = context;
+        this.ctx = ctx;
         setContent(content);
         var label = new Label(content.nameProperty().get());
         label.setOnDragDetected(this::handleTabDragDetected);
@@ -39,7 +39,7 @@ public class TabContent extends Tab {
             Dragboard db = label.startDragAndDrop(TransferMode.MOVE);
             ClipboardContent cc = new ClipboardContent();
             cc.put(tabMoveFormat, String.valueOf(System.identityHashCode(label)));
-            context.dragged(this);
+            ctx.dragged(this);
             Image image = tabImage();
             db.setDragView(image, image.getWidth() / 2, image.getHeight() / 2);
             db.setContent(cc);
@@ -48,6 +48,11 @@ public class TabContent extends Tab {
 
     private void handleDragDone(DragEvent e) {
         getTabPane().getTabs().remove(this);
+        ctx.clear();
+        if (getTabPane().getTabs().isEmpty()) {
+            // TODO
+        }
+
     }
 
     private Image tabImage() {

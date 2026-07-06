@@ -98,9 +98,10 @@ public class LeafPane extends StackPane {
         TabContent dragged = context.dragged();
         if (!db.hasContent(TabContent.tabMoveFormat) || dragged == null) return;
 
-        TabPane from = dragged.getTabPane();
         if (dragOnTabHeader) {
-            tabPane.getTabs().add(dragged);
+            int tabIndex = Math.min(tabPane.getTabs().size() - 1, insertionIndex(e));
+            var tabContent = new TabContent(context, dragged.content());
+            tabPane.getTabs().add(tabIndex, tabContent);
             e.setDropCompleted(true);
             e.consume();
             return;
@@ -108,6 +109,7 @@ public class LeafPane extends StackPane {
 
         Side side = dragOnSide(e).orElse(null);
         parent.add(dragged.content(), this, side);
+        e.setDropCompleted(true);
         e.consume();
     }
 
