@@ -49,7 +49,7 @@ public class TabContent extends Tab {
     private void handleDragDone(DragEvent e) {
         getTabPane().getTabs().remove(this);
         ctx.clear();
-        if (getTabPane().getTabs().isEmpty()) {
+        if (getTabPane() == null || getTabPane().getTabs().isEmpty()) {
             // TODO
         }
 
