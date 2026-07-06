@@ -4,6 +4,7 @@ import javafx.scene.Node;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.image.Image;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DataFormat;
@@ -19,10 +20,12 @@ public class TabContent extends Tab {
     static final DataFormat tabMoveFormat = new DataFormat(TabContent.class.getSimpleName() + ":tabMove");
 
     private final Context ctx;
+    private final LeafPane parent;
 
-    public TabContent(Context ctx, ContentPane content) {
+    public TabContent(Context ctx, LeafPane parent, ContentPane content) {
         super();
-        this.ctx = ctx;
+        this.ctx = Objects.requireNonNull(ctx);
+        this.parent = Objects.requireNonNull(parent);
         setContent(content);
         var label = new Label(content.nameProperty().get());
         label.setOnDragDetected(this::handleTabDragDetected);
@@ -47,12 +50,8 @@ public class TabContent extends Tab {
     }
 
     private void handleDragDone(DragEvent e) {
-        getTabPane().getTabs().remove(this);
+        parent.eject(this);
         ctx.clear();
-        if (getTabPane() == null || getTabPane().getTabs().isEmpty()) {
-            // TODO
-        }
-
     }
 
     private Image tabImage() {

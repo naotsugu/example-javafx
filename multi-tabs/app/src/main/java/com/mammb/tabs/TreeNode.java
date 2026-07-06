@@ -37,14 +37,29 @@ public class TreeNode extends SplitPane {
             getItems().add(insIndex, leaf);
             setOrientation(orientation);
         } else {
-            Node node = getItems().remove(sourceIndex);
+            LeafPane node = (LeafPane) getItems().remove(sourceIndex);
             TreeNode newChild = new TreeNode(context, this);
             newChild.setOrientation(orientation);
             newChild.getItems().add(node);
+            node.parent(newChild);
             int insIndex = (side == Side.RIGHT || side == Side.BOTTOM) ? 1 : 0;
             var leaf = new LeafPane(context, newChild, content);
             newChild.getItems().add(insIndex, leaf);
             getItems().add(sourceIndex, newChild);
+        }
+    }
+
+    public void eject(LeafPane leafPane) {
+        getItems().remove(leafPane);
+        if (getItems().isEmpty() && !isRoot()) {
+            parent.eject(this);
+        }
+    }
+
+    public void eject(TreeNode treeNode) {
+        getItems().remove(treeNode);
+        if (getItems().isEmpty() && !isRoot()) {
+            parent.eject(this);
         }
     }
 

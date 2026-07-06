@@ -12,23 +12,23 @@ import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.StackPane;
 import java.io.File;
+import java.util.Objects;
 import java.util.Optional;
 
 public class LeafPane extends StackPane {
 
     private final Context context;
     private final TabPane tabPane = new TabPane();
-
     private final DropMarker dropMarker = new DropMarker();
     private TreeNode parent;
 
     public LeafPane(Context context, TreeNode parent, ContentPane content) {
 
-        this.context = context;
-        this.parent = parent;
+        this.context = Objects.requireNonNull(context);
+        this.parent = Objects.requireNonNull(parent);
 
         getChildren().addAll(tabPane, dropMarker);
-        var tab = new TabContent(context, content);
+        var tab = new TabContent(context, this, content);
         tabPane.getTabs().add(tab);
 
         setOnDragOver(this::handleDragOver);
@@ -88,7 +88,7 @@ public class LeafPane extends StackPane {
             db.getFiles().stream().filter(File::canRead)
                 .map(File::toPath)
                 .map(path -> new ContentPane(new Label(path.toString()), path.getFileName().toString()))
-                .map(contentPane -> new TabContent(context, contentPane))
+                .map(contentPane -> new TabContent(context, this, contentPane))
                 .forEach(tab -> tabPane.getTabs().add(tab));
             e.setDropCompleted(true);
             e.consume();
@@ -99,8 +99,8 @@ public class LeafPane extends StackPane {
         if (!db.hasContent(TabContent.tabMoveFormat) || dragged == null) return;
 
         if (dragOnTabHeader) {
-            int tabIndex = Math.min(tabPane.getTabs().size() - 1, insertionIndex(e));
-            var tabContent = new TabContent(context, dragged.content());
+            int tabIndex = Math.min(tabPane.getTabs().size(), insertionIndex(e));
+            var tabContent = new TabContent(context, this, dragged.content());
             tabPane.getTabs().add(tabIndex, tabContent);
             e.setDropCompleted(true);
             e.consume();
@@ -113,10 +113,20 @@ public class LeafPane extends StackPane {
         e.consume();
     }
 
+    public void eject(TabContent tab) {
+        tabPane.getTabs().remove(tab);
+        if (tabPane.getTabs().isEmpty()) {
+            parent.eject(this);
+        }
+    }
+
     private void handleDragExited(DragEvent e) {
         dropMarker.clear();
     }
 
+    public void parent(TreeNode parent) {
+        this.parent = parent;
+    }
 
     private Bounds innerBounds(Bounds bounds) {
         return new BoundingBox(
