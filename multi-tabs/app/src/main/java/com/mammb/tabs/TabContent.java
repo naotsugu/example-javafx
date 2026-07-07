@@ -59,7 +59,6 @@ public class TabContent extends Tab {
     }
 
     private void handleDragDone(DragEvent e) {
-        System.out.println(e.getX());
         if (e.getTransferMode() == null && e.getGestureTarget() == null) {
             double width = content().getWidth();
             double height = content().getHeight();
@@ -82,7 +81,6 @@ public class TabContent extends Tab {
         newStage.setX(x);
         newStage.setY(y);
         newStage.show();
-        System.out.println("x, y " + x + " " + y + " " + width + " " + height);
     }
 
     private Image tabImage() {
