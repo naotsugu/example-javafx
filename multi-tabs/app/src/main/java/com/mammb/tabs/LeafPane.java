@@ -116,7 +116,7 @@ public class LeafPane extends StackPane {
     public void eject(TabContent tab) {
         tabPane.getTabs().remove(tab);
         if (tabPane.getTabs().isEmpty()) {
-            parent.eject(this);
+            parent.remove(this);
         }
     }
 

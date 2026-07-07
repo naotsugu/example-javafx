@@ -2,7 +2,6 @@ package com.mammb.tabs;
 
 import javafx.geometry.Orientation;
 import javafx.geometry.Side;
-import javafx.scene.Node;
 import javafx.scene.control.SplitPane;
 
 public class TreeNode extends SplitPane {
@@ -46,23 +45,42 @@ public class TreeNode extends SplitPane {
             var leaf = new LeafPane(context, newChild, content);
             newChild.getItems().add(insIndex, leaf);
             getItems().add(sourceIndex, newChild);
-            getDividerPositions()
         }
     }
 
-    public void eject(LeafPane leafPane) {
+    public void remove(LeafPane leafPane) {
         getItems().remove(leafPane);
         if (getItems().isEmpty() && !isRoot()) {
-            parent.eject(this);
+            parent.remove(this);
+        }
+        prune();
+    }
+
+    public void remove(TreeNode treeNode) {
+        getItems().remove(treeNode);
+        if (getItems().isEmpty() && !isRoot()) {
+            parent.remove(this);
         }
     }
 
-    public void eject(TreeNode treeNode) {
-        getItems().remove(treeNode);
-        if (getItems().isEmpty() && !isRoot()) {
-            parent.eject(this);
+    private void prune() {
+        if (getItems().size() == 1 && getItems().getFirst() instanceof TreeNode child) {
+            var items = child.getItems().stream().peek(node -> {
+                switch (node) {
+                    case TreeNode branch -> branch.parent = this;
+                    case LeafPane leaf -> leaf.parent(this);
+                    default -> { }
+                }
+            }).toList();
+            getItems().clear();
+            setOrientation(child.getOrientation());
+            getItems().addAll(items);
+        }
+        if (parent != null) {
+            parent.prune();
         }
     }
+
 
     public boolean isRoot() {
         return parent == null;
