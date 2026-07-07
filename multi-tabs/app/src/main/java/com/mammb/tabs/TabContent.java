@@ -1,10 +1,12 @@
 package com.mammb.tabs;
 
+import javafx.event.Event;
+import javafx.geometry.Point2D;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
 import javafx.scene.image.Image;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DataFormat;
@@ -13,6 +15,7 @@ import javafx.scene.input.Dragboard;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.paint.Color;
+import javafx.stage.Stage;
 import java.util.Objects;
 
 public class TabContent extends Tab {
@@ -27,6 +30,7 @@ public class TabContent extends Tab {
         this.ctx = Objects.requireNonNull(ctx);
         this.parent = Objects.requireNonNull(parent);
         setContent(content);
+        setOnClosed(this::handleClosed);
         var label = new Label(content.nameProperty().get());
         label.setOnDragDetected(this::handleTabDragDetected);
         label.setOnDragDone(this::handleDragDone);
@@ -37,21 +41,48 @@ public class TabContent extends Tab {
         return (ContentPane) getContent();
     }
 
+    private void handleClosed(Event e) {
+        parent.eject(this);
+    }
+
     private void handleTabDragDetected(MouseEvent e) {
         if (e.getSource() instanceof Label label) {
             Dragboard db = label.startDragAndDrop(TransferMode.MOVE);
             ClipboardContent cc = new ClipboardContent();
             cc.put(tabMoveFormat, String.valueOf(System.identityHashCode(label)));
-            ctx.dragged(this);
+            ctx.drag(this);
             Image image = tabImage();
             db.setDragView(image, image.getWidth() / 2, image.getHeight() / 2);
             db.setContent(cc);
+            e.consume();
         }
     }
 
     private void handleDragDone(DragEvent e) {
+        System.out.println(e.getX());
+        if (e.getTransferMode() == null && e.getGestureTarget() == null) {
+            double width = content().getWidth();
+            double height = content().getHeight();
+            Point2D pos = content().localToScreen(0, 0);
+            createNewWindow(
+                pos.getX() + width / 4,
+                pos.getY() + height / 4,
+                width, height);
+        }
         parent.eject(this);
-        ctx.clear();
+        ctx.dragDone();
+    }
+
+    private void createNewWindow(double x, double y, double width, double height) {
+        Stage newStage = new Stage();
+        TreeNode treeNode = TreeNode.rootOf(ctx, content());
+        Scene scene = new Scene(treeNode, width, height);
+        newStage.setTitle("Tabs");
+        newStage.setScene(scene);
+        newStage.setX(x);
+        newStage.setY(y);
+        newStage.show();
+        System.out.println("x, y " + x + " " + y + " " + width + " " + height);
     }
 
     private Image tabImage() {

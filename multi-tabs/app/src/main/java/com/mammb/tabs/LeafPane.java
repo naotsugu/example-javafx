@@ -52,7 +52,7 @@ public class LeafPane extends StackPane {
         }
 
         Dragboard db = e.getDragboard();
-        TabContent dragged = context.dragged();
+        TabContent dragged = context.drag();
         if (!db.hasContent(TabContent.tabMoveFormat) || dragged == null) return;
         e.acceptTransferModes(TransferMode.MOVE);
 
@@ -95,7 +95,7 @@ public class LeafPane extends StackPane {
             return;
         }
 
-        TabContent dragged = context.dragged();
+        TabContent dragged = context.drag();
         if (!db.hasContent(TabContent.tabMoveFormat) || dragged == null) return;
 
         if (dragOnTabHeader) {
