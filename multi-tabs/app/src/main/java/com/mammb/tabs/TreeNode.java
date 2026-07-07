@@ -31,7 +31,7 @@ public class TreeNode extends SplitPane {
 
         Orientation orientation = orientation(side);
 
-        if (getItems().size() <= 1 || getOrientation() == orientation) {
+        if (getItems().size() <= 1) {
             var leaf = new LeafPane(context, this, content);
             int insIndex = (side == Side.RIGHT || side == Side.BOTTOM) ? sourceIndex + 1 : sourceIndex;
             getItems().add(insIndex, leaf);
@@ -46,6 +46,7 @@ public class TreeNode extends SplitPane {
             var leaf = new LeafPane(context, newChild, content);
             newChild.getItems().add(insIndex, leaf);
             getItems().add(sourceIndex, newChild);
+            getDividerPositions()
         }
     }
 
