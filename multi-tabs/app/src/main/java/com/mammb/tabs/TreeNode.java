@@ -13,6 +13,7 @@ public class TreeNode extends SplitPane {
         this.context = context;
         this.parent = parent;
     }
+
     public TreeNode(Context context, TreeNode parent, ContentPane content) {
         this(context, parent);
         var leaf = new LeafPane(context, this, content);

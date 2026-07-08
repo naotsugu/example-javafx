@@ -74,12 +74,11 @@ public class TabContent extends Tab {
 
     private void createNewWindow(double x, double y, double width, double height) {
         Stage newStage = new Stage();
-        TreeNode treeNode = TreeNode.rootOf(ctx, content());
-        Scene scene = new Scene(treeNode, width, height);
-        newStage.setTitle("Tabs");
-        newStage.setScene(scene);
+        newStage.setWidth(width);
+        newStage.setHeight(height);
         newStage.setX(x);
         newStage.setY(y);
+        ctx.createScene(newStage, content());
         newStage.show();
     }
 
