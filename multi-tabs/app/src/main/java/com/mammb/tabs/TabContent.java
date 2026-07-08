@@ -64,8 +64,12 @@ public class TabContent extends Tab {
 
     private void handleDragDone(DragEvent e) {
         dropThroughPanes.forEach(DropThroughPane::close);
+        Scene scene = parent.getScene();
         parent.eject(this);
         ctx.dragDone();
+        if (scene.getRoot() instanceof TreeNode treeNode && treeNode.getItems().isEmpty()) {
+            ((Stage) scene.getWindow()).close();
+        }
     }
 
 
