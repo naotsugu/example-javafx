@@ -4,6 +4,8 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
@@ -29,10 +31,14 @@ public class Context {
     }
 
     public void toFrontAll() {
-        stages.stream()
+        stages().stream()
             .filter(Predicate.not(Stage::isIconified))
             .filter(Predicate.not(Stage::isAlwaysOnTop))
             .forEach(Stage::toFront);
+    }
+
+    public List<Stage> stages() {
+        return stages.stream().toList();
     }
 
     public void drag(TabContent tabContent) {

@@ -49,8 +49,7 @@ public class TabContent extends Tab {
 
     private void handleTabDragDetected(MouseEvent e) {
         if (e.getSource() instanceof Label label) {
-            dropThroughPanes.addAll(DropThroughPane.create(ctx, parent.getScene().getWindow()));
-
+            dropThroughPanes.addAll(DropThroughPane.create(ctx));
 
             Dragboard db = label.startDragAndDrop(TransferMode.MOVE);
             ClipboardContent cc = new ClipboardContent();
