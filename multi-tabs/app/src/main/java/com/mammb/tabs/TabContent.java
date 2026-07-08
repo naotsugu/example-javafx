@@ -16,12 +16,14 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class TabContent extends Tab {
 
     static final DataFormat tabMoveFormat = new DataFormat(TabContent.class.getSimpleName() + ":tabMove");
-
+    private final List<DropThroughPane> dropThroughPanes = new ArrayList<>();
     private final Context ctx;
     private final LeafPane parent;
 
@@ -47,6 +49,9 @@ public class TabContent extends Tab {
 
     private void handleTabDragDetected(MouseEvent e) {
         if (e.getSource() instanceof Label label) {
+            dropThroughPanes.addAll(DropThroughPane.create(ctx, parent.getScene().getWindow()));
+
+
             Dragboard db = label.startDragAndDrop(TransferMode.MOVE);
             ClipboardContent cc = new ClipboardContent();
             cc.put(tabMoveFormat, String.valueOf(System.identityHashCode(label)));
@@ -59,15 +64,16 @@ public class TabContent extends Tab {
     }
 
     private void handleDragDone(DragEvent e) {
-        if (e.getTransferMode() == null && e.getGestureTarget() == null) {
-            double width = content().getWidth();
-            double height = content().getHeight();
-            Point2D pos = content().localToScreen(0, 0);
-            createNewWindow(
-                pos.getX() + width / 4,
-                pos.getY() + height / 4,
-                width, height);
-        }
+        dropThroughPanes.forEach(DropThroughPane::close);
+//        if (e.getTransferMode() == null && e.getGestureTarget() == null) {
+//            double width = content().getWidth();
+//            double height = content().getHeight();
+//            Point2D pos = content().localToScreen(0, 0);
+//            createNewWindow(
+//                pos.getX() + width / 4,
+//                pos.getY() + height / 4,
+//                width, height);
+//        }
         parent.eject(this);
         ctx.dragDone();
     }
