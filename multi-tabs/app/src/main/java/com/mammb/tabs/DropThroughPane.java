@@ -25,7 +25,6 @@ public class DropThroughPane extends Pane {
         setStyle("-fx-background-color: transparent;");
         setOnDragOver(this::handleDragOver);
         setOnDragDropped(this::handleDragDropped);
-        setOnDragExited(this::handleDragExited);
 
         var scene = new Scene(this);
         scene.setFill(Color.TRANSPARENT);
@@ -71,21 +70,15 @@ public class DropThroughPane extends Pane {
         Dragboard db = e.getDragboard();
         TabContent dragged = ctx.drag();
         if (!db.hasContent(TabContent.tabMoveFormat) || dragged == null) return;
-//        if (e.getTransferMode() == null && e.getGestureTarget() == null) {
-//            double width = content().getWidth();
-//            double height = content().getHeight();
-//            Point2D pos = content().localToScreen(0, 0);
-//            createNewWindow(
-//                pos.getX() + width / 4,
-//                pos.getY() + height / 4,
-//                width, height);
-//        }
 
+        Stage newStage = new Stage();
+        ctx.createScene(newStage, dragged.content(), dragged.content().getWidth(), dragged.content().getHeight());
+        newStage.setX(e.getScreenX() - newStage.getWidth() / 2);
+        newStage.setY(e.getScreenY() - newStage.getHeight() / 2);
+        newStage.show();
+        e.setDropCompleted(true);
+        e.consume();
     }
-
-    private void handleDragExited(DragEvent e) {
-    }
-
 
     public void close() {
         stage.close();

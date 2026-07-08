@@ -15,12 +15,14 @@ public class Context {
     private final ObservableList<Stage> stages = FXCollections.observableArrayList();
     private final AtomicReference<TabContent> dragged = new AtomicReference<>();
 
-    public Scene createScene(Stage stage, ContentPane contentPane) {
+    public Scene createScene(Stage stage, ContentPane contentPane, double width, double height) {
 
         TreeNode treeNode = TreeNode.rootOf(this, contentPane);
         Scene scene = new Scene(treeNode);
         stage.setTitle("Tabs");
         stage.setScene(scene);
+        stage.setWidth(width);
+        stage.setHeight(height);
 
         stages.add(stage);
         stage.focusedProperty().addListener((_, _, focused) -> {

@@ -64,28 +64,10 @@ public class TabContent extends Tab {
 
     private void handleDragDone(DragEvent e) {
         dropThroughPanes.forEach(DropThroughPane::close);
-//        if (e.getTransferMode() == null && e.getGestureTarget() == null) {
-//            double width = content().getWidth();
-//            double height = content().getHeight();
-//            Point2D pos = content().localToScreen(0, 0);
-//            createNewWindow(
-//                pos.getX() + width / 4,
-//                pos.getY() + height / 4,
-//                width, height);
-//        }
         parent.eject(this);
         ctx.dragDone();
     }
 
-    private void createNewWindow(double x, double y, double width, double height) {
-        Stage newStage = new Stage();
-        newStage.setWidth(width);
-        newStage.setHeight(height);
-        newStage.setX(x);
-        newStage.setY(y);
-        ctx.createScene(newStage, content());
-        newStage.show();
-    }
 
     private Image tabImage() {
         var snapshotParams = new SnapshotParameters();
