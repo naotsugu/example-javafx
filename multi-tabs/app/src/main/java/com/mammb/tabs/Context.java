@@ -3,21 +3,24 @@ package com.mammb.tabs;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.stage.Stage;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 public class Context {
 
     // last -> front
     private final ObservableList<Stage> stages = FXCollections.observableArrayList();
     private final AtomicReference<TabContent> dragged = new AtomicReference<>();
+    private Supplier<ContentPane> contentPaneSupplier = () -> new ContentPane(new Label("empty"), "empty");
 
     public Scene createScene(Stage stage, ContentPane contentPane, double width, double height) {
 
-        TreeNode treeNode = TreeNode.rootOf(this, contentPane);
-        Scene scene = new Scene(treeNode);
+        BranchNode branchNode = BranchNode.rootOf(this, contentPane);
+        Scene scene = new Scene(branchNode);
         stage.setTitle("Tabs");
         stage.setScene(scene);
         stage.setWidth(width);
@@ -52,6 +55,12 @@ public class Context {
 
     public void dragDone() {
         dragged.set(null);
+    }
+    public Supplier<ContentPane> contentPaneSupplier() {
+        return contentPaneSupplier;
+    }
+    public void setContentPaneSupplier(Supplier<ContentPane> contentPaneSupplier) {
+        this.contentPaneSupplier = contentPaneSupplier;
     }
 
 }

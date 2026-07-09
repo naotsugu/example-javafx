@@ -30,6 +30,7 @@ public class TabContent extends Tab {
         this.ctx = Objects.requireNonNull(ctx);
         this.parent = Objects.requireNonNull(parent);
         setContent(content);
+        setOnCloseRequest(this::handleCloseRequest);
         setOnClosed(this::handleClosed);
         var label = new Label(content.nameProperty().get());
         label.setOnDragDetected(this::handleTabDragDetected);
@@ -39,6 +40,11 @@ public class TabContent extends Tab {
 
     ContentPane content() {
         return (ContentPane) getContent();
+    }
+
+    private void handleCloseRequest(Event e) {
+        content().handleCloseRequest(e);
+        if (e.isConsumed()) return;
     }
 
     private void handleClosed(Event e) {
@@ -65,7 +71,7 @@ public class TabContent extends Tab {
         Scene scene = parent.getScene();
         parent.eject(this);
         ctx.dragDone();
-        if (scene.getRoot() instanceof TreeNode treeNode && treeNode.getItems().isEmpty()) {
+        if (scene.getRoot() instanceof BranchNode branchNode && branchNode.getItems().isEmpty()) {
             ((Stage) scene.getWindow()).close();
         }
     }

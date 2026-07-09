@@ -20,9 +20,9 @@ public class LeafPane extends StackPane {
     private final Context ctx;
     private final TabPane tabPane = new TabPane();
     private final DropMarker dropMarker = new DropMarker();
-    private TreeNode parent;
+    private BranchNode parent;
 
-    public LeafPane(Context ctx, TreeNode parent, ContentPane content) {
+    public LeafPane(Context ctx, BranchNode parent, ContentPane content) {
 
         this.ctx = Objects.requireNonNull(ctx);
         this.parent = Objects.requireNonNull(parent);
@@ -107,10 +107,11 @@ public class LeafPane extends StackPane {
             return;
         }
 
-        Side side = dragOnSide(e).orElse(null);
-        parent.add(dragged.content(), this, side);
-        e.setDropCompleted(true);
-        e.consume();
+        dragOnSide(e).ifPresent(side -> {
+            parent.add(dragged.content(), this, side);
+            e.setDropCompleted(true);
+            e.consume();
+        });
     }
 
     public void eject(TabContent tab) {
@@ -124,7 +125,7 @@ public class LeafPane extends StackPane {
         dropMarker.clear();
     }
 
-    public void parent(TreeNode parent) {
+    public void parent(BranchNode parent) {
         this.parent = parent;
     }
 

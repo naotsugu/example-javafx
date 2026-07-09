@@ -3,26 +3,27 @@ package com.mammb.tabs;
 import javafx.geometry.Orientation;
 import javafx.geometry.Side;
 import javafx.scene.control.SplitPane;
+import javafx.stage.Stage;
 import java.util.Objects;
 
-public class TreeNode extends SplitPane {
+public class BranchNode extends SplitPane {
 
     private final Context ctx;
-    private TreeNode parent;
+    private BranchNode parent;
 
-    public TreeNode(Context ctx, TreeNode parent) {
+    public BranchNode(Context ctx, BranchNode parent) {
         this.ctx = Objects.requireNonNull(ctx);
         this.parent = parent;
     }
 
-    public TreeNode(Context ctx, TreeNode parent, ContentPane content) {
+    public BranchNode(Context ctx, BranchNode parent, ContentPane content) {
         this(ctx, parent);
         var leaf = new LeafPane(ctx, this, content);
         getItems().add(leaf);
     }
 
-    public static TreeNode rootOf(Context ctx, ContentPane content) {
-        return new TreeNode(ctx, null, content);
+    public static BranchNode rootOf(Context ctx, ContentPane content) {
+        return new BranchNode(ctx, null, content);
     }
 
     public void add(ContentPane content, LeafPane source, Side side) {
@@ -40,7 +41,7 @@ public class TreeNode extends SplitPane {
             setOrientation(orientation);
         } else {
             LeafPane node = (LeafPane) getItems().remove(sourceIndex);
-            TreeNode newChild = new TreeNode(ctx, this);
+            BranchNode newChild = new BranchNode(ctx, this);
             newChild.setOrientation(orientation);
             newChild.getItems().add(node);
             node.parent(newChild);
@@ -59,18 +60,18 @@ public class TreeNode extends SplitPane {
         prune();
     }
 
-    private void remove(TreeNode treeNode) {
-        getItems().remove(treeNode);
+    private void remove(BranchNode branchNode) {
+        getItems().remove(branchNode);
         if (getItems().isEmpty() && parent != null) {
             parent.remove(this);
         }
     }
 
     private void prune() {
-        if (getItems().size() == 1 && getItems().getFirst() instanceof TreeNode child) {
+        if (getItems().size() == 1 && getItems().getFirst() instanceof BranchNode child) {
             var items = child.getItems().stream().peek(node -> {
                 switch (node) {
-                    case TreeNode branch -> branch.parent = this;
+                    case BranchNode branch -> branch.parent = this;
                     case LeafPane leaf -> leaf.parent(this);
                     default -> { }
                 }
@@ -81,6 +82,13 @@ public class TreeNode extends SplitPane {
         }
         if (parent != null) {
             parent.prune();
+        } else if (getItems().isEmpty()) {
+            if (ctx.stages().size() > 1) {
+                ((Stage) getScene().getWindow()).close();
+            } else {
+                var leaf = new LeafPane(ctx, this, ctx.contentPaneSupplier().get());
+                getItems().add(leaf);
+            }
         }
     }
 

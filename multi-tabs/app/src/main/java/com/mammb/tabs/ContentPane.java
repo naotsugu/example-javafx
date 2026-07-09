@@ -2,6 +2,7 @@ package com.mammb.tabs;
 
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.event.Event;
 import javafx.scene.Node;
 import javafx.scene.layout.StackPane;
 
@@ -21,5 +22,7 @@ public class ContentPane extends StackPane {
 
     public ReadOnlyObjectProperty<String> nameProperty() { return nameProperty; }
 
+    public void handleCloseRequest(Event e) {
+    }
 }
 
