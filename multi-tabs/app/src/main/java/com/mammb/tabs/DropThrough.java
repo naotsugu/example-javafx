@@ -12,6 +12,7 @@ import javafx.stage.Modality;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
+import java.io.File;
 import java.util.List;
 
 public class DropThrough extends Pane {
@@ -20,8 +21,15 @@ public class DropThrough extends Pane {
     private final Context ctx;
 
     private DropThrough(Context ctx, Rectangle2D bounds) {
+
         this.ctx = ctx;
-        setStyle("-fx-background-color: transparent;");
+
+        if (File.separatorChar == '\\') {
+            setStyle("-fx-background-color: rgba(0, 0, 0, 0.01);");
+        } else {
+            setStyle("-fx-background-color: transparent;");
+        }
+
         setOnDragOver(this::handleDragOver);
         setOnDragDropped(this::handleDragDropped);
 
@@ -38,7 +46,7 @@ public class DropThrough extends Pane {
             .forEach(shape -> getChildren().add(shape));
 
         stage = new Stage();
-        // stage.initOwner(owner);
+        // stage.initOwner(owner); do not use
         stage.initModality(Modality.NONE);
         stage.initStyle(StageStyle.TRANSPARENT);
         stage.setScene(scene);
@@ -71,7 +79,8 @@ public class DropThrough extends Pane {
         if (!db.hasContent(TabContent.TAB_MOVE_FORMAT) || dragged == null) return;
 
         Stage newStage = new Stage();
-        ctx.createScene(newStage, dragged.content(), dragged.content().getWidth(), dragged.content().getHeight());
+        ContentPane content = dragged.content();
+        ctx.createScene(newStage, content, content.getWidth(), content.getHeight());
         newStage.setX(e.getScreenX() - newStage.getWidth() / 2);
         newStage.setY(e.getScreenY() - newStage.getHeight() / 2);
         newStage.show();

@@ -21,7 +21,6 @@ public class Context {
 
         BranchNode branchNode = BranchNode.rootOf(this, contentPane);
         Scene scene = new Scene(branchNode);
-        stage.setTitle("Tabs");
         stage.setScene(scene);
         stage.setWidth(width);
         stage.setHeight(height);
