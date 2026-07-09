@@ -68,7 +68,18 @@ public class BranchNode extends SplitPane {
     }
 
     private void prune() {
-        if (getItems().size() == 1 && getItems().getFirst() instanceof BranchNode child) {
+        if (parent != null && getItems().size() == 1) {
+            var child = getItems().getFirst();
+            int index = parent.getItems().indexOf(this);
+            if (index >= 0) {
+                parent.getItems().set(index, child);
+                switch (child) {
+                    case BranchNode branch -> branch.parent = parent;
+                    case LeafPane leaf -> leaf.parent(parent);
+                    default -> { }
+                }
+            }
+        } else if (getItems().size() == 1 && getItems().getFirst() instanceof BranchNode child) {
             var items = child.getItems().stream().peek(node -> {
                 switch (node) {
                     case BranchNode branch -> branch.parent = this;

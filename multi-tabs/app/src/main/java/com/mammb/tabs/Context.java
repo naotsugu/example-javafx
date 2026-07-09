@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.KeyCode;
 
 public class Context {
 
@@ -29,7 +31,15 @@ public class Context {
         stage.focusedProperty().addListener((_, _, focused) -> {
             if (focused && stages.remove(stage)) stages.add(stage);
         });
-        stage.setOnCloseRequest(_ -> stages.remove(stage));
+        stage.setOnHidden(_ -> stages.remove(stage));
+
+        scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            if (event.getCode() == KeyCode.ESCAPE) {
+                printTree();
+                event.consume();
+            }
+        });
+
         return scene;
     }
 
@@ -60,6 +70,10 @@ public class Context {
     }
     public void setContentPaneSupplier(Supplier<ContentPane> contentPaneSupplier) {
         this.contentPaneSupplier = contentPaneSupplier;
+    }
+
+    public void printTree() {
+        System.out.print(TreePrinter.print(stages));
     }
 
 }

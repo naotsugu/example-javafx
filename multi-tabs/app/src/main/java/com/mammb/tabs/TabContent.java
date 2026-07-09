@@ -68,12 +68,14 @@ public class TabContent extends Tab {
 
     private void handleDragDone(DragEvent e) {
         dropThrough.forEach(DropThrough::close);
-        Scene scene = parent.getScene();
-        parent.eject(this);
-        ctx.dragDone();
-        if (scene.getRoot() instanceof BranchNode branchNode && branchNode.getItems().isEmpty()) {
-            ((Stage) scene.getWindow()).close();
+        if (e.getTransferMode() == TransferMode.MOVE) {
+            Scene preEject = parent.getScene();
+            parent.eject(this);
+            if (preEject.getRoot() instanceof BranchNode branchNode && branchNode.getItems().isEmpty()) {
+                ((Stage) preEject.getWindow()).close();
+            }
         }
+        ctx.dragDone();
     }
 
 

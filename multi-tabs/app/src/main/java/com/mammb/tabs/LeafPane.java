@@ -12,6 +12,7 @@ import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.StackPane;
 import java.io.File;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -127,6 +128,13 @@ public class LeafPane extends StackPane {
 
     public void parent(BranchNode parent) {
         this.parent = parent;
+    }
+
+    public List<TabContent> getTabs() {
+        return tabPane.getTabs().stream()
+            .filter(TabContent.class::isInstance)
+            .map(TabContent.class::cast)
+            .toList();
     }
 
     private Bounds innerBounds(Bounds bounds) {
