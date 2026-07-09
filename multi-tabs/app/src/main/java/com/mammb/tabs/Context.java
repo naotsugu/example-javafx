@@ -4,7 +4,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
@@ -43,11 +42,11 @@ public class Context {
         return stages.stream().toList();
     }
 
-    public void drag(TabContent tabContent) {
+    public void dragStart(TabContent tabContent) {
         dragged.set(tabContent);
     }
 
-    public TabContent drag() {
+    public TabContent dragElement() {
         return dragged.get();
     }
 

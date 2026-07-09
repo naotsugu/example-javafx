@@ -1,7 +1,6 @@
 package com.mammb.tabs;
 
 import javafx.event.Event;
-import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
@@ -22,13 +21,12 @@ import java.util.Objects;
 
 public class TabContent extends Tab {
 
-    static final DataFormat tabMoveFormat = new DataFormat(TabContent.class.getSimpleName() + ":tabMove");
-    private final List<DropThroughPane> dropThroughPanes = new ArrayList<>();
+    static final DataFormat TAB_MOVE_FORMAT = new DataFormat(TabContent.class.getSimpleName() + ":tabMove");
+    private final List<DropThrough> dropThrough = new ArrayList<>();
     private final Context ctx;
     private final LeafPane parent;
 
     public TabContent(Context ctx, LeafPane parent, ContentPane content) {
-        super();
         this.ctx = Objects.requireNonNull(ctx);
         this.parent = Objects.requireNonNull(parent);
         setContent(content);
@@ -49,12 +47,12 @@ public class TabContent extends Tab {
 
     private void handleTabDragDetected(MouseEvent e) {
         if (e.getSource() instanceof Label label) {
-            dropThroughPanes.addAll(DropThroughPane.create(ctx));
+            dropThrough.addAll(DropThrough.create(ctx));
 
             Dragboard db = label.startDragAndDrop(TransferMode.MOVE);
             ClipboardContent cc = new ClipboardContent();
-            cc.put(tabMoveFormat, String.valueOf(System.identityHashCode(label)));
-            ctx.drag(this);
+            cc.put(TAB_MOVE_FORMAT, String.valueOf(System.identityHashCode(label)));
+            ctx.dragStart(this);
             Image image = tabImage();
             db.setDragView(image, image.getWidth() / 2, image.getHeight() / 2);
             db.setContent(cc);
@@ -63,7 +61,7 @@ public class TabContent extends Tab {
     }
 
     private void handleDragDone(DragEvent e) {
-        dropThroughPanes.forEach(DropThroughPane::close);
+        dropThrough.forEach(DropThrough::close);
         Scene scene = parent.getScene();
         parent.eject(this);
         ctx.dragDone();

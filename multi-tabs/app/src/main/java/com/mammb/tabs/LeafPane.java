@@ -17,18 +17,18 @@ import java.util.Optional;
 
 public class LeafPane extends StackPane {
 
-    private final Context context;
+    private final Context ctx;
     private final TabPane tabPane = new TabPane();
     private final DropMarker dropMarker = new DropMarker();
     private TreeNode parent;
 
-    public LeafPane(Context context, TreeNode parent, ContentPane content) {
+    public LeafPane(Context ctx, TreeNode parent, ContentPane content) {
 
-        this.context = Objects.requireNonNull(context);
+        this.ctx = Objects.requireNonNull(ctx);
         this.parent = Objects.requireNonNull(parent);
 
         getChildren().addAll(tabPane, dropMarker);
-        var tab = new TabContent(context, this, content);
+        var tab = new TabContent(ctx, this, content);
         tabPane.getTabs().add(tab);
 
         setOnDragOver(this::handleDragOver);
@@ -52,8 +52,8 @@ public class LeafPane extends StackPane {
         }
 
         Dragboard db = e.getDragboard();
-        TabContent dragged = context.drag();
-        if (!db.hasContent(TabContent.tabMoveFormat) || dragged == null) return;
+        TabContent dragged = ctx.dragElement();
+        if (!db.hasContent(TabContent.TAB_MOVE_FORMAT) || dragged == null) return;
         e.acceptTransferModes(TransferMode.MOVE);
 
         if (dragOnTabHeader) {
@@ -88,19 +88,19 @@ public class LeafPane extends StackPane {
             db.getFiles().stream().filter(File::canRead)
                 .map(File::toPath)
                 .map(path -> new ContentPane(new Label(path.toString()), path.getFileName().toString()))
-                .map(contentPane -> new TabContent(context, this, contentPane))
+                .map(contentPane -> new TabContent(ctx, this, contentPane))
                 .forEach(tab -> tabPane.getTabs().add(tab));
             e.setDropCompleted(true);
             e.consume();
             return;
         }
 
-        TabContent dragged = context.drag();
-        if (!db.hasContent(TabContent.tabMoveFormat) || dragged == null) return;
+        TabContent dragged = ctx.dragElement();
+        if (!db.hasContent(TabContent.TAB_MOVE_FORMAT) || dragged == null) return;
 
         if (dragOnTabHeader) {
             int tabIndex = Math.min(tabPane.getTabs().size(), insertionIndex(e));
-            var tabContent = new TabContent(context, this, dragged.content());
+            var tabContent = new TabContent(ctx, this, dragged.content());
             tabPane.getTabs().add(tabIndex, tabContent);
             e.setDropCompleted(true);
             e.consume();
