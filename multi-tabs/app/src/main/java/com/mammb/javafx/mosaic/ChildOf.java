@@ -1,8 +1,11 @@
 package com.mammb.javafx.mosaic;
 
-public interface ChildOf<E> {
+import javafx.scene.Node;
 
-    E parent();
+public interface ChildOf<P extends Node> {
+
+    P parent();
+    void parent(P parent);
 
     default boolean isRoot() {
         return parent() == null;

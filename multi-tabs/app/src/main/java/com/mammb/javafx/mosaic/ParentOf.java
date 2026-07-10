@@ -2,8 +2,9 @@ package com.mammb.javafx.mosaic;
 
 import java.util.List;
 
-public interface ParentOf<E> {
+public interface ParentOf<C> {
 
-    List<E> children();
+    List<C> children();
+    void addChildren(List<C> children);
 
 }
