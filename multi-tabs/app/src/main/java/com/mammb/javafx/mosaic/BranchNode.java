@@ -1,9 +1,9 @@
 package com.mammb.javafx.mosaic;
 
-import com.mammb.tabs.LeafPane;
 import javafx.geometry.Orientation;
 import javafx.geometry.Side;
 import javafx.scene.control.SplitPane;
+import javafx.stage.Stage;
 import java.util.List;
 import java.util.Objects;
 
@@ -21,7 +21,7 @@ public class BranchNode extends TreeNode implements ParentOf<TreeNode> {
 
     BranchNode(Context ctx, ContentPane content) {
         this(ctx, (BranchNode) null);
-        splitPane.getItems().add(new LeafNode(ctx, this, content));
+        addChildren(List.of(new LeafNode(ctx, content)));
     }
 
     public void add(ContentPane content, LeafNode source, Side side) {
@@ -39,7 +39,7 @@ public class BranchNode extends TreeNode implements ParentOf<TreeNode> {
             int insIndex = (side == Side.RIGHT || side == Side.BOTTOM)
                 ? sourceIndex + 1
                 : sourceIndex;
-            addChild(insIndex, new LeafNode(ctx, this, content));
+            addChild(insIndex, new LeafNode(ctx, content));
             splitPane.setOrientation(orientation);
         } else {
             removeChild(source);
@@ -47,9 +47,40 @@ public class BranchNode extends TreeNode implements ParentOf<TreeNode> {
             newChild.orientation(orientation);
             newChild.addChildren(List.of(source));
             int insIndex = (side == Side.RIGHT || side == Side.BOTTOM) ? 1 : 0;
-            newChild.addChild(insIndex, new LeafNode(ctx, newChild, content));
+            newChild.addChild(insIndex, new LeafNode(ctx, content));
             addChild(sourceIndex, newChild);
         }
+    }
+
+    void eject(TreeNode node) {
+        removeChild(node);
+        balance();
+    }
+
+    private void balance() {
+
+        List<TreeNode> children = children();
+        if (isRoot() && children.isEmpty()) {
+            if (ctx.stages().size() == 1) {
+                addChildren(List.of(new LeafNode(ctx, ctx.emptyContentSupplier().get())));
+            } else {
+                ((Stage) getScene().getWindow()).close();
+            }
+        }
+
+        if (isRoot()) return;
+
+        int childrenSize = children.size();
+        if (childrenSize <= 1) {
+            if (childrenSize == 1) {
+                parent.addChild(parent.children().indexOf(this), children.getFirst());
+            }
+            BranchNode prevParent = parent;
+            parent.removeChild(this);
+            prevParent.balance();
+            return;
+        }
+        parent.balance();
     }
 
     private void orientation(Orientation value) {

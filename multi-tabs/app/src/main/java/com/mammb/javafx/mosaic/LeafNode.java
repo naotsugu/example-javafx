@@ -21,10 +21,9 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
     private final Context ctx;
     private BranchNode parent;
 
-    public LeafNode(Context ctx, BranchNode parent, ContentPane content) {
+    public LeafNode(Context ctx, ContentPane content) {
 
         this.ctx = Objects.requireNonNull(ctx);
-        this.parent = Objects.requireNonNull(parent);
 
         getChildren().addAll(tabPane, dropMarker);
         addChildren(List.of(new Tab(ctx, content)));
@@ -54,7 +53,8 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
             int insertionIndex = insertionIndex(e);
             List<Tab> tabs = children();
             int tabIndex = Math.min(tabs.size() - 1, insertionIndex);
-            Bounds tabBounds = tabs.get(tabIndex).tabNode().getBoundsInLocal();
+            Node tabNode = tabs.get(tabIndex).tabNode();
+            Bounds tabBounds = screenToLocal(tabNode.localToScreen(tabNode.getBoundsInLocal()));
             Bounds bounds = new BoundingBox(
                 (insertionIndex > tabIndex) ? tabBounds.getMaxX() : tabBounds.getMinX(),
                 tabBounds.getMinY(), // TODO
@@ -116,6 +116,13 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         dropMarker.clear();
     }
 
+    void eject(Tab node) {
+        removeChild(node);
+        if (children().isEmpty()) {
+            parent.eject(this);
+        }
+    }
+
 
     @Override
     public BranchNode parent() {
@@ -124,7 +131,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
 
     @Override
     public void parent(BranchNode parent) {
-        this.parent = Objects.requireNonNull(parent);
+        this.parent = parent;
     }
 
     private boolean dragOnTabHeader(DragEvent e) {
@@ -168,7 +175,9 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
     private int insertionIndex(DragEvent e) {
         int insertion = 0;
         for (var tab : children()) {
-            if (e.getX() < tab.tabNode().getBoundsInLocal().getCenterX()) {
+            Node tabNode = tab.tabNode();
+            Bounds bounds = tabNode.localToScreen(tabNode.getBoundsInLocal());
+            if (e.getScreenX() < bounds.getCenterX()) {
                 return insertion;
             }
             insertion++;
