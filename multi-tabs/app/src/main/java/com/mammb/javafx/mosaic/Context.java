@@ -2,10 +2,10 @@ package com.mammb.javafx.mosaic;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.scene.Scene;
 import javafx.stage.Stage;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -16,6 +16,7 @@ public class Context {
     // last -> front
     private final ObservableList<Stage> stages = FXCollections.observableArrayList();
     private final AtomicReference<Tab> dragged = new AtomicReference<>();
+    private final ConcurrentHashMap<Stage, Tab> latestTab = new ConcurrentHashMap<>();
     private Supplier<? extends ContentPane> emptyContentSupplier = ContentPane::new;
     private Function<Path, ? extends ContentPane> contentSupplier = ContentPane::new;
 
