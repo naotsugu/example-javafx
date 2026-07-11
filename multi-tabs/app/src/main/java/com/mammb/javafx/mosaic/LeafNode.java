@@ -27,6 +27,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
     public LeafNode(Context ctx, ContentPane content) {
 
         this.ctx = Objects.requireNonNull(ctx);
+        initTabPane();
         initTabButton();
         getChildren().addAll(tabPane, dropMarker);
         addChildren(List.of(new Tab(ctx, content)));
@@ -34,6 +35,12 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         setOnDragOver(this::handleDragOver);
         setOnDragDropped(this::handleDragDropped);
         setOnDragExited(this::handleDragExited);
+    }
+
+    private void initTabPane() {
+        tabPane.tabClosingPolicyProperty().set(TabPane.TabClosingPolicy.ALL_TABS);
+        tabPane.getSelectionModel().selectedItemProperty().addListener(ctx::handleTabSelected);
+        tabPane.getTabs().removeListener(ctx::handleTabRemoved);
     }
 
     private void handleDragOver(DragEvent e) {
@@ -209,12 +216,10 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
     }
 
     @Override
-    public void addChildren(List<Tab> children) {
-        for (var child : children) {
-            child.parent(this);
-            tabPane.getTabs().add(tabPane.getTabs().size() - 1, child);
+    public void addChildren(List<Tab> tabs) {
+        for (var tab : tabs) {
+            addChild(children().size(), tab);
         }
-        tabPane.getSelectionModel().select(children.getLast());
     }
 
     @Override
@@ -226,7 +231,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
 
     @Override
     public boolean removeChild(Tab child) {
-        child.parent(this);
+        child.parent(null);
         return tabPane.getTabs().remove(child);
     }
 
