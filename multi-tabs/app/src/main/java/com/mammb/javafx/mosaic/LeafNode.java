@@ -126,7 +126,6 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         }
     }
 
-
     @Override
     public BranchNode parent() {
         return parent;

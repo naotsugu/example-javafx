@@ -26,21 +26,7 @@ public class Context {
         addStage(stage);
     }
 
-    Scene installOn(Stage stage, ContentPane contentPane,
-                    double x, double y, double width, double height) {
-
-        Scene scene = new Scene(new BranchNode(this, contentPane));
-        stage.setScene(scene);
-        stage.setWidth(width);
-        stage.setHeight(height);
-        stage.setX(x);
-        stage.setX(y);
-
-        addStage(stage);
-        return scene;
-    }
-
-    private void addStage(Stage stage) {
+    void addStage(Stage stage) {
         stages.add(stage);
         stage.focusedProperty().addListener((_, _, focused) -> {
             // sort by z-order
