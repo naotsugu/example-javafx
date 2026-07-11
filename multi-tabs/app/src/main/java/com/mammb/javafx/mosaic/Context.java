@@ -4,8 +4,10 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -14,10 +16,18 @@ public class Context {
     // last -> front
     private final ObservableList<Stage> stages = FXCollections.observableArrayList();
     private final AtomicReference<Tab> dragged = new AtomicReference<>();
-    private Supplier<ContentPane> emptyContentSupplier = () -> new ContentPane();
+    private Supplier<? extends ContentPane> emptyContentSupplier = ContentPane::new;
+    private Function<Path, ? extends ContentPane> contentSupplier = ContentPane::new;
+
+    public Context() {
+    }
+
+    public Context(Stage stage) {
+        addStage(stage);
+    }
 
     Scene installOn(Stage stage, ContentPane contentPane,
-            double x, double y, double width, double height) {
+                    double x, double y, double width, double height) {
 
         Scene scene = new Scene(new BranchNode(this, contentPane));
         stage.setScene(scene);
@@ -26,14 +36,17 @@ public class Context {
         stage.setX(x);
         stage.setX(y);
 
+        addStage(stage);
+        return scene;
+    }
+
+    private void addStage(Stage stage) {
         stages.add(stage);
         stage.focusedProperty().addListener((_, _, focused) -> {
             // sort by z-order
             if (focused && stages.remove(stage)) stages.add(stage);
         });
         stage.setOnHidden(_ -> stages.remove(stage));
-
-        return scene;
     }
 
     void toFrontAll() {
@@ -59,4 +72,19 @@ public class Context {
         dragged.set(null);
     }
 
+    public Supplier<? extends ContentPane> emptyContentSupplier() {
+        return emptyContentSupplier;
+    }
+
+    public void emptyContentSupplier(Supplier<? extends ContentPane> emptyContentSupplier) {
+        this.emptyContentSupplier = emptyContentSupplier;
+    }
+
+    public Function<Path, ? extends ContentPane> contentSupplier() {
+        return contentSupplier;
+    }
+
+    public void contentSupplier(Function<Path, ? extends ContentPane> contentSupplier) {
+        this.contentSupplier = contentSupplier;
+    }
 }

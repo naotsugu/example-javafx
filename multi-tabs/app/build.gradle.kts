@@ -19,7 +19,8 @@ java {
 }
 
 application {
-    mainClass = "com.mammb.tabs.App"
+    //mainClass = "com.mammb.tabs.App"
+    mainClass = "com.mammb.javafx.mosaic.App"
     applicationDefaultJvmArgs = listOf(
         "-XX:+UseCompactObjectHeaders",
         "--enable-native-access=javafx.graphics", // Restricted methods will be blocked in a future release unless native access is enabled

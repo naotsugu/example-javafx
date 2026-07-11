@@ -1,12 +1,13 @@
 package com.mammb.javafx.mosaic;
 
-import javafx.scene.Node;
+import com.mammb.tabs.LeafPane;
+import javafx.geometry.Orientation;
+import javafx.geometry.Side;
 import javafx.scene.control.SplitPane;
-import javafx.scene.layout.StackPane;
 import java.util.List;
 import java.util.Objects;
 
-public class BranchNode extends StackPane implements ChildOf<BranchNode>, ParentOf<ChildOf<BranchNode>> {
+public class BranchNode extends TreeNode implements ParentOf<TreeNode> {
 
     private final SplitPane splitPane = new SplitPane();
     private final Context ctx;
@@ -15,11 +16,44 @@ public class BranchNode extends StackPane implements ChildOf<BranchNode>, Parent
     BranchNode(Context ctx, BranchNode parent) {
         this.ctx = Objects.requireNonNull(ctx);
         this.parent = parent;
+        getChildren().add(splitPane);
     }
 
     BranchNode(Context ctx, ContentPane content) {
         this(ctx, (BranchNode) null);
         splitPane.getItems().add(new LeafNode(ctx, this, content));
+    }
+
+    public void add(ContentPane content, LeafNode source, Side side) {
+
+        int sourceIndex = children().indexOf(source);
+        if (sourceIndex < 0) throw new IllegalArgumentException("No such node in content");
+
+        Orientation orientation = switch (side) {
+            case TOP, BOTTOM -> Orientation.VERTICAL;
+            default ->  Orientation.HORIZONTAL;
+        };
+
+        if (children().size() <= 1) {
+            // add new leaf pane
+            int insIndex = (side == Side.RIGHT || side == Side.BOTTOM)
+                ? sourceIndex + 1
+                : sourceIndex;
+            addChild(insIndex, new LeafNode(ctx, this, content));
+            splitPane.setOrientation(orientation);
+        } else {
+            removeChild(source);
+            BranchNode newChild = new BranchNode(ctx, this);
+            newChild.orientation(orientation);
+            newChild.addChildren(List.of(source));
+            int insIndex = (side == Side.RIGHT || side == Side.BOTTOM) ? 1 : 0;
+            newChild.addChild(insIndex, new LeafNode(ctx, newChild, content));
+            addChild(sourceIndex, newChild);
+        }
+    }
+
+    private void orientation(Orientation value) {
+        splitPane.setOrientation(value);
     }
 
     @Override
@@ -33,23 +67,31 @@ public class BranchNode extends StackPane implements ChildOf<BranchNode>, Parent
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public List<ChildOf<BranchNode>> children() {
+    public List<TreeNode> children() {
         return splitPane.getItems().stream()
-            .filter(ChildOf.class::isInstance)
-            .map(item -> (ChildOf<BranchNode>) item)
+            .filter(TreeNode.class::isInstance)
+            .map(TreeNode.class::cast)
             .toList();
-    }
-
+        }
 
     @Override
-    public void addChildren(List<ChildOf<BranchNode>> children) {
-        for (ChildOf<BranchNode> child : children) {
+    public void addChildren(List<TreeNode> children) {
+        for (TreeNode child : children) {
             child.parent(this);
-            if (child instanceof Node node) {
-                splitPane.getItems().add(node);
-            }
+            splitPane.getItems().add(child);
         }
+    }
+
+    @Override
+    public void addChild(int index, TreeNode child) {
+        child.parent(this);
+        splitPane.getItems().add(index, child);
+    }
+
+    @Override
+    public boolean removeChild(TreeNode child) {
+        child.parent(null);
+        return splitPane.getItems().remove(child);
     }
 
 }

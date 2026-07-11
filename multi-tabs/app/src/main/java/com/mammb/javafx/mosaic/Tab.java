@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-class Tab extends javafx.scene.control.Tab {
+public class Tab extends javafx.scene.control.Tab implements ChildOf<LeafNode> {
 
     static final DataFormat TAB_MOVE_FORMAT = new DataFormat(Tab.class.getSimpleName() + ":tabMove");
 
@@ -25,11 +25,14 @@ class Tab extends javafx.scene.control.Tab {
     private final Label label;
     private LeafNode parent;
 
+    Tab(Context ctx, ContentPane content) {
+        this(ctx, null, content);
+    }
 
     Tab(Context ctx, LeafNode parent, ContentPane content) {
 
         this.ctx = Objects.requireNonNull(ctx);
-        this.parent = Objects.requireNonNull(parent);
+        this.parent = parent;
         this.label = new Label(content.shortNameProperty().getValue());
 
         setContent(content);
@@ -85,7 +88,7 @@ class Tab extends javafx.scene.control.Tab {
         return tabNode().snapshot(snapshotParams, null);
     }
 
-    private Node tabNode() {
+    Node tabNode() {
         for (Node n = getGraphic(); n != null; n = n.getParent()) {
             if (Objects.equals(n.getClass().getSimpleName(), "TabHeaderSkin"))
                 return n;
@@ -93,4 +96,13 @@ class Tab extends javafx.scene.control.Tab {
         return getGraphic();
     }
 
+    @Override
+    public LeafNode parent() {
+        return parent;
+    }
+
+    @Override
+    public void parent(LeafNode parent) {
+        this.parent = parent;
+    }
 }
