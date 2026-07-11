@@ -1,12 +1,15 @@
 package com.mammb.javafx.mosaic;
 
+import javafx.event.EventHandler;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Side;
 import javafx.scene.Node;
+import javafx.scene.control.Label;
 import javafx.scene.control.TabPane;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
 import java.io.File;
 import java.nio.file.Path;
@@ -24,7 +27,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
     public LeafNode(Context ctx, ContentPane content) {
 
         this.ctx = Objects.requireNonNull(ctx);
-
+        initTabButton();
         getChildren().addAll(tabPane, dropMarker);
         addChildren(List.of(new Tab(ctx, content)));
 
@@ -210,20 +213,70 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
     public void addChildren(List<Tab> children) {
         for (var child : children) {
             child.parent(this);
-            tabPane.getTabs().add(child);
+            tabPane.getTabs().add(tabPane.getTabs().size() - 1, child);
         }
+        tabPane.getSelectionModel().select(children.getLast());
     }
 
     @Override
     public void addChild(int index, Tab child) {
         child.parent(this);
         tabPane.getTabs().add(index, child);
+        tabPane.getSelectionModel().select(child);
     }
 
     @Override
     public boolean removeChild(Tab child) {
         child.parent(this);
         return tabPane.getTabs().remove(child);
+    }
+
+    private void initTabButton() {
+        TabButton tabButton = new TabButton();
+        tabButton.setOnMouseClicked(_ -> {
+            Tab newNormalTab = new Tab(ctx, this, ctx.emptyContentSupplier().get());
+            int addTabIndex = tabPane.getTabs().indexOf(tabButton);
+            tabPane.getTabs().add(addTabIndex, newNormalTab);
+            tabPane.getSelectionModel().select(newNormalTab);
+        });
+        tabPane.getTabs().addLast(tabButton);
+
+        tabPane.getSelectionModel().selectedItemProperty().addListener((_, old, selected) -> {
+            if (selected == tabButton) {
+                if (old != null && tabPane.getTabs().contains(old)) {
+                    tabPane.getSelectionModel().select(old);
+                } else {
+                    int index = Math.max(0, tabPane.getTabs().size() - 2);
+                    tabPane.getSelectionModel().select(index);
+                }
+            }
+        });
+    }
+
+    static class TabButton extends javafx.scene.control.Tab {
+        private final Label label;
+        public TabButton() {
+            label = new Label("+");
+            var style = """
+                -fx-font-weight: bold;
+                -fx-font-size: 15px;
+                -fx-padding: 0 5 0 5;
+                -fx-background-radius: 15px;
+                -fx-border-radius: 15px;
+                """;
+            label.setStyle(style);
+            label.setOnMouseEntered(e -> label.setStyle(style + " -fx-background-color: rgba(128, 128, 128, 0.5);"));
+            label.setOnMouseExited(e -> label.setStyle(style + " -fx-background-color: transparent;"));
+            setGraphic(label);
+            setClosable(false);
+            getStyleClass().add("add-tab-button");
+            setStyle("""
+                -fx-background-color: transparent;
+                """);
+        }
+        public final void setOnMouseClicked(EventHandler<? super MouseEvent> event) {
+            label.setOnMouseClicked(event);
+        }
     }
 
 }
