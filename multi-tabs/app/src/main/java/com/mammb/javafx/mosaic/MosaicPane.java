@@ -9,8 +9,11 @@ public class MosaicPane extends StackPane {
 
     public MosaicPane(Stage stage) {
         this.ctx = new Context(stage);
-        getChildren().add(new BranchNode(ctx, ctx.emptyContentSupplier().get()));
+        getChildren().add(new BranchNode(ctx, ctx.contentSupplier().apply("")));
     }
 
+    public String asString() {
+        return "";
+    }
 
 }

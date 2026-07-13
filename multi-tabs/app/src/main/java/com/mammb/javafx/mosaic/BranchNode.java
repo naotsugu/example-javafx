@@ -62,7 +62,7 @@ public class BranchNode extends TreeNode implements ParentOf<TreeNode> {
         List<TreeNode> children = children();
         if (isRoot() && children.isEmpty()) {
             if (ctx.stages().size() == 1) {
-                addChildren(List.of(new LeafNode(ctx, ctx.emptyContentSupplier().get())));
+                addChildren(List.of(new LeafNode(ctx, ctx.contentSupplier().apply(""))));
             } else {
                 ((Stage) getScene().getWindow()).close();
             }
@@ -81,10 +81,6 @@ public class BranchNode extends TreeNode implements ParentOf<TreeNode> {
             return;
         }
         parent.balance();
-    }
-
-    private void orientation(Orientation value) {
-        splitPane.setOrientation(value);
     }
 
     @Override
@@ -123,6 +119,22 @@ public class BranchNode extends TreeNode implements ParentOf<TreeNode> {
     public boolean removeChild(TreeNode child) {
         child.parent(null);
         return splitPane.getItems().remove(child);
+    }
+
+    public Orientation orientation() {
+        return splitPane.getOrientation();
+    }
+
+    public void orientation(Orientation value) {
+        splitPane.setOrientation(value);
+    }
+
+    public double[] dividerPositions() {
+        return splitPane.getDividerPositions();
+    }
+
+    public void dividerPositions(double[] value) {
+        splitPane.setDividerPositions(value);
     }
 
 }

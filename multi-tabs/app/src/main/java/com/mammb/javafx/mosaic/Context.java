@@ -1,7 +1,5 @@
 package com.mammb.javafx.mosaic;
 
-import javafx.beans.Observable;
-import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -14,7 +12,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 public class Context {
 
@@ -22,8 +19,8 @@ public class Context {
     private final ObservableList<Stage> stages = FXCollections.observableArrayList();
     private final ObservableMap<Scene, Tab> latestTab = FXCollections.observableHashMap();
     private final AtomicReference<Tab> dragged = new AtomicReference<>();
-    private Supplier<? extends ContentPane> emptyContentSupplier = ContentPane::new;
-    private Function<Path, ? extends ContentPane> contentSupplier = ContentPane::new;
+    private Function<String, ? extends ContentPane> contentSupplier = ContentPane::new;
+    private Function<Path, ? extends ContentPane> pathContentSupplier = ContentPane::new;
 
     public Context() {
 
@@ -65,20 +62,20 @@ public class Context {
         dragged.set(null);
     }
 
-    public Supplier<? extends ContentPane> emptyContentSupplier() {
-        return emptyContentSupplier;
-    }
-
-    public void emptyContentSupplier(Supplier<? extends ContentPane> emptyContentSupplier) {
-        this.emptyContentSupplier = emptyContentSupplier;
-    }
-
-    public Function<Path, ? extends ContentPane> contentSupplier() {
+    public Function<String, ? extends ContentPane> contentSupplier() {
         return contentSupplier;
     }
 
-    public void contentSupplier(Function<Path, ? extends ContentPane> contentSupplier) {
-        this.contentSupplier = contentSupplier;
+    public void contentSupplier(Function<String, ? extends ContentPane> function) {
+        this.contentSupplier = function;
+    }
+
+    public Function<Path, ? extends ContentPane> pathContentSupplier() {
+        return pathContentSupplier;
+    }
+
+    public void pathContentSupplier(Function<Path, ? extends ContentPane> function) {
+        this.pathContentSupplier = function;
     }
 
     public void handleTabSelected(ObservableValue<? extends javafx.scene.control.Tab> observable, javafx.scene.control.Tab oldValue, javafx.scene.control.Tab newValue) {

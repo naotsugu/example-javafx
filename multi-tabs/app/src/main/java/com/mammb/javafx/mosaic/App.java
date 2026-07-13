@@ -8,10 +8,14 @@ public class App extends Application {
 
     @Override
     public void start(Stage stage) {
-        Scene scene = new Scene(new MosaicPane(stage));
+        var pane = new MosaicPane(stage);
+        Scene scene = new Scene(pane);
         stage.setScene(scene);
         stage.setWidth(600);
         stage.setHeight(400);
         stage.show();
+
+        stage.setOnCloseRequest(_ ->System.out.println(pane.asString()));
+
     }
 }

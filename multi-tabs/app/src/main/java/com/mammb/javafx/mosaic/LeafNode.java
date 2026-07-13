@@ -93,7 +93,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
             List<Path> paths = db.getFiles().stream()
                 .filter(File::exists).filter(File::canRead).map(File::toPath).toList();
             paths.stream()
-                .map(ctx.contentSupplier())
+                .map(ctx.pathContentSupplier())
                 .map(contentPane -> new Tab(ctx, contentPane))
                 .forEach(tab -> addChildren(List.of(tab)));
             if (paths.isEmpty()) {
@@ -238,7 +238,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
     private void initTabButton() {
         TabButton tabButton = new TabButton();
         tabButton.setOnMouseClicked(_ -> {
-            Tab newNormalTab = new Tab(ctx, this, ctx.emptyContentSupplier().get());
+            Tab newNormalTab = new Tab(ctx, this, ctx.contentSupplier().apply(""));
             int addTabIndex = tabPane.getTabs().indexOf(tabButton);
             tabPane.getTabs().add(addTabIndex, newNormalTab);
             tabPane.getSelectionModel().select(newNormalTab);
