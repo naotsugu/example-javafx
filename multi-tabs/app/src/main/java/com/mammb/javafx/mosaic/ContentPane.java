@@ -14,17 +14,16 @@ public class ContentPane extends StackPane {
         shortNameProperty.set(shortName);
         fullNameProperty.set(fullName);
     }
-    public ContentPane() {
-        this("Untitled", "");
-    }
+
     public ContentPane(Path path) {
         this(path.getFileName().toString(), path.toString());
     }
+
     public ContentPane(String string) {
         if (string == null || string.isBlank()) {
             shortNameProperty.set("Untitled");
         } else {
-            String[] strip = string.split(",", 2);
+            String[] strip = string.split(";", 2);
             shortNameProperty.set(strip[0]);
             if (strip.length > 1) {
                 fullNameProperty.set(strip[1]);
@@ -33,7 +32,7 @@ public class ContentPane extends StackPane {
     }
 
     public String asString() {
-        return shortNameProperty.get() + "," + fullNameProperty.get();
+        return shortNameProperty.get() + ";" + fullNameProperty.get();
     }
 
     public boolean canClose() {
