@@ -1,4 +1,4 @@
 module com.mammb.tabs {
     requires javafx.controls;
-    exports com.mammb.tabs;
+    exports com.mammb.javafx.mosaic;
 }
