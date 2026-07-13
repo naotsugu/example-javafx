@@ -9,6 +9,7 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -67,7 +68,7 @@ public class Context {
     }
 
     public void contentSupplier(Function<String, ? extends ContentPane> function) {
-        this.contentSupplier = function;
+        this.contentSupplier = Objects.requireNonNull(function);
     }
 
     public Function<Path, ? extends ContentPane> pathContentSupplier() {
@@ -75,7 +76,7 @@ public class Context {
     }
 
     public void pathContentSupplier(Function<Path, ? extends ContentPane> function) {
-        this.pathContentSupplier = function;
+        this.pathContentSupplier = Objects.requireNonNull(function);
     }
 
     public void handleTabSelected(ObservableValue<? extends javafx.scene.control.Tab> observable, javafx.scene.control.Tab oldValue, javafx.scene.control.Tab newValue) {
