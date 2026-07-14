@@ -46,11 +46,11 @@ public class MosaicPane extends StackPane {
                     .map(e -> (ParentOf<?>) e)
                     .map(this::asStringRecursive)
                     .collect(Collectors.joining(",")) + "}";
-            case LeafNode leafNode ->  "[" + leafNode.children().stream()
+            case LeafNode leafNode -> leafNode.children().stream()
                 .map(Tab::content)
                 .map(ContentPane::asString)
                 .map(e -> "\"" + e + "\"")
-                .collect(Collectors.joining(",")) + "]";
+                .collect(Collectors.joining(",", "[", "]"));
             default -> "";
         };
     }
@@ -60,21 +60,6 @@ public class MosaicPane extends StackPane {
     }
 
     public Object fromStringRecursive(String string) {
-        if (string.startsWith("{")) {
-            Orientation orientation = Objects.equals(string.charAt(1), 'h') ? Orientation.HORIZONTAL : Orientation.VERTICAL;
-            int index = string.indexOf(',', 3, string.length());
-            String divider = string.substring(3, index);
-            double[] dividerPositions = divider.isBlank() ? new double[]{} : new double[]{Double.parseDouble(divider)};
-            var branchNode = new BranchNode(ctx, ctx.contentSupplier().apply(""));
-            branchNode.dividerPositions(dividerPositions);
-            branchNode.orientation(orientation);
-            @SuppressWarnings("unchecked")
-            List<TreeNode> children = (List<TreeNode>) fromStringRecursive(string.substring(index + 1, string.length() - 2);
-            branchNode.addChildren(children);
-            return List.of(branchNode);
-        } else if (string.startsWith("[")) {
-            return null;
-        }
         return null;
     }
 
