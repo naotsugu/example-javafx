@@ -5,9 +5,13 @@ import javafx.scene.Node;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import java.nio.file.Path;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.List;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -66,7 +70,7 @@ public class MosaicPane extends StackPane {
             case LeafNode leafNode -> leafNode.children().stream()
                 .map(Tab::content)
                 .map(ContentPane::asString)
-                .map(e -> "\"" + e + "\"") // TODO escape
+                .map(e -> '"' + e + '"') // TODO escape
                 .collect(Collectors.joining(",", "[", "]"));
 
             default -> "";
@@ -78,7 +82,7 @@ public class MosaicPane extends StackPane {
         if (str.startsWith("{") && str.endsWith("}")) {
             str = str.substring(1, str.length() - 1); // remove '{' '}'
             // orientation
-            Orientation orientation = Objects.equals(str.charAt(0), 'h')
+            Orientation orientation = Objects.equals(str.charAt(0), 'H')
                 ? Orientation.HORIZONTAL
                 : Orientation.VERTICAL;
             // dividerPositions
@@ -86,7 +90,7 @@ public class MosaicPane extends StackPane {
             String div = str.substring(2, divClose);
             double[] dividerPositions = new double[] { div.isBlank() ? 0.5 : Double.parseDouble(div) };
             // children
-            List<TreeNode> children = Arrays.stream(str.substring(divClose + 1).split("(?<=\\]|\\}),(?=\\[|\\{)"))
+            List<TreeNode> children = splitBranch(str.substring(divClose + 1)).stream()
                 .map(this::fromString)
                 .filter(TreeNode.class::isInstance)
                 .map(TreeNode.class::cast)
@@ -101,7 +105,9 @@ public class MosaicPane extends StackPane {
         } else if (str.startsWith("[") && str.endsWith("]")) {
             str = str.substring(1, str.length() - 1); // remove '[' ']'
             // children
-            List<Tab> children = Arrays.stream(str.split("(?<=\\\"),(?=\\\")"))
+            String[] split = str.split("(?<=\\\"),(?=\\\")");
+            List<Tab> children = Arrays.stream(split)
+                .map(s -> s.substring(1, s.length() - 1)) // remove '"'
                 .map(ctx.contentSupplier())
                 .map(c -> new Tab(ctx, c))
                 .toList();
@@ -113,5 +119,45 @@ public class MosaicPane extends StackPane {
         return null;
     }
 
+    private List<String> splitBranch(String str) {
+        Deque<Character> deque = new ArrayDeque<>();
+        char p = 0;
+        for (int i = 0; i < str.length(); i++) {
+            char c = str.charAt(i);
+            if (c == '[' || c == '{') {
+                deque.push(c);
+            } else if (c == ']' && !deque.isEmpty() && deque.peek() == '[') {
+                deque.pop();
+            } else if (c == '}' && !deque.isEmpty() && deque.peek() == '{') {
+                deque.pop();
+            } else if ((p == ']' || p == '}') && c == ',' && deque.isEmpty()) {
+                return List.of(
+                    str.substring(0, i),
+                    str.substring(i + 1));
+            }
+            p = c;
+        }
+        return List.of(str);
+    }
+
+    private List<String> splitLeaf(String str) {
+        Deque<Character> deque = new ArrayDeque<>();
+        char p = 0;
+        List<String> result = new ArrayList<>();
+        for (int i = 0; i < str.length(); i++) {
+            char c = str.charAt(i);
+            if (c == '(') {
+                deque.push(c);
+            } else if (c == ')' && !deque.isEmpty() && deque.peek() == '(') {
+                deque.pop();
+            } else if (p == ')' && c == ',' && deque.isEmpty()) {
+                return List.of(
+                    str.substring(1, i - 1),
+                    str.substring(i + 1));
+            }
+            p = c;
+        }
+        return List.of(str);
+    }
 
 }
