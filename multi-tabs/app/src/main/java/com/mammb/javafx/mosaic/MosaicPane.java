@@ -70,7 +70,7 @@ public class MosaicPane extends StackPane {
             case LeafNode leafNode -> leafNode.children().stream()
                 .map(Tab::content)
                 .map(ContentPane::asString)
-                .map(e -> '"' + escape(e) + '"')
+                .map(MosaicPane::escape)
                 .collect(Collectors.joining(",", "[", "]"));
 
             default -> "";
@@ -105,9 +105,8 @@ public class MosaicPane extends StackPane {
         } else if (str.startsWith("[") && str.endsWith("]")) {
             str = str.substring(1, str.length() - 1); // remove '[' ']'
             // children
-            String[] split = str.split("(?<=\\\"),(?=\\\")");
+            String[] split = str.split(",");
             List<Tab> children = Arrays.stream(split)
-                .map(s -> s.substring(1, s.length() - 1)) // remove '"'
                 .map(MosaicPane::unescape)
                 .map(ctx.contentSupplier())
                 .map(c -> new Tab(ctx, c))
