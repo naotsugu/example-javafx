@@ -30,11 +30,17 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         initTabPane();
         initTabButton();
         getChildren().addAll(tabPane, dropMarker);
-        addChildren(List.of(new Tab(ctx, content)));
+        addChildren(Objects.isNull(content)
+            ? List.of()
+            : List.of(new Tab(ctx, content)));
 
         setOnDragOver(this::handleDragOver);
         setOnDragDropped(this::handleDragDropped);
         setOnDragExited(this::handleDragExited);
+    }
+
+    public LeafNode(Context ctx) {
+        this(ctx, null);
     }
 
     private void initTabPane() {

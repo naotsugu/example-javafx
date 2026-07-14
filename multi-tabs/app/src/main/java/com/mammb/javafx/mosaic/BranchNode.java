@@ -24,6 +24,10 @@ public class BranchNode extends TreeNode implements ParentOf<TreeNode> {
         addChildren(List.of(new LeafNode(ctx, content)));
     }
 
+    BranchNode(Context ctx) {
+        this(ctx, (BranchNode) null);
+    }
+
     public void add(ContentPane content, LeafNode source, Side side) {
 
         int sourceIndex = children().indexOf(source);
