@@ -70,7 +70,7 @@ public class MosaicPane extends StackPane {
             case LeafNode leafNode -> leafNode.children().stream()
                 .map(Tab::content)
                 .map(ContentPane::asString)
-                .map(e -> '"' + e + '"') // TODO escape
+                .map(e -> '"' + escape(e) + '"')
                 .collect(Collectors.joining(",", "[", "]"));
 
             default -> "";
@@ -108,6 +108,7 @@ public class MosaicPane extends StackPane {
             String[] split = str.split("(?<=\\\"),(?=\\\")");
             List<Tab> children = Arrays.stream(split)
                 .map(s -> s.substring(1, s.length() - 1)) // remove '"'
+                .map(MosaicPane::unescape)
                 .map(ctx.contentSupplier())
                 .map(c -> new Tab(ctx, c))
                 .toList();
@@ -140,24 +141,24 @@ public class MosaicPane extends StackPane {
         return List.of(str);
     }
 
-    private List<String> splitLeaf(String str) {
-        Deque<Character> deque = new ArrayDeque<>();
-        char p = 0;
-        List<String> result = new ArrayList<>();
-        for (int i = 0; i < str.length(); i++) {
-            char c = str.charAt(i);
-            if (c == '(') {
-                deque.push(c);
-            } else if (c == ')' && !deque.isEmpty() && deque.peek() == '(') {
-                deque.pop();
-            } else if (p == ')' && c == ',' && deque.isEmpty()) {
-                return List.of(
-                    str.substring(1, i - 1),
-                    str.substring(i + 1));
-            }
-            p = c;
+    private static final String[][] ESCAPES = {
+        {"%", "%25"}, {"[", "%5B"}, {"]", "%5D"}, {"{", "%7B"}, {"}", "%7D"}, {"\"", "%22"}, {",", "%2C"}
+    };
+
+    public static String escape(String str) {
+        if (str == null || str.isBlank()) return null;
+        for (String[] rule : ESCAPES) {
+            str = str.replace(rule[0], rule[1]);
         }
-        return List.of(str);
+        return str;
+    }
+
+    public static String unescape(String str) {
+        if (str == null || str.isBlank()) return null;
+        for (int i = ESCAPES.length - 1; i >= 0; i--) {
+            str = str.replace(ESCAPES[i][1], ESCAPES[i][0]);
+        }
+        return str;
     }
 
 }
