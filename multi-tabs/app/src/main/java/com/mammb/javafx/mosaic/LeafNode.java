@@ -44,6 +44,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
     }
 
     private void initTabPane() {
+        tabPane.setRotateGraphic(true);
         tabPane.tabClosingPolicyProperty().set(TabPane.TabClosingPolicy.ALL_TABS);
         tabPane.getSelectionModel().selectedItemProperty().addListener(ctx::handleTabSelected);
         tabPane.getTabs().removeListener(ctx::handleTabRemoved);
@@ -150,9 +151,16 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
     }
 
     private boolean dragOnTabHeader(DragEvent e) {
-        double gap = 20;
-        return tabHeaderArea().getLayoutBounds()
-            .contains(Math.max(0, e.getX() - gap), Math.max(0, e.getY() - gap));
+        double gapX = 0, gapY = 0;
+        switch (tabPane.getSide()) {
+            case TOP -> gapX = -20;
+            case BOTTOM -> gapX = 20;
+            case LEFT -> gapY = -20;
+            case RIGHT -> gapY = 20;
+        }
+        Node tabHeaderArea = tabHeaderArea();
+        return tabHeaderArea.localToScreen(tabHeaderArea.getBoundsInLocal())
+            .contains(e.getScreenX() + gapX, e.getScreenY() + gapY);
     }
 
     private Optional<Side> dragOnSide(DragEvent e) {
