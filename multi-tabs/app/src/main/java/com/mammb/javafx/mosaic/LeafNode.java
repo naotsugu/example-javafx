@@ -3,6 +3,7 @@ package com.mammb.javafx.mosaic;
 import javafx.event.EventHandler;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
+import javafx.geometry.Point2D;
 import javafx.geometry.Side;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
@@ -44,7 +45,6 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
     }
 
     private void initTabPane() {
-        tabPane.setSide(Side.BOTTOM);
         tabPane.setRotateGraphic(true);
         tabPane.tabClosingPolicyProperty().set(TabPane.TabClosingPolicy.ALL_TABS);
         tabPane.getSelectionModel().selectedItemProperty().addListener(ctx::handleTabSelected);
@@ -58,7 +58,6 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
 
         if (e.getDragboard().hasFiles() && dragOnTabHeader) {
             Node tabHeaderArea = tabHeaderArea();
-
             dropMarker.show(innerBounds(
                 tabHeaderArea.localToParent(tabHeaderArea.getBoundsInLocal()),
                 dropMarker.getStrokeWidth()));
@@ -76,14 +75,14 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
             List<Tab> tabs = children();
             int tabIndex = Math.min(tabs.size() - 1, insertionIndex);
             Node tabNode = tabs.get(tabIndex).tabNode();
-            Bounds tabBounds = screenToLocal(tabNode.localToScreen(tabNode.getBoundsInLocal()));
+            Bounds tabBounds = tabNode.getBoundsInLocal();
             Bounds bounds = new BoundingBox(
                 (insertionIndex > tabIndex) ? tabBounds.getMaxX() : tabBounds.getMinX(),
-                tabBounds.getMinY(), // TODO
+                tabBounds.getMinY(),
                 dropMarker.getStrokeWidth(),
                 tabBounds.getHeight()
             );
-            dropMarker.show(bounds);
+            dropMarker.show(dropMarker.screenToLocal(tabNode.localToScreen(bounds)));
             e.acceptTransferModes(TransferMode.MOVE);
             e.consume();
         } else {
@@ -158,10 +157,10 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
     private boolean dragOnTabHeader(DragEvent e) {
         double gapX = 0, gapY = 0;
         switch (tabPane.getSide()) {
-            case TOP -> gapX = -20;
-            case BOTTOM -> gapX = 20;
-            case LEFT -> gapY = -20;
-            case RIGHT -> gapY = 20;
+            case TOP -> gapY = -20;
+            case BOTTOM -> gapY = 20;
+            case LEFT -> gapX = -20;
+            case RIGHT -> gapX = 20;
         }
         Node tabHeaderArea = tabHeaderArea();
         return tabHeaderArea.localToScreen(tabHeaderArea.getBoundsInLocal())
@@ -204,8 +203,9 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         int insertion = 0;
         for (var tab : children()) {
             Node tabNode = tab.tabNode();
-            Bounds bounds = tabNode.localToScreen(tabNode.getBoundsInLocal());
-            if (e.getScreenX() < bounds.getCenterX()) {
+            Bounds bounds = tabNode.getBoundsInLocal();
+            Point2D p = tabNode.screenToLocal(e.getScreenX(), e.getScreenY());
+            if (p.getX() < bounds.getCenterX()) {
                 return insertion;
             }
             insertion++;
