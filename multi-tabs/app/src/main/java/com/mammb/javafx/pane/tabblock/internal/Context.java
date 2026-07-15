@@ -39,10 +39,6 @@ public class Context {
     private Function<String, ? extends ContentPane> contentSupplier = ContentPane::new;
     private Function<Path, ? extends ContentPane> pathContentSupplier = ContentPane::new;
 
-    public Context() {
-
-    }
-
     public Context(Stage stage) {
         addStage(stage);
     }

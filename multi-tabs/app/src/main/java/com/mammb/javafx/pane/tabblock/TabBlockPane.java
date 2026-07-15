@@ -60,10 +60,6 @@ public class TabBlockPane extends StackPane {
         this(stage, "", null, null);
     }
 
-    public TabBlockPane(Stage stage, String string) {
-        this(stage, string, null, null);
-    }
-
     public String asString() {
         return asStringRecursive((BranchNode) getChildren().getFirst());
     }

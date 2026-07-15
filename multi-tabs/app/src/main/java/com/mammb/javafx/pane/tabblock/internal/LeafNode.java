@@ -16,17 +16,14 @@
 package com.mammb.javafx.pane.tabblock.internal;
 
 import com.mammb.javafx.pane.tabblock.ContentPane;
-import javafx.event.EventHandler;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.geometry.Side;
 import javafx.scene.Node;
-import javafx.scene.control.Label;
 import javafx.scene.control.TabPane;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
 import java.io.File;
 import java.nio.file.Path;
@@ -271,7 +268,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
     }
 
     private void initTabButton() {
-        TabButton tabButton = new TabButton();
+        TabXButton tabButton = new TabXButton();
         tabButton.setOnMouseClicked(_ -> {
             Tab newNormalTab = new Tab(ctx, this, ctx.contentSupplier().apply(""));
             int addTabIndex = tabPane.getTabs().indexOf(tabButton);
@@ -290,32 +287,6 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
                 }
             }
         });
-    }
-
-    static class TabButton extends javafx.scene.control.Tab {
-        private final Label label;
-        public TabButton() {
-            label = new Label("+");
-            var style = """
-                -fx-font-weight: bold;
-                -fx-font-size: 15px;
-                -fx-padding: 0 5 0 5;
-                -fx-background-radius: 15px;
-                -fx-border-radius: 15px;
-                """;
-            label.setStyle(style);
-            label.setOnMouseEntered(_ -> label.setStyle(style + " -fx-background-color: rgba(128, 128, 128, 0.5);"));
-            label.setOnMouseExited(_ -> label.setStyle(style + " -fx-background-color: transparent;"));
-            setGraphic(label);
-            setClosable(false);
-            getStyleClass().add("add-tab-button");
-            setStyle("""
-                -fx-background-color: transparent;
-                """);
-        }
-        public final void setOnMouseClicked(EventHandler<? super MouseEvent> event) {
-            label.setOnMouseClicked(event);
-        }
     }
 
 }
