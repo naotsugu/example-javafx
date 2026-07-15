@@ -23,7 +23,7 @@ public class ContentPane extends StackPane {
         if (string == null || string.isBlank()) {
             shortNameProperty.set("Untitled");
         } else {
-            String[] strip = string.split(";", 2);
+            String[] strip = string.split(System.getProperty("path.separator", ";"), 2);
             shortNameProperty.set(strip[0]);
             if (strip.length > 1) {
                 fullNameProperty.set(strip[1]);
@@ -32,7 +32,7 @@ public class ContentPane extends StackPane {
     }
 
     public String asString() {
-        return shortNameProperty.get() + ";" + fullNameProperty.get();
+        return shortNameProperty.get() + System.getProperty("path.separator", ";") + fullNameProperty.get();
     }
 
     public boolean canClose() {
