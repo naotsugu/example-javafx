@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mammb.javafx.mosaic;
+package com.mammb.javafx.pane.tabblock.internal;
 
+import com.mammb.javafx.pane.tabblock.ContentPane;
 import javafx.event.EventHandler;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;

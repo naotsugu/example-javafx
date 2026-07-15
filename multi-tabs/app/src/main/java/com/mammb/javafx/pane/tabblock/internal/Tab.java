@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mammb.javafx.mosaic;
+package com.mammb.javafx.pane.tabblock.internal;
 
+import com.mammb.javafx.pane.tabblock.ContentPane;
 import javafx.event.Event;
 import javafx.scene.Node;
 import javafx.scene.SnapshotParameters;
@@ -40,7 +41,7 @@ public class Tab extends javafx.scene.control.Tab implements ChildOf<LeafNode> {
     private final Label label;
     private LeafNode parent;
 
-    Tab(Context ctx, ContentPane content) {
+    public Tab(Context ctx, ContentPane content) {
         this(ctx, null, content);
     }
 
@@ -89,7 +90,7 @@ public class Tab extends javafx.scene.control.Tab implements ChildOf<LeafNode> {
         ctx.dragDone();
     }
 
-    ContentPane content() {
+    public ContentPane content() {
         return (ContentPane) getContent();
     }
 

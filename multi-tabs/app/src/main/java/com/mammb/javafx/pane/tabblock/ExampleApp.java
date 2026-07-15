@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mammb.javafx.mosaic;
+package com.mammb.javafx.pane.tabblock;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-public class App extends Application {
+public class ExampleApp extends Application {
 
     @Override
     public void start(Stage stage) {
 
-        var pane = new MosaicPane(stage);
+        var pane = new TabBlockPane(stage);
         Scene scene = new Scene(pane);
         stage.setScene(scene);
         stage.setWidth(600);

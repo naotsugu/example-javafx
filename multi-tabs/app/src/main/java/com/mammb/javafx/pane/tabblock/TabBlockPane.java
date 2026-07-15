@@ -13,28 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mammb.javafx.mosaic;
+package com.mammb.javafx.pane.tabblock;
 
+import com.mammb.javafx.pane.tabblock.internal.BranchNode;
+import com.mammb.javafx.pane.tabblock.internal.Context;
+import com.mammb.javafx.pane.tabblock.internal.LeafNode;
+import com.mammb.javafx.pane.tabblock.internal.ParentOf;
+import com.mammb.javafx.pane.tabblock.internal.Tab;
+import com.mammb.javafx.pane.tabblock.internal.TreeNode;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
 import java.util.Objects;
-import java.util.Queue;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class MosaicPane extends StackPane {
+public class TabBlockPane extends StackPane {
 
     private final Context ctx;
 
-    public MosaicPane(Stage stage, String string,
+    public TabBlockPane(Stage stage, String string,
             Function<String, ? extends ContentPane> contentSupplier,
             Function<Path, ? extends ContentPane> pathContentSupplier) {
 
@@ -52,11 +56,11 @@ public class MosaicPane extends StackPane {
         getChildren().add(branchNode);
     }
 
-    public MosaicPane(Stage stage) {
+    public TabBlockPane(Stage stage) {
         this(stage, "", null, null);
     }
 
-    public MosaicPane(Stage stage, String string) {
+    public TabBlockPane(Stage stage, String string) {
         this(stage, string, null, null);
     }
 
@@ -85,7 +89,7 @@ public class MosaicPane extends StackPane {
             case LeafNode leafNode -> leafNode.children().stream()
                 .map(Tab::content)
                 .map(ContentPane::asString)
-                .map(MosaicPane::escape)
+                .map(TabBlockPane::escape)
                 .collect(Collectors.joining(",", "[", "]"));
 
             default -> "";
@@ -122,7 +126,7 @@ public class MosaicPane extends StackPane {
             // children
             String[] split = str.split(",");
             List<Tab> children = Arrays.stream(split)
-                .map(MosaicPane::unescape)
+                .map(TabBlockPane::unescape)
                 .map(ctx.contentSupplier())
                 .map(c -> new Tab(ctx, c))
                 .toList();

@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mammb.javafx.mosaic;
+package com.mammb.javafx.pane.tabblock.internal;
 
+import com.mammb.javafx.pane.tabblock.ContentPane;
 import javafx.geometry.Orientation;
 import javafx.geometry.Side;
 import javafx.scene.control.SplitPane;
@@ -34,12 +35,12 @@ public class BranchNode extends TreeNode implements ParentOf<TreeNode> {
         getChildren().add(splitPane);
     }
 
-    BranchNode(Context ctx, ContentPane content) {
+    public BranchNode(Context ctx, ContentPane content) {
         this(ctx, (BranchNode) null);
         addChildren(List.of(new LeafNode(ctx, content)));
     }
 
-    BranchNode(Context ctx) {
+    public BranchNode(Context ctx) {
         this(ctx, (BranchNode) null);
     }
 
