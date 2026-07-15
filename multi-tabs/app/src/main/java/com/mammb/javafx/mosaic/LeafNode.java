@@ -44,6 +44,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
     }
 
     private void initTabPane() {
+        tabPane.setSide(Side.BOTTOM);
         tabPane.setRotateGraphic(true);
         tabPane.tabClosingPolicyProperty().set(TabPane.TabClosingPolicy.ALL_TABS);
         tabPane.getSelectionModel().selectedItemProperty().addListener(ctx::handleTabSelected);
@@ -56,7 +57,11 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         boolean dragOnTabHeader = dragOnTabHeader(e);
 
         if (e.getDragboard().hasFiles() && dragOnTabHeader) {
-            dropMarker.show(innerBounds(tabHeaderArea().getBoundsInLocal(), dropMarker.getStrokeWidth()));
+            Node tabHeaderArea = tabHeaderArea();
+
+            dropMarker.show(innerBounds(
+                tabHeaderArea.localToParent(tabHeaderArea.getBoundsInLocal()),
+                dropMarker.getStrokeWidth()));
             e.acceptTransferModes(TransferMode.COPY);
             e.consume();
             return;
