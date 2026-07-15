@@ -16,6 +16,7 @@
 package com.mammb.javafx.pane.tabblock.internal;
 
 import com.mammb.javafx.pane.tabblock.ContentPane;
+import javafx.event.Event;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
@@ -150,10 +151,32 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         dropMarker.clear();
     }
 
-    void eject(Tab node) {
-        removeChild(node);
+    void close(Tab tab) {
+        removeChild(tab);
         if (children().isEmpty()) {
             parent.eject(this);
+        }
+    }
+
+    void closeAll() {
+        children().forEach(tab -> Event.fireEvent(tab, new Event(Tab.TAB_CLOSE_REQUEST_EVENT)));
+    }
+
+    void closeRight(Tab node) {
+        List<Tab> children = children();
+        int index = children.indexOf(node);
+        if (index >= 0) {
+            children.subList(index + 1, children.size())
+                .forEach(tab -> Event.fireEvent(tab, new Event(Tab.TAB_CLOSE_REQUEST_EVENT)));
+        }
+    }
+
+    void closeLeft(Tab node) {
+        List<Tab> children = children();
+        int index = children.indexOf(node);
+        if (index >= 0) {
+            children.subList(0, index)
+                .forEach(tab -> Event.fireEvent(tab, new Event(Tab.TAB_CLOSE_REQUEST_EVENT)));
         }
     }
 
@@ -268,17 +291,17 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
     }
 
     private void initTabButton() {
-        TabXButton tabButton = new TabXButton();
-        tabButton.setOnMouseClicked(_ -> {
+        TabButton button = new TabButton();
+        button.setOnMouseClicked(_ -> {
             Tab newNormalTab = new Tab(ctx, this, ctx.contentSupplier().apply(""));
-            int addTabIndex = tabPane.getTabs().indexOf(tabButton);
+            int addTabIndex = tabPane.getTabs().indexOf(button);
             tabPane.getTabs().add(addTabIndex, newNormalTab);
             tabPane.getSelectionModel().select(newNormalTab);
         });
-        tabPane.getTabs().addLast(tabButton);
+        tabPane.getTabs().addLast(button);
 
         tabPane.getSelectionModel().selectedItemProperty().addListener((_, old, selected) -> {
-            if (selected == tabButton) {
+            if (selected == button) {
                 if (old != null && tabPane.getTabs().contains(old)) {
                     tabPane.getSelectionModel().select(old);
                 } else {

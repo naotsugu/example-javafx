@@ -58,6 +58,7 @@ public class Tab extends javafx.scene.control.Tab implements ChildOf<LeafNode> {
         setOnClosed(this::handleClosed);
         label.setOnDragDetected(this::handleTabDragDetected);
         label.setOnDragDone(this::handleDragDone);
+
     }
 
     private void handleCloseRequest(Event e) {
@@ -67,7 +68,7 @@ public class Tab extends javafx.scene.control.Tab implements ChildOf<LeafNode> {
     }
 
     private void handleClosed(Event e) {
-        parent.eject(this);
+        parent.close(this);
     }
 
     private void handleTabDragDetected(MouseEvent e) {
@@ -85,7 +86,7 @@ public class Tab extends javafx.scene.control.Tab implements ChildOf<LeafNode> {
     private void handleDragDone(DragEvent e) {
         dropThrough.forEach(DropThrough::close);
         if (e.getTransferMode() == TransferMode.MOVE) {
-            parent.eject(this);
+            parent.close(this);
         }
         ctx.dragDone();
     }

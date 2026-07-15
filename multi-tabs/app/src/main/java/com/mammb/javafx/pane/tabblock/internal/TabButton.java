@@ -1,17 +1,16 @@
 package com.mammb.javafx.pane.tabblock.internal;
 
 import javafx.event.EventHandler;
-import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.SVGPath;
 
-class TabXButton extends javafx.scene.control.Tab {
+class TabButton extends javafx.scene.control.Tab {
 
     private final Label label;
 
-    public TabXButton() {
+    public TabButton() {
         label = new Label();
         label.setGraphic(plus());
         var style = """
