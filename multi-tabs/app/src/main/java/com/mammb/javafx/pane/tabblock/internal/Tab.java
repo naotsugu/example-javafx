@@ -19,7 +19,9 @@ import com.mammb.javafx.pane.tabblock.ContentPane;
 import javafx.event.Event;
 import javafx.scene.Node;
 import javafx.scene.SnapshotParameters;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.DataFormat;
@@ -53,6 +55,7 @@ public class Tab extends javafx.scene.control.Tab implements ChildOf<LeafNode> {
 
         setContent(content);
         setGraphic(label);
+        setContextMenu(buildContextMenu());
 
         setOnCloseRequest(this::handleCloseRequest);
         setOnClosed(this::handleClosed);
@@ -91,6 +94,14 @@ public class Tab extends javafx.scene.control.Tab implements ChildOf<LeafNode> {
         ctx.dragDone();
     }
 
+    void requestClose() {
+        var req = new Event(Tab.TAB_CLOSE_REQUEST_EVENT);
+        Event.fireEvent(this, req);
+        if (!req.isConsumed()) {
+            Event.fireEvent(this, new Event(Tab.CLOSED_EVENT));
+        }
+    }
+
     public ContentPane content() {
         return (ContentPane) getContent();
     }
@@ -119,4 +130,19 @@ public class Tab extends javafx.scene.control.Tab implements ChildOf<LeafNode> {
     public void parent(LeafNode parent) {
         this.parent = parent;
     }
+
+    private ContextMenu buildContextMenu() {
+        MenuItem close = new MenuItem("Close");
+        close.setOnAction(_-> parent.close(this));
+        MenuItem closeOther = new MenuItem("Close Other");
+        closeOther.setOnAction(_ -> parent.closeOther(this));
+        MenuItem closeAll = new MenuItem("Close All");
+        closeAll.setOnAction(_ -> parent.closeAll());
+        MenuItem closeLeft = new MenuItem("Close Left");
+        closeLeft.setOnAction(_ -> parent.closeLeft(this));
+        MenuItem closeRight = new MenuItem("Close Right");
+        closeRight.setOnAction(_ -> parent.closeRight(this));
+        return new ContextMenu(close, closeOther, closeAll, closeLeft, closeRight);
+    }
+
 }

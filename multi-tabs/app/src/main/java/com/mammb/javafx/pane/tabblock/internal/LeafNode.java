@@ -159,15 +159,18 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
     }
 
     void closeAll() {
-        children().forEach(tab -> Event.fireEvent(tab, new Event(Tab.TAB_CLOSE_REQUEST_EVENT)));
+        children().forEach(Tab::requestClose);
+    }
+
+    void closeOther(Tab node) {
+        children().stream().filter(c -> !Objects.equals(c, node)).forEach(Tab::requestClose);
     }
 
     void closeRight(Tab node) {
         List<Tab> children = children();
         int index = children.indexOf(node);
         if (index >= 0) {
-            children.subList(index + 1, children.size())
-                .forEach(tab -> Event.fireEvent(tab, new Event(Tab.TAB_CLOSE_REQUEST_EVENT)));
+            children.subList(index + 1, children.size()).forEach(Tab::requestClose);
         }
     }
 
@@ -175,8 +178,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         List<Tab> children = children();
         int index = children.indexOf(node);
         if (index >= 0) {
-            children.subList(0, index)
-                .forEach(tab -> Event.fireEvent(tab, new Event(Tab.TAB_CLOSE_REQUEST_EVENT)));
+            children.subList(0, index).forEach(Tab::requestClose);
         }
     }
 
