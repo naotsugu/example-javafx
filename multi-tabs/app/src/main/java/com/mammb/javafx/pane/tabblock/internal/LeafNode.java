@@ -64,6 +64,10 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         TabButton.install(tabPane, () -> new Tab(ctx, this, ctx.contentSupplier().apply("")));
     }
 
+    private void initTabHeaderArea() {
+
+    }
+
     private void handleDragOver(DragEvent e) {
 
         dropMarker.clear();
@@ -192,16 +196,14 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
     }
 
     private boolean dragOnTabHeader(DragEvent e) {
-        double gapX = 0, gapY = 0;
-        switch (tabPane.getSide()) {
-            case TOP -> gapY = -20;
-            case BOTTOM -> gapY = 20;
-            case LEFT -> gapX = -20;
-            case RIGHT -> gapX = 20;
-        }
         Node tabHeaderArea = tabHeaderArea();
-        return tabHeaderArea.localToScreen(tabHeaderArea.getBoundsInLocal())
-            .contains(e.getScreenX() + gapX, e.getScreenY() + gapY);
+        Bounds bounds = tabHeaderArea.localToScreen(tabHeaderArea.getBoundsInLocal());
+        return (switch (tabPane.getSide()) {
+            case TOP    -> new BoundingBox(bounds.getMinX(), bounds.getMinY(), bounds.getWidth(), bounds.getHeight() + 20);
+            case BOTTOM -> new BoundingBox(bounds.getMinX(), bounds.getMinY() - 20, bounds.getWidth(), bounds.getHeight() + 20);
+            case LEFT   -> new BoundingBox(bounds.getMinX(), bounds.getMinY(), bounds.getWidth() + 20, bounds.getHeight());
+            case RIGHT  -> new BoundingBox(bounds.getMinX() - 20, bounds.getMinY(), bounds.getWidth() + 20, bounds.getHeight());
+        }).contains(e.getScreenX(), e.getScreenY());
     }
 
     private Optional<Side> dragOnSide(DragEvent e) {

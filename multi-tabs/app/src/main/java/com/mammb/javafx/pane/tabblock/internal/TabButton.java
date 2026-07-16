@@ -1,9 +1,7 @@
 package com.mammb.javafx.pane.tabblock.internal;
 
-import javafx.event.EventHandler;
 import javafx.scene.control.Label;
 import javafx.scene.control.TabPane;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.SVGPath;
 import java.nio.charset.StandardCharsets;
