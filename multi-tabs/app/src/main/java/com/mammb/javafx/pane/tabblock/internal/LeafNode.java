@@ -16,11 +16,14 @@
 package com.mammb.javafx.pane.tabblock.internal;
 
 import com.mammb.javafx.pane.tabblock.ContentPane;
+import javafx.application.Platform;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.geometry.Side;
 import javafx.scene.Node;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TabPane;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
@@ -50,6 +53,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         setOnDragOver(this::handleDragOver);
         setOnDragDropped(this::handleDragDropped);
         setOnDragExited(this::handleDragExited);
+        Platform.runLater(this::initTabHeaderArea);
     }
 
     public LeafNode(Context ctx) {
@@ -65,7 +69,23 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
     }
 
     private void initTabHeaderArea() {
+        Node headerArea = tabHeaderArea();
+        if (headerArea == null) {
+            Platform.runLater(this::initTabHeaderArea);
+            return;
+        }
+        headerArea.setOnMouseClicked(e -> {
+            if (e.getClickCount() == 2) {
+                tabPane.setSide(tabPane.getSide() == Side.LEFT ? Side.TOP : Side.LEFT);
+            }
+        });
+        headerArea.setOnContextMenuRequested(event ->
+            buildTabHeaderContextMenu()
+                .show(tabPane, event.getScreenX(), event.getScreenY()));
+    }
 
+    void toggleTabSide() {
+        tabPane.setSide(tabPane.getSide() == Side.LEFT ? Side.TOP : Side.LEFT);
     }
 
     private void handleDragOver(DragEvent e) {
@@ -147,7 +167,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
             e.setDropCompleted(true);
             e.consume();
         });
-
+        e.consume();
     }
 
     private void handleDragExited(DragEvent e) {
@@ -291,6 +311,16 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
     public boolean removeChild(Tab child) {
         child.parent(null);
         return tabPane.getTabs().remove(child);
+    }
+
+    private ContextMenu buildTabHeaderContextMenu() {
+        MenuItem newTab = new MenuItem("New");
+        newTab.setOnAction(_ -> addChildren(List.of(new Tab(ctx, ctx.contentSupplier().apply("")))));
+        MenuItem closeAll = new MenuItem("Close All");
+        closeAll.setOnAction(_ -> closeAll());
+        MenuItem toggleSide = new MenuItem("Toggle Tab Side");
+        toggleSide.setOnAction(_ -> toggleTabSide());
+        return new ContextMenu(newTab, closeAll, toggleSide);
     }
 
 }

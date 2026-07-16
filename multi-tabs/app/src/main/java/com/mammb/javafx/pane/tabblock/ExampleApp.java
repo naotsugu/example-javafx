@@ -31,7 +31,5 @@ public class ExampleApp extends Application {
         stage.setHeight(400);
         stage.show();
 
-        stage.setOnCloseRequest(_ -> System.out.println(pane.asString()));
-
     }
 }

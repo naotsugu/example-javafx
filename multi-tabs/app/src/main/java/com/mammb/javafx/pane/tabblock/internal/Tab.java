@@ -144,7 +144,9 @@ public class Tab extends javafx.scene.control.Tab implements ChildOf<LeafNode> {
         closeLeft.setOnAction(_ -> parent.closeLeft(this));
         MenuItem closeRight = new MenuItem("Close Right");
         closeRight.setOnAction(_ -> parent.closeRight(this));
-        return new ContextMenu(newTab, close, closeOther, closeAll, closeLeft, closeRight);
+        MenuItem toggleSide = new MenuItem("Toggle Tab Side");
+        toggleSide.setOnAction(_ -> parent.toggleTabSide());
+        return new ContextMenu(newTab, close, closeOther, closeAll, closeLeft, closeRight, toggleSide);
     }
 
 }

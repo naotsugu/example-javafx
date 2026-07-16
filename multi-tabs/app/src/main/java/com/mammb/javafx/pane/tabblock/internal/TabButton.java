@@ -13,7 +13,7 @@ class TabButton extends javafx.scene.control.Tab {
     private final Label label = new Label();
 
     public TabButton() {
-        setText("New Tab");
+
         setGraphic(label);
         setClosable(false);
         getStyleClass().add("add-tab-button");
