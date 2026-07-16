@@ -16,7 +16,6 @@
 package com.mammb.javafx.pane.tabblock.internal;
 
 import com.mammb.javafx.pane.tabblock.ContentPane;
-import javafx.event.Event;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
@@ -43,7 +42,6 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
 
         this.ctx = Objects.requireNonNull(ctx);
         initTabPane();
-        initTabButton();
         getChildren().addAll(tabPane, dropMarker);
         addChildren(Objects.isNull(content)
             ? List.of()
@@ -63,6 +61,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         tabPane.tabClosingPolicyProperty().set(TabPane.TabClosingPolicy.ALL_TABS);
         tabPane.getSelectionModel().selectedItemProperty().addListener(ctx::handleTabSelected);
         tabPane.getTabs().removeListener(ctx::handleTabRemoved);
+        TabButton.install(tabPane, () -> new Tab(ctx, this, ctx.contentSupplier().apply("")));
     }
 
     private void handleDragOver(DragEvent e) {
@@ -290,28 +289,6 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
     public boolean removeChild(Tab child) {
         child.parent(null);
         return tabPane.getTabs().remove(child);
-    }
-
-    private void initTabButton() {
-        TabButton button = new TabButton();
-        button.setOnMouseClicked(_ -> {
-            Tab newNormalTab = new Tab(ctx, this, ctx.contentSupplier().apply(""));
-            int addTabIndex = tabPane.getTabs().indexOf(button);
-            tabPane.getTabs().add(addTabIndex, newNormalTab);
-            tabPane.getSelectionModel().select(newNormalTab);
-        });
-        tabPane.getTabs().addLast(button);
-
-        tabPane.getSelectionModel().selectedItemProperty().addListener((_, old, selected) -> {
-            if (selected == button) {
-                if (old != null && tabPane.getTabs().contains(old)) {
-                    tabPane.getSelectionModel().select(old);
-                } else {
-                    int index = Math.max(0, tabPane.getTabs().size() - 2);
-                    tabPane.getSelectionModel().select(index);
-                }
-            }
-        });
     }
 
 }

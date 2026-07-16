@@ -132,6 +132,8 @@ public class Tab extends javafx.scene.control.Tab implements ChildOf<LeafNode> {
     }
 
     private ContextMenu buildContextMenu() {
+        MenuItem newTab = new MenuItem("New");
+        newTab.setOnAction(_ -> parent.addChildren(List.of(new Tab(ctx, ctx.contentSupplier().apply("")))));
         MenuItem close = new MenuItem("Close");
         close.setOnAction(_-> parent.close(this));
         MenuItem closeOther = new MenuItem("Close Other");
@@ -142,7 +144,7 @@ public class Tab extends javafx.scene.control.Tab implements ChildOf<LeafNode> {
         closeLeft.setOnAction(_ -> parent.closeLeft(this));
         MenuItem closeRight = new MenuItem("Close Right");
         closeRight.setOnAction(_ -> parent.closeRight(this));
-        return new ContextMenu(close, closeOther, closeAll, closeLeft, closeRight);
+        return new ContextMenu(newTab, close, closeOther, closeAll, closeLeft, closeRight);
     }
 
 }
