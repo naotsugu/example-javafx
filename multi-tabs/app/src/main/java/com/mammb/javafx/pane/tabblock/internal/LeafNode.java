@@ -16,7 +16,6 @@
 package com.mammb.javafx.pane.tabblock.internal;
 
 import com.mammb.javafx.pane.tabblock.ContentPane;
-import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.BoundingBox;
@@ -83,7 +82,9 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
     }
 
     private void initTabHeaderArea() {
+
         Node headerArea = tabHeaderArea();
+
         if (headerArea == null) {
             tabPane.skinProperty().addListener(new ChangeListener<>() {
                 @Override
@@ -105,6 +106,10 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         headerArea.setOnContextMenuRequested(event ->
             buildTabHeaderContextMenu()
                 .show(tabPane, event.getScreenX(), event.getScreenY()));
+        headerArea.boundsInLocalProperty().addListener((_, _, boundsInLocal) -> {
+            setMinWidth(boundsInLocal.getHeight());
+            setMinHeight(boundsInLocal.getHeight());
+        });
     }
 
     private void handleDragOver(DragEvent e) {

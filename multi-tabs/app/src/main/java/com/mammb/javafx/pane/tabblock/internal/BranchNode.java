@@ -52,7 +52,7 @@ public class BranchNode extends TreeNode implements ParentOf<TreeNode> {
 
         Orientation orientation = switch (side) {
             case TOP, BOTTOM -> Orientation.VERTICAL;
-            default ->  Orientation.HORIZONTAL;
+            default -> Orientation.HORIZONTAL;
         };
 
         if (children().size() <= 1) {
@@ -120,7 +120,7 @@ public class BranchNode extends TreeNode implements ParentOf<TreeNode> {
             .filter(TreeNode.class::isInstance)
             .map(TreeNode.class::cast)
             .toList();
-        }
+    }
 
     @Override
     public void addChildren(List<TreeNode> children) {
@@ -159,23 +159,14 @@ public class BranchNode extends TreeNode implements ParentOf<TreeNode> {
     }
 
     void maximize(TreeNode node) {
-System.out.println(node);
         List<TreeNode> children = children();
         if (children.size() > 1) {
             prefDividerPositions = splitPane.getDividerPositions();
-            Orientation orientation = splitPane.getOrientation();
-            int index = children.indexOf(node);
-
-            if (index == 1) {
-                splitPane.setDividerPositions(26.0 / getWidth());
-            } else {
-                splitPane.setDividerPositions(1 - 26.0 / getWidth());
-            }
+            splitPane.setDividerPositions((children.indexOf(node) == 1) ? 0 : 1);
         }
         if (parent != null) {
             parent.maximize(this);
         }
-
     }
 
 }
