@@ -17,6 +17,8 @@ package com.mammb.javafx.pane.tabblock.internal;
 
 import com.mammb.javafx.pane.tabblock.ContentPane;
 import javafx.application.Platform;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
@@ -42,7 +44,6 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
     private BranchNode parent;
 
     public LeafNode(Context ctx, ContentPane content) {
-
         this.ctx = Objects.requireNonNull(ctx);
         initTabPane();
         getChildren().addAll(tabPane, dropMarker);
@@ -61,6 +62,15 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
     }
 
     private void initTabPane() {
+        tabPane.layoutBoundsProperty().addListener((ov, oldBounds, newBounds) -> {
+            double len = tabPane.lookupAll(".tab").stream()
+                .mapToDouble(node -> node.getBoundsInLocal().getWidth())
+                .sum();
+            Side side = (Math.min(newBounds.getWidth(), newBounds.getHeight()) < len &&
+                         newBounds.getWidth() < newBounds.getHeight() * 0.5)
+                ? Side.LEFT : Side.TOP;
+            if (side != tabPane.getSide()) tabPane.setSide(side);
+        });
         tabPane.setRotateGraphic(true);
         tabPane.tabClosingPolicyProperty().set(TabPane.TabClosingPolicy.ALL_TABS);
         tabPane.getSelectionModel().selectedItemProperty().addListener(ctx::handleTabSelected);
