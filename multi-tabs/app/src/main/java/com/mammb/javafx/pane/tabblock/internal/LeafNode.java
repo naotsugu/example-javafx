@@ -17,8 +17,6 @@ package com.mammb.javafx.pane.tabblock.internal;
 
 import com.mammb.javafx.pane.tabblock.ContentPane;
 import javafx.application.Platform;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
@@ -92,10 +90,6 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         headerArea.setOnContextMenuRequested(event ->
             buildTabHeaderContextMenu()
                 .show(tabPane, event.getScreenX(), event.getScreenY()));
-    }
-
-    void toggleTabSide() {
-        tabPane.setSide(tabPane.getSide() == Side.LEFT ? Side.TOP : Side.LEFT);
     }
 
     private void handleDragOver(DragEvent e) {
@@ -328,9 +322,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         newTab.setOnAction(_ -> addChildren(List.of(new Tab(ctx, ctx.contentSupplier().apply("")))));
         MenuItem closeAll = new MenuItem("Close All");
         closeAll.setOnAction(_ -> closeAll());
-        MenuItem toggleSide = new MenuItem("Toggle Tab Side");
-        toggleSide.setOnAction(_ -> toggleTabSide());
-        return new ContextMenu(newTab, closeAll, toggleSide);
+        return new ContextMenu(newTab, closeAll);
     }
 
 }
