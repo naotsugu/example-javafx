@@ -28,6 +28,7 @@ public class BranchNode extends TreeNode implements ParentOf<TreeNode> {
     private final SplitPane splitPane = new SplitPane();
     private final Context ctx;
     private BranchNode parent;
+    private double[] prefDividerPositions;
 
     BranchNode(Context ctx, BranchNode parent) {
         this.ctx = Objects.requireNonNull(ctx);
@@ -155,6 +156,26 @@ public class BranchNode extends TreeNode implements ParentOf<TreeNode> {
 
     public void dividerPositions(double[] value) {
         splitPane.setDividerPositions(value);
+    }
+
+    void maximize(TreeNode node) {
+System.out.println(node);
+        List<TreeNode> children = children();
+        if (children.size() > 1) {
+            prefDividerPositions = splitPane.getDividerPositions();
+            Orientation orientation = splitPane.getOrientation();
+            int index = children.indexOf(node);
+
+            if (index == 1) {
+                splitPane.setDividerPositions(26.0 / getWidth());
+            } else {
+                splitPane.setDividerPositions(1 - 26.0 / getWidth());
+            }
+        }
+        if (parent != null) {
+            parent.maximize(this);
+        }
+
     }
 
 }

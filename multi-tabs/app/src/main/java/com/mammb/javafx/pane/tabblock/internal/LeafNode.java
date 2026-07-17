@@ -17,6 +17,8 @@ package com.mammb.javafx.pane.tabblock.internal;
 
 import com.mammb.javafx.pane.tabblock.ContentPane;
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
@@ -24,6 +26,7 @@ import javafx.geometry.Side;
 import javafx.scene.Node;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.Skin;
 import javafx.scene.control.TabPane;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
@@ -35,6 +38,9 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class LeafNode extends TreeNode implements ParentOf<Tab> {
+
+    /** logger. */
+    private static final System.Logger log = System.getLogger(LeafNode.class.getName());
 
     private final TabPane tabPane = new TabPane();
     private final DropMarker dropMarker = new DropMarker();
@@ -52,7 +58,6 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         setOnDragOver(this::handleDragOver);
         setOnDragDropped(this::handleDragDropped);
         setOnDragExited(this::handleDragExited);
-        Platform.runLater(() -> initTabHeaderArea(0));
     }
 
     public LeafNode(Context ctx) {
@@ -60,32 +65,41 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
     }
 
     private void initTabPane() {
-        tabPane.layoutBoundsProperty().addListener((ov, oldBounds, newBounds) -> {
-            double len = tabPane.lookupAll(".tab").stream()
-                .mapToDouble(node -> node.getBoundsInLocal().getWidth())
-                .sum();
-            Side side = (Math.min(newBounds.getWidth(), newBounds.getHeight()) < len &&
-                         newBounds.getWidth() < newBounds.getHeight() * 0.5)
-                ? Side.LEFT : Side.TOP;
-            if (side != tabPane.getSide()) tabPane.setSide(side);
-        });
         tabPane.setRotateGraphic(true);
         tabPane.tabClosingPolicyProperty().set(TabPane.TabClosingPolicy.ALL_TABS);
         tabPane.getSelectionModel().selectedItemProperty().addListener(ctx::handleTabSelected);
         tabPane.getTabs().removeListener(ctx::handleTabRemoved);
+        tabPane.layoutBoundsProperty().addListener((_, _, newBounds) -> {
+            double len = tabPane.lookupAll(".tab").stream()
+                .mapToDouble(node -> node.getBoundsInLocal().getWidth())
+                .sum();
+            Side side = (Math.min(newBounds.getWidth(), newBounds.getHeight()) < len &&
+                newBounds.getWidth() < newBounds.getHeight() * 0.5)
+                ? Side.LEFT : Side.TOP;
+            if (side != tabPane.getSide()) tabPane.setSide(side);
+        });
         TabButton.install(tabPane, () -> new Tab(ctx, this, ctx.contentSupplier().apply("")));
+        initTabHeaderArea();
     }
 
-    private void initTabHeaderArea(int n) {
+    private void initTabHeaderArea() {
         Node headerArea = tabHeaderArea();
         if (headerArea == null) {
-            if (n > 3) return;
-            Platform.runLater(() -> initTabHeaderArea(n + 1));
+            tabPane.skinProperty().addListener(new ChangeListener<>() {
+                @Override
+                public void changed(ObservableValue<? extends Skin<?>> ob, Skin<?> old, Skin<?> skin) {
+                    if (skin != null) {
+                        tabPane.applyCss();
+                        initTabHeaderArea();
+                        tabPane.skinProperty().removeListener(this);
+                    }
+                }
+            });
             return;
         }
         headerArea.setOnMouseClicked(e -> {
             if (e.getClickCount() == 2) {
-                tabPane.setSide(tabPane.getSide() == Side.LEFT ? Side.TOP : Side.LEFT);
+                parent().maximize(this);
             }
         });
         headerArea.setOnContextMenuRequested(event ->

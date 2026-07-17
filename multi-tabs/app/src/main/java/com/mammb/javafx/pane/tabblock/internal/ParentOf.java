@@ -23,5 +23,8 @@ public interface ParentOf<C> {
     void addChildren(List<C> children);
     void addChild(int index, C child);
     boolean removeChild(C child);
+    default int childCount() {
+        return children().size();
+    }
 
 }
