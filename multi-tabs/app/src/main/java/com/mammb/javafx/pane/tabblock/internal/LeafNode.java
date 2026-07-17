@@ -52,7 +52,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         setOnDragOver(this::handleDragOver);
         setOnDragDropped(this::handleDragDropped);
         setOnDragExited(this::handleDragExited);
-        Platform.runLater(this::initTabHeaderArea);
+        Platform.runLater(() -> initTabHeaderArea(0));
     }
 
     public LeafNode(Context ctx) {
@@ -76,10 +76,11 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         TabButton.install(tabPane, () -> new Tab(ctx, this, ctx.contentSupplier().apply("")));
     }
 
-    private void initTabHeaderArea() {
+    private void initTabHeaderArea(int n) {
         Node headerArea = tabHeaderArea();
         if (headerArea == null) {
-            Platform.runLater(this::initTabHeaderArea);
+            if (n > 3) return;
+            Platform.runLater(() -> initTabHeaderArea(n + 1));
             return;
         }
         headerArea.setOnMouseClicked(e -> {
