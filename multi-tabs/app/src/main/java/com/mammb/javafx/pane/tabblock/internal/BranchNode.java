@@ -20,15 +20,17 @@ import javafx.geometry.Orientation;
 import javafx.geometry.Side;
 import javafx.scene.control.SplitPane;
 import javafx.stage.Stage;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Predicate;
 
 public class BranchNode extends TreeNode implements ParentOf<TreeNode> {
 
     private final SplitPane splitPane = new SplitPane();
     private final Context ctx;
     private BranchNode parent;
-    private double[] prefDividerPositions;
+    private double prefDividerPositions = 0.5;
 
     BranchNode(Context ctx, BranchNode parent) {
         this.ctx = Objects.requireNonNull(ctx);
@@ -161,12 +163,38 @@ public class BranchNode extends TreeNode implements ParentOf<TreeNode> {
     void maximize(TreeNode node) {
         List<TreeNode> children = children();
         if (children.size() > 1) {
-            prefDividerPositions = splitPane.getDividerPositions();
+            double[] div = splitPane.getDividerPositions();
+            prefDividerPositions = (div != null && div.length > 0) ? splitPane.getDividerPositions()[0] : 0.5;
             splitPane.setDividerPositions((children.indexOf(node) == 1) ? 0 : 1);
         }
         if (parent != null) {
             parent.maximize(this);
         }
+    }
+
+    void unmaximize() {
+        if (prefDividerPositions <= 0 || prefDividerPositions >= 1) {
+            prefDividerPositions = 0.5;
+        }
+        splitPane.setDividerPositions(prefDividerPositions);
+        if (parent != null) {
+            parent.unmaximize();
+        }
+    }
+
+    boolean isMaximized(TreeNode node) {
+        List<TreeNode> children = children();
+        if (children.size() > 1) {
+            List<LeafNode> leafs = children.stream()
+                .filter(c -> node != c)
+                .filter(LeafNode.class::isInstance)
+                .map(LeafNode.class::cast)
+                .toList();
+            if (leafs.stream().anyMatch(Predicate.not(LeafNode::isFolded))) {
+                return false;
+            }
+        }
+        return parent == null || parent.isMaximized(this);
     }
 
 }

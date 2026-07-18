@@ -38,7 +38,6 @@ import java.util.Optional;
 
 public class LeafNode extends TreeNode implements ParentOf<Tab> {
 
-    /** logger. */
     private static final System.Logger log = System.getLogger(LeafNode.class.getName());
 
     private final TabPane tabPane = new TabPane();
@@ -68,15 +67,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         tabPane.tabClosingPolicyProperty().set(TabPane.TabClosingPolicy.ALL_TABS);
         tabPane.getSelectionModel().selectedItemProperty().addListener(ctx::handleTabSelected);
         tabPane.getTabs().removeListener(ctx::handleTabRemoved);
-        tabPane.layoutBoundsProperty().addListener((_, _, newBounds) -> {
-            double len = tabPane.lookupAll(".tab").stream()
-                .mapToDouble(node -> node.getBoundsInLocal().getWidth())
-                .sum();
-            Side side = (Math.min(newBounds.getWidth(), newBounds.getHeight()) < len &&
-                newBounds.getWidth() < newBounds.getHeight() * 0.5)
-                ? Side.LEFT : Side.TOP;
-            if (side != tabPane.getSide()) tabPane.setSide(side);
-        });
+        tabPane.layoutBoundsProperty().addListener(this::handleTabPaneLayoutBoundsChanged);
         TabButton.install(tabPane, () -> new Tab(ctx, this, ctx.contentSupplier().apply("")));
         initTabHeaderArea();
     }
@@ -86,6 +77,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         Node headerArea = tabHeaderArea();
 
         if (headerArea == null) {
+            // ensure the initialization of headerArea.
             tabPane.skinProperty().addListener(new ChangeListener<>() {
                 @Override
                 public void changed(ObservableValue<? extends Skin<?>> ob, Skin<?> old, Skin<?> skin) {
@@ -98,18 +90,27 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
             });
             return;
         }
-        headerArea.setOnMouseClicked(e -> {
-            if (e.getClickCount() == 2) {
-                parent().maximize(this);
-            }
-        });
-        headerArea.setOnContextMenuRequested(event ->
-            buildTabHeaderContextMenu()
-                .show(tabPane, event.getScreenX(), event.getScreenY()));
+
+        // fix the minimum width/height of this panel.
         headerArea.boundsInLocalProperty().addListener((_, _, boundsInLocal) -> {
             setMinWidth(boundsInLocal.getHeight());
             setMinHeight(boundsInLocal.getHeight());
         });
+
+        headerArea.setOnMouseClicked(e -> {
+            if (e.getClickCount() == 2) {
+                if (parent().isMaximized(this)) {
+                    parent().unmaximize();
+                } else {
+                    parent().maximize(this);
+                }
+            }
+        });
+
+        headerArea.setOnContextMenuRequested(event ->
+            buildTabHeaderContextMenu()
+                .show(tabPane, event.getScreenX(), event.getScreenY()));
+
     }
 
     private void handleDragOver(DragEvent e) {
@@ -229,6 +230,10 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         }
     }
 
+    boolean isFolded() {
+        return getMinWidth() == getWidth() || getMinHeight() == getHeight();
+    }
+
     @Override
     public BranchNode parent() {
         return parent;
@@ -243,10 +248,13 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         Node tabHeaderArea = tabHeaderArea();
         Bounds bounds = tabHeaderArea.localToScreen(tabHeaderArea.getBoundsInLocal());
         return (switch (tabPane.getSide()) {
-            case TOP    -> new BoundingBox(bounds.getMinX(), bounds.getMinY(), bounds.getWidth(), bounds.getHeight() + 20);
-            case BOTTOM -> new BoundingBox(bounds.getMinX(), bounds.getMinY() - 20, bounds.getWidth(), bounds.getHeight() + 20);
-            case LEFT   -> new BoundingBox(bounds.getMinX(), bounds.getMinY(), bounds.getWidth() + 20, bounds.getHeight());
-            case RIGHT  -> new BoundingBox(bounds.getMinX() - 20, bounds.getMinY(), bounds.getWidth() + 20, bounds.getHeight());
+            case TOP -> new BoundingBox(bounds.getMinX(), bounds.getMinY(), bounds.getWidth(), bounds.getHeight() + 20);
+            case BOTTOM ->
+                new BoundingBox(bounds.getMinX(), bounds.getMinY() - 20, bounds.getWidth(), bounds.getHeight() + 20);
+            case LEFT ->
+                new BoundingBox(bounds.getMinX(), bounds.getMinY(), bounds.getWidth() + 20, bounds.getHeight());
+            case RIGHT ->
+                new BoundingBox(bounds.getMinX() - 20, bounds.getMinY(), bounds.getWidth() + 20, bounds.getHeight());
         }).contains(e.getScreenX(), e.getScreenY());
     }
 
@@ -304,7 +312,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         return new BoundingBox(
             bounds.getMinX() + gap,
             bounds.getMinY() + gap,
-            bounds.getWidth()  - (gap * 2),
+            bounds.getWidth() - (gap * 2),
             bounds.getHeight() - (gap * 2)
         );
     }
@@ -335,6 +343,19 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
     public boolean removeChild(Tab child) {
         child.parent(null);
         return tabPane.getTabs().remove(child);
+    }
+
+    /**
+     * If the Pane layout is changed, adjust the position of the tab Pane.
+     */
+    private void handleTabPaneLayoutBoundsChanged(ObservableValue<? extends Bounds> observable, Bounds oldValue, Bounds newBounds) {
+        double len = tabPane.lookupAll(".tab").stream()
+            .mapToDouble(node -> node.getBoundsInLocal().getWidth())
+            .sum();
+        Side side = (Math.min(newBounds.getWidth(), newBounds.getHeight()) < len &&
+            newBounds.getWidth() < newBounds.getHeight() * 0.5)
+            ? Side.LEFT : Side.TOP;
+        if (side != tabPane.getSide()) tabPane.setSide(side);
     }
 
     private ContextMenu buildTabHeaderContextMenu() {
