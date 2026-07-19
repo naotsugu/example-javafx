@@ -161,6 +161,7 @@ public class BranchNode extends TreeNode implements ParentOf<TreeNode> {
     }
 
     void maximize(TreeNode node) {
+        if (root().countLeaves() == 1) return;
         List<TreeNode> children = children();
         if (children.size() > 1) {
             double[] div = splitPane.getDividerPositions();
@@ -195,6 +196,17 @@ public class BranchNode extends TreeNode implements ParentOf<TreeNode> {
             }
         }
         return parent == null || parent.isMaximized(this);
+    }
+
+
+    int countLeaves() {
+        return children().stream()
+            .mapToInt(c -> switch (c) {
+                    case LeafNode _ -> 1;
+                    case BranchNode branch -> branch.countLeaves();
+                    case null, default -> 0;
+                })
+            .sum();
     }
 
 }
