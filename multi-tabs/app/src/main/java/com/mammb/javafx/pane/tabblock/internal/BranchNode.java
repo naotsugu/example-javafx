@@ -21,6 +21,7 @@ import javafx.geometry.Side;
 import javafx.scene.control.SplitPane;
 import javafx.stage.Stage;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -161,7 +162,7 @@ public class BranchNode extends TreeNode implements ParentOf<TreeNode> {
     }
 
     void maximize(TreeNode node) {
-        if (root().countLeaves() == 1) return;
+        if (root().leaves().size() == 1) return;
         List<TreeNode> children = children();
         if (children.size() > 1) {
             double[] div = splitPane.getDividerPositions();
@@ -184,29 +185,21 @@ public class BranchNode extends TreeNode implements ParentOf<TreeNode> {
     }
 
     boolean isMaximized(TreeNode node) {
-        List<TreeNode> children = children();
-        if (children.size() > 1) {
-            List<LeafNode> leafs = children.stream()
-                .filter(c -> node != c)
-                .filter(LeafNode.class::isInstance)
-                .map(LeafNode.class::cast)
-                .toList();
-            if (leafs.stream().anyMatch(Predicate.not(LeafNode::isFolded))) {
-                return false;
-            }
-        }
-        return parent == null || parent.isMaximized(this);
+        return root().leaves().stream().filter(c -> node != c).allMatch(LeafNode::isFolded);
     }
 
 
-    int countLeaves() {
+    List<LeafNode> leaves() {
         return children().stream()
-            .mapToInt(c -> switch (c) {
-                    case LeafNode _ -> 1;
-                    case BranchNode branch -> branch.countLeaves();
-                    case null, default -> 0;
-                })
-            .sum();
+            .map(c -> switch (c) {
+                case LeafNode leaf -> List.of(leaf);
+                case BranchNode branch -> branch.leaves();
+                case null, default -> List.of();
+            })
+            .flatMap(Collection::stream)
+            .filter(LeafNode.class::isInstance)
+            .map(LeafNode.class::cast)
+            .toList();
     }
 
 }

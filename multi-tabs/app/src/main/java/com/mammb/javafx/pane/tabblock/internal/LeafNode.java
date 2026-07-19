@@ -365,7 +365,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         closeAll.setOnAction(_ -> closeAll());
         MenuItem maximize = new MenuItem("Maximize");
         maximize.setOnAction(_ -> parent().maximize(this));
-        maximize.setDisable(parent.root().countLeaves() > 1);
+        maximize.setDisable(parent.root().leaves().size() <= 1);
         MenuItem restore = new MenuItem("Restore");
         restore.setOnAction(_ -> parent().unmaximize());
         restore.setDisable(!parent.isMaximized(this));
