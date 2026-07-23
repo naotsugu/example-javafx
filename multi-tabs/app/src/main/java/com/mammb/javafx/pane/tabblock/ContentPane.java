@@ -58,6 +58,9 @@ public class ContentPane extends StackPane {
         return true;
     }
 
+    public void close() {
+    }
+
     public ReadOnlyObjectProperty<String> shortNameProperty() {
         return shortNameProperty;
     }

@@ -65,7 +65,9 @@ public class Tab extends javafx.scene.control.Tab implements ChildOf<LeafNode> {
     }
 
     private void handleCloseRequest(Event e) {
-        if (!content().closeRequest()) {
+        if (content().closeRequest()) {
+            content().close();
+        } else {
             e.consume();
         }
     }
