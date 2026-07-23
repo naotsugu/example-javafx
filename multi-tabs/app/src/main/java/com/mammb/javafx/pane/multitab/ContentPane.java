@@ -13,14 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mammb.javafx.pane.tabblock.internal;
+package com.mammb.javafx.pane.multitab;
 
+import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.scene.layout.StackPane;
 
-public abstract class TreeNode extends StackPane implements ChildOf<BranchNode> {
-    public abstract BranchNode parent();
-    public abstract void parent(BranchNode parent);
-    public BranchNode root() {
-        return isRoot() ? (BranchNode) this : parent().root();
-    }
+public abstract class ContentPane extends StackPane {
+
+    abstract public void focus();
+
+    abstract public boolean canCloseQuiet();
+
+    abstract public boolean closeRequest();
+
+    abstract public void close();
+
+    abstract public String asString();
+
+    abstract public ReadOnlyObjectProperty<String> shortNameProperty();
+
+    abstract public ReadOnlyObjectProperty<String> fullNameProperty();
+
 }

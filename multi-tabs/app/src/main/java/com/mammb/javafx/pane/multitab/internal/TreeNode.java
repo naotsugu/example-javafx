@@ -13,23 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mammb.javafx.pane.tabblock;
+package com.mammb.javafx.pane.multitab.internal;
 
-import javafx.application.Application;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
+import javafx.scene.layout.StackPane;
 
-public class ExampleApp extends Application {
-
-    @Override
-    public void start(Stage stage) {
-
-        var pane = new TabBlockPane(stage);
-        Scene scene = new Scene(pane);
-        stage.setScene(scene);
-        stage.setWidth(600);
-        stage.setHeight(400);
-        stage.show();
-
+public abstract class TreeNode extends StackPane implements ChildOf<BranchNode> {
+    public abstract BranchNode parent();
+    public abstract void parent(BranchNode parent);
+    public BranchNode root() {
+        return isRoot() ? (BranchNode) this : parent().root();
     }
 }

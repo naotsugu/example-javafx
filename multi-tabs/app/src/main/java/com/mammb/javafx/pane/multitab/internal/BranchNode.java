@@ -13,18 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mammb.javafx.pane.tabblock.internal;
+package com.mammb.javafx.pane.multitab.internal;
 
-import com.mammb.javafx.pane.tabblock.ContentPane;
+import com.mammb.javafx.pane.multitab.ContentPane;
 import javafx.geometry.Orientation;
 import javafx.geometry.Side;
 import javafx.scene.control.SplitPane;
 import javafx.stage.Stage;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Predicate;
 
 public class BranchNode extends TreeNode implements ParentOf<TreeNode> {
 

@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mammb.javafx.pane.tabblock.internal;
+package com.mammb.javafx.pane.multitab.internal;
 
-import com.mammb.javafx.pane.tabblock.ContentPane;
+import com.mammb.javafx.pane.multitab.ContentPane;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.BoundingBox;

@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mammb.javafx.pane.tabblock;
+package com.mammb.javafx.pane.multitab;
 
-import com.mammb.javafx.pane.tabblock.internal.BranchNode;
-import com.mammb.javafx.pane.tabblock.internal.Context;
-import com.mammb.javafx.pane.tabblock.internal.LeafNode;
-import com.mammb.javafx.pane.tabblock.internal.ParentOf;
-import com.mammb.javafx.pane.tabblock.internal.Tab;
-import com.mammb.javafx.pane.tabblock.internal.TreeNode;
+import com.mammb.javafx.pane.multitab.internal.BranchNode;
+import com.mammb.javafx.pane.multitab.internal.Context;
+import com.mammb.javafx.pane.multitab.internal.LeafNode;
+import com.mammb.javafx.pane.multitab.internal.ParentOf;
+import com.mammb.javafx.pane.multitab.internal.Tab;
+import com.mammb.javafx.pane.multitab.internal.TreeNode;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.layout.StackPane;
@@ -34,30 +34,23 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class TabBlockPane extends StackPane {
+public class MultiTabPane extends StackPane {
 
     private final Context ctx;
 
-    public TabBlockPane(Stage stage, String string,
-            Function<String, ? extends ContentPane> contentSupplier,
-            Function<Path, ? extends ContentPane> pathContentSupplier) {
+    public MultiTabPane(Stage stage, String string,
+                        Function<String, ? extends ContentPane> contentSupplier,
+                        Function<Path, ? extends ContentPane> pathContentSupplier) {
 
         this.ctx = new Context(stage);
-
-        if  (contentSupplier != null)
-            ctx.contentSupplier(contentSupplier);
-        if (pathContentSupplier != null)
-            ctx.pathContentSupplier(pathContentSupplier);
+        this.ctx.contentSupplier(contentSupplier);
+        this.ctx.pathContentSupplier(pathContentSupplier);
 
         Node branchNode = (string != null && !string.isBlank())
             ? fromString(string)
             : new BranchNode(ctx, ctx.contentSupplier().apply(""));
 
         getChildren().add(branchNode);
-    }
-
-    public TabBlockPane(Stage stage) {
-        this(stage, "", null, null);
     }
 
     public String asString() {
@@ -85,7 +78,7 @@ public class TabBlockPane extends StackPane {
             case LeafNode leafNode -> leafNode.children().stream()
                 .map(Tab::content)
                 .map(ContentPane::asString)
-                .map(TabBlockPane::escape)
+                .map(MultiTabPane::escape)
                 .collect(Collectors.joining(",", "[", "]"));
 
             default -> "";
@@ -122,7 +115,7 @@ public class TabBlockPane extends StackPane {
             // children
             String[] split = str.split(",");
             List<Tab> children = Arrays.stream(split)
-                .map(TabBlockPane::unescape)
+                .map(MultiTabPane::unescape)
                 .map(ctx.contentSupplier())
                 .map(c -> new Tab(ctx, c))
                 .toList();

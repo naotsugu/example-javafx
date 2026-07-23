@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mammb.javafx.pane.tabblock.internal;
+package com.mammb.javafx.pane.multitab.internal;
 
-import com.mammb.javafx.pane.tabblock.ContentPane;
+import com.mammb.javafx.pane.multitab.ContentPane;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -36,8 +36,8 @@ public class Context {
     private final ObservableList<Stage> stages = FXCollections.observableArrayList();
     private final ObservableMap<Scene, Tab> latestTab = FXCollections.observableHashMap();
     private final AtomicReference<Tab> dragged = new AtomicReference<>();
-    private Function<String, ? extends ContentPane> contentSupplier = ContentPane::new;
-    private Function<Path, ? extends ContentPane> pathContentSupplier = ContentPane::new;
+    private Function<String, ? extends ContentPane> contentSupplier;
+    private Function<Path, ? extends ContentPane> pathContentSupplier;
 
     public Context(Stage stage) {
         addStage(stage);
