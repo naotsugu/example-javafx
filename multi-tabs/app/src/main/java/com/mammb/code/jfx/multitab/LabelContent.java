@@ -1,4 +1,4 @@
-package com.mammb.javafx.pane.multitab;
+package com.mammb.code.jfx.multitab;
 
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;

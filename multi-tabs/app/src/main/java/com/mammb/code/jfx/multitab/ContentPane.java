@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mammb.javafx.pane.multitab;
+package com.mammb.code.jfx.multitab;
 
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.scene.layout.StackPane;

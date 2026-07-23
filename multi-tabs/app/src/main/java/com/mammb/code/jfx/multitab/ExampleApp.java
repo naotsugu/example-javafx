@@ -13,18 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mammb.javafx.pane.multitab.internal;
+package com.mammb.code.jfx.multitab;
 
-import java.util.List;
+import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
 
-public interface ParentOf<C> {
+public class ExampleApp extends Application {
 
-    List<C> children();
-    void addChildren(List<C> children);
-    void addChild(int index, C child);
-    boolean removeChild(C child);
-    default int childCount() {
-        return children().size();
+    @Override
+    public void start(Stage stage) {
+
+        var pane = new MultiTabPane(stage, "", LabelContent::new, LabelContent::new);
+        Scene scene = new Scene(pane);
+        stage.setScene(scene);
+        stage.setWidth(600);
+        stage.setHeight(400);
+        stage.show();
+
     }
-
 }

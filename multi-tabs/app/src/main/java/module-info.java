@@ -1,4 +1,4 @@
-module com.mammb.tabs {
+module com.mammb.code.jfx.multitab {
     requires javafx.controls;
-    exports com.mammb.javafx.pane.multitab;
+    exports com.mammb.code.jfx.multitab;
 }

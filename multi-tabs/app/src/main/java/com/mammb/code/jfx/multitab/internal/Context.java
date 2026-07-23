@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mammb.javafx.pane.multitab.internal;
+package com.mammb.code.jfx.multitab.internal;
 
-import com.mammb.javafx.pane.multitab.ContentPane;
+import com.mammb.code.jfx.multitab.ContentPane;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
