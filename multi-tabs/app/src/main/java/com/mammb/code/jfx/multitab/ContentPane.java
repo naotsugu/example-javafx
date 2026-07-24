@@ -18,8 +18,15 @@ package com.mammb.code.jfx.multitab;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.scene.layout.StackPane;
 
+/**
+ * The ContentPane.
+ * @author Naotsugu Kobayashi
+ */
 public abstract class ContentPane extends StackPane {
 
+    /**
+     * Focus the pane.
+     */
     abstract public void focus();
 
     abstract public boolean canCloseQuiet();
