@@ -18,7 +18,6 @@ package com.mammb.code.jfx.multitab.internal;
 import com.mammb.code.jfx.multitab.ContentPane;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.event.Event;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
