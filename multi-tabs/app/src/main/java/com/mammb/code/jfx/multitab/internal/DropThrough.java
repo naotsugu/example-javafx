@@ -16,7 +16,6 @@
 package com.mammb.code.jfx.multitab.internal;
 
 import com.mammb.code.jfx.multitab.ContentPane;
-import com.mammb.code.jfx.multitab.MultiTabPane;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.input.DragEvent;
