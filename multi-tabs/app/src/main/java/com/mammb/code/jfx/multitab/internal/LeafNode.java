@@ -18,6 +18,7 @@ package com.mammb.code.jfx.multitab.internal;
 import com.mammb.code.jfx.multitab.ContentPane;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.event.Event;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
@@ -29,6 +30,8 @@ import javafx.scene.control.Skin;
 import javafx.scene.control.TabPane;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.TransferMode;
 import java.io.File;
 import java.nio.file.Path;
@@ -68,6 +71,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         tabPane.getSelectionModel().selectedItemProperty().addListener(ctx::handleTabSelected);
         tabPane.getTabs().removeListener(ctx::handleTabRemoved);
         tabPane.layoutBoundsProperty().addListener(this::handleTabPaneLayoutBoundsChanged);
+        tabPane.addEventFilter(KeyEvent.KEY_PRESSED, this::handleTabPaneKeyPressed);
         TabButton.install(tabPane, () -> new Tab(ctx, this, ctx.contentSupplier().apply("")));
         initTabHeaderArea();
     }
@@ -356,6 +360,16 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
             newBounds.getWidth() < newBounds.getHeight() * 0.5)
             ? Side.LEFT : Side.TOP;
         if (side != tabPane.getSide()) tabPane.setSide(side);
+    }
+
+    private void handleTabPaneKeyPressed(KeyEvent e) {
+        if (e.getCode() == KeyCode.W && e.isShortcutDown()) {
+            var selectedTab = tabPane.getSelectionModel().getSelectedItem();
+            if (selectedTab instanceof Tab tab && selectedTab.isClosable()) {
+                tab.requestClose();
+                e.consume();
+            }
+        }
     }
 
     private ContextMenu buildTabHeaderContextMenu() {
