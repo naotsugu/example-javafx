@@ -23,6 +23,7 @@ import com.mammb.code.jfx.multitab.internal.Tab;
 import com.mammb.code.jfx.multitab.internal.TreeNode;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import java.nio.file.Path;

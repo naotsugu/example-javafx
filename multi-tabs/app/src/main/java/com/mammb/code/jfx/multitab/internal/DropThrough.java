@@ -16,6 +16,7 @@
 package com.mammb.code.jfx.multitab.internal;
 
 import com.mammb.code.jfx.multitab.ContentPane;
+import com.mammb.code.jfx.multitab.MultiTabPane;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.input.DragEvent;
@@ -100,11 +101,11 @@ class DropThrough extends Pane {
         ContentPane content = tab.content();
         Scene scene = new Scene(new BranchNode(ctx, content));
         ctx.addStage(nextStage);
-        stage.setScene(scene);
-        stage.setWidth(content.getWidth());
-        stage.setHeight(content.getHeight());
-        stage.setX(e.getScreenX() - content.getWidth() / 2);
-        stage.setX(e.getScreenY() - content.getHeight() / 2);
+        nextStage.setScene(scene);
+        nextStage.setWidth(content.getWidth());
+        nextStage.setHeight(content.getHeight());
+        nextStage.setX(e.getScreenX() - content.getWidth() / 2);
+        nextStage.setY(e.getScreenY() - content.getHeight() / 2);
         nextStage.show();
 
         e.setDropCompleted(true);
