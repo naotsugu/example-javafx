@@ -52,6 +52,10 @@ public class MultiTabPane extends StackPane {
         getChildren().add(branchNode);
     }
 
+    public MultiTabPane(Node node) {
+        getChildren().add(node);
+    }
+
     public String asString() {
         return asStringRecursive((BranchNode) getChildren().getFirst());
     }

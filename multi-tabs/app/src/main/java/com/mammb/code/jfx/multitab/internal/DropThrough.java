@@ -99,7 +99,7 @@ class DropThrough extends Pane {
 
         Stage nextStage = new Stage();
         ContentPane content = tab.content();
-        Scene scene = new Scene(new BranchNode(ctx, content));
+        Scene scene = new Scene(new MultiTabPane(new BranchNode(ctx, content)));
         ctx.addStage(nextStage);
         nextStage.setScene(scene);
         nextStage.setWidth(content.getWidth());
