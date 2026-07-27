@@ -198,6 +198,10 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         e.consume();
     }
 
+    public void addRight(ContentPane contentPane) {
+        parent.add(contentPane, this, Side.RIGHT);
+    }
+
     private void handleDragExited(DragEvent e) {
         dropMarker.clear();
     }
