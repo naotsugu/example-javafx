@@ -42,12 +42,12 @@ public class MultiTabPane extends StackPane {
             Function<Path, ? extends ContentPane> pathContentSupplier) {
 
         Context ctx = new Context(stage);
-        ctx.contentSupplier(contentSupplier);
-        ctx.pathContentSupplier(pathContentSupplier);
+        ctx.addSupplier(String.class, contentSupplier);
+        ctx.addSupplier(Path.class, pathContentSupplier);
 
         Node branchNode = (string != null && !string.isBlank())
             ? fromString(ctx, string)
-            : new BranchNode(ctx, ctx.contentSupplier().apply(""));
+            : new BranchNode(ctx, ctx.create(""));
 
         getChildren().add(branchNode);
     }
@@ -119,7 +119,7 @@ public class MultiTabPane extends StackPane {
             String[] split = str.split(",");
             List<Tab> children = Arrays.stream(split)
                 .map(MultiTabPane::unescape)
-                .map(ctx.contentSupplier())
+                .map(ctx::create)
                 .map(c -> new Tab(ctx, c))
                 .toList();
             // create LeafNode

@@ -25,11 +25,15 @@ import javafx.collections.ObservableMap;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 public class Context {
 
@@ -37,8 +41,8 @@ public class Context {
     private final ObservableList<Stage> stages = FXCollections.observableArrayList();
     private final ObservableMap<Scene, Tab> latestTab = FXCollections.observableHashMap();
     private final AtomicReference<Tab> dragged = new AtomicReference<>();
-    private Function<String, ? extends ContentPane> contentSupplier;
-    private Function<Path, ? extends ContentPane> pathContentSupplier;
+    private final List<ContentConstruct<?>> contentConstructs = new ArrayList<>();
+    private Supplier<? extends ContentPane> supplier;
 
     public Context(Stage stage) {
         addStage(stage);
@@ -76,22 +80,6 @@ public class Context {
         dragged.set(null);
     }
 
-    public Function<String, ? extends ContentPane> contentSupplier() {
-        return contentSupplier;
-    }
-
-    public void contentSupplier(Function<String, ? extends ContentPane> function) {
-        this.contentSupplier = Objects.requireNonNull(function);
-    }
-
-    public Function<Path, ? extends ContentPane> pathContentSupplier() {
-        return pathContentSupplier;
-    }
-
-    public void pathContentSupplier(Function<Path, ? extends ContentPane> function) {
-        this.pathContentSupplier = Objects.requireNonNull(function);
-    }
-
     public void handleTabSelected(ObservableValue<? extends javafx.scene.control.Tab> observable, javafx.scene.control.Tab oldValue, javafx.scene.control.Tab newValue) {
         if (newValue instanceof Tab selected && selected.parent() != null && selected.parent().getScene() != null) {
             Platform.runLater(() -> selected.content().focus());
@@ -106,6 +94,34 @@ public class Context {
                     latestTab.remove(tab.parent().getScene(), tab);
                 }
             }
+        }
+    }
+
+    public void addSupplier(Supplier<? extends ContentPane> supplier) {
+        contentConstructs.add(ContentConstruct.of(Void.class, _ -> supplier.get()));
+    }
+
+    public <T> void addSupplier(Class<T> type, Function<T, ? extends ContentPane> supplier) {
+        contentConstructs.add(ContentConstruct.of(type, supplier));
+    }
+
+    public <T> ContentPane create(T arg) {
+        Class<?> clazz = (arg == null) ? Void.class : arg.getClass();
+        return contentConstructs.stream()
+            .filter(cc -> cc.type().isAssignableFrom(clazz))
+            .findFirst()
+            .map(cc -> ((ContentConstruct<T>) cc).apply(arg))
+            .orElse(null);
+    }
+
+    interface ContentConstruct<T> {
+        ContentPane apply(T arg);
+        Class<T> type();
+        static <T> ContentConstruct<T> of(Class<T> type, Function<T, ? extends ContentPane> fun) {
+            record Record<T>(Class<T> type, Function<T, ? extends ContentPane> fun) implements ContentConstruct<T> {
+                @Override public ContentPane apply(T arg) { return fun().apply(arg); }
+            }
+            return new Record<>(type, fun);
         }
     }
 
