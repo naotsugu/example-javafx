@@ -37,24 +37,26 @@ import java.util.stream.Collectors;
 
 public class MultiTabPane extends StackPane {
 
-    public MultiTabPane(Stage stage, String string,
-            Function<String, ? extends ContentPane> contentSupplier,
-            Function<Path, ? extends ContentPane> pathContentSupplier) {
-
-        Context ctx = new Context(stage);
-        ctx.addSupplier(String.class, contentSupplier);
-        ctx.addSupplier(Path.class, pathContentSupplier);
-
-        Node branchNode = (string != null && !string.isBlank())
-            ? fromString(ctx, string)
-            : new BranchNode(ctx, ctx.create(""));
-
-        getChildren().add(branchNode);
-    }
-
-    public MultiTabPane(Node node) {
-        getChildren().add(node);
-    }
+//    public MultiTabPane(Stage stage, String string,
+//            Function<String, ? extends ContentPane> contentSupplier,
+//            Function<Path, ? extends ContentPane> pathContentSupplier) {
+//
+//        Context ctx = new Context(stage,
+//            Supplier<? extends ContentPane> supplier,
+//            contentSupplier,
+//            pathContentSupplier,
+//            Function<BranchNode, Stage> newStage);
+//
+//        Node branchNode = (string != null && !string.isBlank())
+//            ? fromString(ctx, string)
+//            : new BranchNode(ctx, ctx.create(""));
+//
+//        getChildren().add(branchNode);
+//    }
+//
+//    public MultiTabPane(Node node) {
+//        getChildren().add(node);
+//    }
 
     public String asString() {
         return asStringRecursive((BranchNode) getChildren().getFirst());

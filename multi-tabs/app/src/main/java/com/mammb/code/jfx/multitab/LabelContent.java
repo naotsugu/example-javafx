@@ -14,6 +14,10 @@ public class LabelContent extends ContentPane {
         fullNameProperty.set(fullName);
     }
 
+    public LabelContent() {
+        this("");
+    }
+
     public LabelContent(Path path) {
         this(path.getFileName().toString(), path.toString());
     }
