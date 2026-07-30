@@ -22,7 +22,9 @@ import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
+import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import java.nio.file.Path;
 import java.util.List;
@@ -41,13 +43,13 @@ public class Context {
     private final Supplier<? extends ContentPane> supplier;
     private final Function<String, ? extends ContentPane> supplierString;
     private final Function<Path, ? extends ContentPane> supplierPath;
-    private final Function<BranchNode, Stage> newStage;
+    private final Function<Pane, Stage> newStage;
 
     public Context(Stage stage,
             Supplier<? extends ContentPane> supplier,
             Function<String, ? extends ContentPane> supplierString,
             Function<Path, ? extends ContentPane> supplierPath,
-            Function<BranchNode, Stage> newStage) {
+            Function<Pane, Stage> newStage) {
         this.supplier = supplier;
         this.supplierString = supplierString;
         this.supplierPath = supplierPath;
@@ -119,36 +121,5 @@ public class Context {
         addStage(stage);
         return stage;
     }
-
-
-//    private final List<ContentConstruct<?>> contentConstructs = new ArrayList<>();
-//
-//    public void addSupplier(Supplier<? extends ContentPane> supplier) {
-//        contentConstructs.add(ContentConstruct.of(Void.class, _ -> supplier.get()));
-//    }
-//
-//    public <T> void addSupplier(Class<T> type, Function<T, ? extends ContentPane> supplier) {
-//        contentConstructs.add(ContentConstruct.of(type, supplier));
-//    }
-//
-//    public <T> ContentPane create(T arg) {
-//        Class<?> clazz = (arg == null) ? Void.class : arg.getClass();
-//        return contentConstructs.stream()
-//            .filter(cc -> cc.type().isAssignableFrom(clazz))
-//            .findFirst()
-//            .map(cc -> ((ContentConstruct<T>) cc).apply(arg))
-//            .orElse(null);
-//    }
-//
-//    interface ContentConstruct<T> {
-//        ContentPane apply(T arg);
-//        Class<T> type();
-//        static <T> ContentConstruct<T> of(Class<T> type, Function<T, ? extends ContentPane> fun) {
-//            record Record<T>(Class<T> type, Function<T, ? extends ContentPane> fun) implements ContentConstruct<T> {
-//                @Override public ContentPane apply(T arg) { return fun().apply(arg); }
-//            }
-//            return new Record<>(type, fun);
-//        }
-//    }
 
 }
