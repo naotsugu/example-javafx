@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mammb.code.jfx.multitab;
+package com.mammb.code.jfx.multitab.example;
 
+import com.mammb.code.jfx.multitab.Builder;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;

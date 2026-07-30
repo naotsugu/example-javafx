@@ -1,5 +1,6 @@
-package com.mammb.code.jfx.multitab;
+package com.mammb.code.jfx.multitab.example;
 
+import com.mammb.code.jfx.multitab.ContentPane;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import java.nio.file.Path;
