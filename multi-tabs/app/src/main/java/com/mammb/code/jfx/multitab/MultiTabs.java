@@ -52,23 +52,19 @@ public interface MultiTabs {
     record Builder(
             Stage stage,
             Supplier<? extends ContentPane> toContent,
-            Function<String, ? extends ContentPane> stringToContent,
             Function<Path, ? extends ContentPane> pathToContent,
             Function<Pane, Stage> toStage) {
         public Builder(Stage stage) {
-            this(Objects.requireNonNull(stage), null, null, null, null);
+            this(Objects.requireNonNull(stage), null, null, null);
         }
         public Builder toContent(Supplier<? extends ContentPane> toContent) {
-            return new Builder(stage, toContent, stringToContent, pathToContent, toStage);
-        }
-        public Builder stringToContent(Function<String, ? extends ContentPane> stringToContent) {
-            return new Builder(stage, toContent, stringToContent, pathToContent, toStage);
+            return new Builder(stage, toContent, pathToContent, toStage);
         }
         public Builder pathToContent(Function<Path, ? extends ContentPane> pathToContent) {
-            return new Builder(stage, toContent, stringToContent, pathToContent, toStage);
+            return new Builder(stage, toContent, pathToContent, toStage);
         }
         public Builder toStage(Function<Pane, Stage> toStage) {
-            return new Builder(stage, toContent, stringToContent, pathToContent, toStage);
+            return new Builder(stage, toContent, pathToContent, toStage);
         }
         public Pane build() {
             var ctx = context();
@@ -79,7 +75,6 @@ public interface MultiTabs {
             return new Context(
                 stage,
                 toContent,
-                (stringToContent != null) ? stringToContent : _ -> toContent.get(),
                 (pathToContent != null) ? pathToContent : _ -> toContent.get(),
                 (toStage != null) ? toStage : pane -> {
                     Stage nextStage = new Stage();

@@ -22,7 +22,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
@@ -41,19 +40,16 @@ public class Context {
     private final AtomicReference<Tab> dragged = new AtomicReference<>();
 
     private final Supplier<? extends ContentPane> supplier;
-    private final Function<String, ? extends ContentPane> supplierString;
     private final Function<Path, ? extends ContentPane> supplierPath;
-    private final Function<Pane, Stage> newStage;
+    private final Function<Pane, Stage> initStage;
 
     public Context(Stage stage,
             Supplier<? extends ContentPane> supplier,
-            Function<String, ? extends ContentPane> supplierString,
             Function<Path, ? extends ContentPane> supplierPath,
-            Function<Pane, Stage> newStage) {
+            Function<Pane, Stage> initStage) {
         this.supplier = supplier;
-        this.supplierString = supplierString;
         this.supplierPath = supplierPath;
-        this.newStage = newStage;
+        this.initStage = initStage;
         addStage(stage);
     }
 
@@ -111,13 +107,12 @@ public class Context {
     public <T> ContentPane create(T arg) {
         return switch (arg) {
             case Path path -> supplierPath.apply(path);
-            case String string -> supplierString.apply(string);
             case null, default -> supplier.get();
         };
     }
 
-    public Stage createStage(BranchNode branchNode) {
-        Stage stage = newStage.apply(branchNode);
+    public Stage initStage(BranchNode branchNode) {
+        Stage stage = initStage.apply(branchNode);
         addStage(stage);
         return stage;
     }

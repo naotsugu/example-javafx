@@ -100,7 +100,7 @@ class DropThrough extends Pane {
         Scene oldScene = content.getScene();
         Stage oldStage = (Stage) oldScene.getWindow();
 
-        Stage nextStage = ctx.createStage(new BranchNode(ctx, content));
+        Stage nextStage = ctx.initStage(new BranchNode(ctx, content));
         nextStage.setTitle(oldStage.getTitle());
         nextStage.getIcons().addAll(oldStage.getIcons());
         nextStage.getScene().getStylesheets().addAll(oldScene.getStylesheets());

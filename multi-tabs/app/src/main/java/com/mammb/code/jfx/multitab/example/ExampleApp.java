@@ -28,7 +28,6 @@ public class ExampleApp extends Application {
 
         Pane pane = MultiTabs.builder(stage)
             .toContent(LabelContent::new)
-            .stringToContent(LabelContent::new)
             .pathToContent(LabelContent::new)
             .build();
 
