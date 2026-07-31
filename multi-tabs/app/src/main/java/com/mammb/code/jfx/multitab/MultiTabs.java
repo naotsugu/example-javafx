@@ -38,53 +38,49 @@ import java.util.stream.Collectors;
 
 public interface MultiTabs {
 
-    static Builder builder() {
-        return new Builder();
+    static SceneBuilder builder() {
+        return new SceneBuilder();
     }
 
     static String asString(Pane pane) {
         return null;
     }
 
-
-    record Builder(
+    record SceneBuilder(
+            Stage stage,
             Supplier<? extends ContentPane> toContent,
             Function<Path, ? extends ContentPane> pathToContent,
-            BiFunction<Stage, Pane, Stage> initStage) {
-        public Builder() {
-            this(null, null, (nextStage, pane) -> {
-                nextStage.setScene(new Scene(pane));
-                return nextStage;
-            });
+            Function<String, ? extends ContentPane> stringToContent,
+            BiFunction<Stage, Pane, Scene> toScene) {
+        public SceneBuilder() {
+            this(null, null, null, null, null);
         }
-        public Builder toContent(Supplier<? extends ContentPane> toContent) {
-            return new Builder(Objects.requireNonNull(toContent), pathToContent, initStage);
+        public SceneBuilder stage(Stage stage) {
+            return new SceneBuilder(Objects.requireNonNull(stage), toContent, pathToContent, stringToContent, toScene);
         }
-        public Builder pathToContent(Function<Path, ? extends ContentPane> pathToContent) {
-            return new Builder(toContent, Objects.requireNonNull(pathToContent), initStage);
+        public SceneBuilder toContent(Supplier<? extends ContentPane> toContent) {
+            return new SceneBuilder(stage, Objects.requireNonNull(toContent), pathToContent, stringToContent, toScene);
         }
-        public Builder initStage(BiFunction<Stage, Pane, Stage> initStage) {
-            return new Builder(toContent, pathToContent, Objects.requireNonNull(initStage));
+        public SceneBuilder pathToContent(Function<Path, ? extends ContentPane> pathToContent) {
+            return new SceneBuilder(stage, toContent, Objects.requireNonNull(pathToContent), stringToContent, toScene);
         }
-        public void buildOn(Stage stage) {
-            Objects.requireNonNull(stage);
+        public SceneBuilder stringToContent(Function<String, ? extends ContentPane> stringToContent) {
+            return new SceneBuilder(stage, toContent, pathToContent, Objects.requireNonNull(stringToContent), toScene);
+        }
+        public SceneBuilder toScene(BiFunction<Stage, Pane, Scene> toScene) {
+            return new SceneBuilder(stage, toContent, pathToContent, stringToContent, Objects.requireNonNull(toScene));
+        }
+        public Scene build() {
             var ctx = context();
-            ctx.initStage(stage, new BranchNode(ctx, ctx.create()));
-        }
-        public Pane build(Stage stage) {
-            var ctx = context();
-            ctx.addStage(stage);
-            return new BranchNode(ctx, ctx.create());
+            Stage st = (stage == null) ? new Stage() : stage;
+            ctx.addStage(st);
+            return ctx.toScene(st, new BranchNode(ctx, ctx.create()));
         }
         private Context context() {
-            Objects.requireNonNull(toContent);
             return new Context(
-                toContent,
+                Objects.requireNonNull(toContent),
                 (pathToContent != null) ? pathToContent : _ -> toContent.get(),
-                (initStage != null) ? initStage : (nextStage, pane) -> {
-                    nextStage.setScene(new Scene(pane));
-                    return nextStage;
-                });
+                (toScene != null) ? toScene : (stage, pane) -> new Scene(pane));
         }
     }
 

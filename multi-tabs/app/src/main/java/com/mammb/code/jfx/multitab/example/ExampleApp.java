@@ -17,6 +17,9 @@ package com.mammb.code.jfx.multitab.example;
 
 import com.mammb.code.jfx.multitab.MultiTabs;
 import javafx.application.Application;
+import javafx.scene.Scene;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
 public class ExampleApp extends Application {
@@ -24,13 +27,22 @@ public class ExampleApp extends Application {
     @Override
     public void start(Stage stage) {
 
-        MultiTabs.builder()
+        Scene scene = MultiTabs.builder()
+            .stage(stage)
             .toContent(LabelContent::new)
             .pathToContent(LabelContent::new)
-            .buildOn(stage);
-        stage.setWidth(600);
-        stage.setHeight(400);
+            .toScene(this::toScene)
+            .build();
+        stage.setScene(scene);
         stage.show();
 
     }
+
+    private Scene toScene(Stage stage, Pane pane) {
+        stage.setTitle("example");
+        stage.setWidth(600);
+        stage.setHeight(400);
+        return new Scene(new BorderPane(pane));
+    }
+
 }
