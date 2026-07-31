@@ -38,65 +38,72 @@ import java.util.stream.Collectors;
 
 public interface MultiTabs {
 
-    static Builder builder(Stage stage) {
-        return new Builder(stage);
+    static Builder builder() {
+        return new Builder();
     }
 
     static String asString(Pane pane) {
         return null;
     }
 
-    static FromStringBuilder builder(Stage stage, String string) {
-        return new FromStringBuilder(stage, string);
-    }
-
-    record FromStringBuilder(
-        Builder builder,
-        String string,
-        Function<String, ? extends ContentPane> stringToContent) {
-        public FromStringBuilder(Stage stage, String string) {
-            this(new Builder(stage), string, null);
-        }
-        public FromStringBuilder toContent(Supplier<? extends ContentPane> toContent) {
-            return new FromStringBuilder(builder.toContent(toContent), string, stringToContent);
-        }
-        public FromStringBuilder pathToContent(Function<Path, ? extends ContentPane> pathToContent) {
-            return new FromStringBuilder(builder.pathToContent(pathToContent), string, stringToContent);
-        }
-        public FromStringBuilder initStage(BiFunction<Stage, Pane, Stage> initStage) {
-            return new FromStringBuilder(builder.initStage(initStage), string, stringToContent);
-        }
-        public FromStringBuilder stringToContent(Function<String, ? extends ContentPane> stringToContent) {
-            return new FromStringBuilder(builder, string, stringToContent);
-        }
-        public Stage build() {
-            var ctx = builder.context();
-            return ctx.initStage(builder.stage(), (BranchNode) fromString(ctx, string, stringToContent));
-        }
-    }
+//    static FromStringBuilder builder(Stage stage, String string) {
+//        return new FromStringBuilder(stage, string);
+//    }
+//
+//    record FromStringBuilder(
+//        Builder builder,
+//        String string,
+//        Function<String, ? extends ContentPane> stringToContent) {
+//        public FromStringBuilder(Stage stage, String string) {
+//            this(new Builder(stage), string, null);
+//        }
+//        public FromStringBuilder toContent(Supplier<? extends ContentPane> toContent) {
+//            return new FromStringBuilder(builder.toContent(toContent), string, stringToContent);
+//        }
+//        public FromStringBuilder pathToContent(Function<Path, ? extends ContentPane> pathToContent) {
+//            return new FromStringBuilder(builder.pathToContent(pathToContent), string, stringToContent);
+//        }
+//        public FromStringBuilder initStage(BiFunction<Stage, Pane, Stage> initStage) {
+//            return new FromStringBuilder(builder.initStage(initStage), string, stringToContent);
+//        }
+//        public FromStringBuilder stringToContent(Function<String, ? extends ContentPane> stringToContent) {
+//            return new FromStringBuilder(builder, string, stringToContent);
+//        }
+//        public Stage build() {
+//            var ctx = builder.context();
+//            return ctx.initStage(builder.stage(), (BranchNode) fromString(ctx, string, stringToContent));
+//        }
+//    }
 
     record Builder(
-            Stage stage,
             Supplier<? extends ContentPane> toContent,
             Function<Path, ? extends ContentPane> pathToContent,
             BiFunction<Stage, Pane, Stage> initStage) {
-        public Builder(Stage stage) {
-            this(Objects.requireNonNull(stage), null, null, null);
+        public Builder() {
+            this(null, null, (nextStage, pane) -> {
+                nextStage.setScene(new Scene(pane));
+                return nextStage;
+            });
         }
         public Builder toContent(Supplier<? extends ContentPane> toContent) {
-            return new Builder(stage, toContent, pathToContent, initStage);
+            return new Builder(Objects.requireNonNull(toContent), pathToContent, initStage);
         }
         public Builder pathToContent(Function<Path, ? extends ContentPane> pathToContent) {
-            return new Builder(stage, toContent, pathToContent, initStage);
+            return new Builder(toContent, Objects.requireNonNull(pathToContent), initStage);
         }
         public Builder initStage(BiFunction<Stage, Pane, Stage> initStage) {
-            return new Builder(stage, toContent, pathToContent, initStage);
+            return new Builder(toContent, pathToContent, Objects.requireNonNull(initStage));
         }
-        public Stage build() {
-            var ctx = context();
-            return ctx.initStage(stage, new BranchNode(ctx, ctx.create()));
+        public void buildOn(Stage stage) {
+            Objects.requireNonNull(stage);
+            var ctx = context(stage);
+            ctx.initStage(stage, new BranchNode(ctx, ctx.create()));
         }
-        private Context context() {
+        public Pane build(Stage stage) {
+            var ctx = context(stage);
+            return new BranchNode(ctx, ctx.create());
+        }
+        private Context context(Stage stage) {
             Objects.requireNonNull(toContent);
             return new Context(
                 stage,

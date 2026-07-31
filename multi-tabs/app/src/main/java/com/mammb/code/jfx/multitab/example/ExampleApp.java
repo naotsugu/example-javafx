@@ -24,10 +24,10 @@ public class ExampleApp extends Application {
     @Override
     public void start(Stage stage) {
 
-        stage = MultiTabs.builder(stage)
+        MultiTabs.builder()
             .toContent(LabelContent::new)
             .pathToContent(LabelContent::new)
-            .build();
+            .buildOn(stage);
         stage.setWidth(600);
         stage.setHeight(400);
         stage.show();

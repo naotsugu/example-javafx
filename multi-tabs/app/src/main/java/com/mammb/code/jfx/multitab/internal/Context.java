@@ -45,7 +45,8 @@ public class Context {
     private final Function<Path, ? extends ContentPane> supplierPath;
     private final BiFunction<Stage, Pane, Stage> initStage;
 
-    public Context(Stage stage,
+    public Context(
+            Stage stage,
             Supplier<? extends ContentPane> supplier,
             Function<Path, ? extends ContentPane> supplierPath,
             BiFunction<Stage, Pane, Stage> initStage) {
@@ -55,7 +56,7 @@ public class Context {
         addStage(stage);
     }
 
-    void addStage(Stage stage) {
+    public void addStage(Stage stage) {
         stages.add(stage);
         stage.focusedProperty().addListener((_, _, focused) -> {
             // sort by z-order
