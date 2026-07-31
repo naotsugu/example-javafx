@@ -112,6 +112,7 @@ public class Context {
     }
 
     public Scene toScene(Stage stage, BranchNode branchNode) {
+        addStage(stage);
         return toScene.apply(stage, branchNode);
     }
 

@@ -73,7 +73,6 @@ public interface MultiTabs {
         public Scene build() {
             var ctx = context();
             Stage st = (stage == null) ? new Stage() : stage;
-            ctx.addStage(st);
             return ctx.toScene(st, new BranchNode(ctx, ctx.create()));
         }
         private Context context() {

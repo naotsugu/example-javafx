@@ -97,13 +97,10 @@ class DropThrough extends Pane {
         if (!db.hasContent(Tab.TAB_MOVE_FORMAT) || tab == null) return;
 
         ContentPane content = tab.content();
-        Scene oldScene = content.getScene();
-        Stage oldStage = (Stage) oldScene.getWindow();
 
         Stage nextStage = new Stage();
         Scene scene = ctx.toScene(nextStage, new BranchNode(ctx, content));
         nextStage.setScene(scene);
-        ctx.addStage(nextStage);
 
         nextStage.setWidth(content.getWidth());
         nextStage.setHeight(content.getHeight());
