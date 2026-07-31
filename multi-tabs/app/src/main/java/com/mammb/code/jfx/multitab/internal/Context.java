@@ -28,6 +28,8 @@ import javafx.stage.Stage;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -41,12 +43,12 @@ public class Context {
 
     private final Supplier<? extends ContentPane> supplier;
     private final Function<Path, ? extends ContentPane> supplierPath;
-    private final Function<Pane, Stage> initStage;
+    private final BiFunction<Stage, Pane, Stage> initStage;
 
     public Context(Stage stage,
             Supplier<? extends ContentPane> supplier,
             Function<Path, ? extends ContentPane> supplierPath,
-            Function<Pane, Stage> initStage) {
+            BiFunction<Stage, Pane, Stage> initStage) {
         this.supplier = supplier;
         this.supplierPath = supplierPath;
         this.initStage = initStage;
@@ -111,10 +113,9 @@ public class Context {
         };
     }
 
-    public Stage initStage(BranchNode branchNode) {
-        Stage stage = initStage.apply(branchNode);
+    public Stage initStage(Stage stage, BranchNode branchNode) {
         addStage(stage);
-        return stage;
+        return initStage.apply(stage, branchNode);
     }
 
 }

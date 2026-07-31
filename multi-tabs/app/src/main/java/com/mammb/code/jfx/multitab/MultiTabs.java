@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -41,34 +42,59 @@ public interface MultiTabs {
         return new Builder(stage);
     }
 
-    static String toString(Pane pane) {
+    static String asString(Pane pane) {
         return null;
     }
 
-    static Pane toPane(Builder builder, String string) {
-        return null;
+    static FromStringBuilder builder(Stage stage, String string) {
+        return new FromStringBuilder(stage, string);
+    }
+
+    record FromStringBuilder(
+        Builder builder,
+        String string,
+        Function<String, ? extends ContentPane> stringToContent) {
+        public FromStringBuilder(Stage stage, String string) {
+            this(new Builder(stage), string, null);
+        }
+        public FromStringBuilder toContent(Supplier<? extends ContentPane> toContent) {
+            return new FromStringBuilder(builder.toContent(toContent), string, stringToContent);
+        }
+        public FromStringBuilder pathToContent(Function<Path, ? extends ContentPane> pathToContent) {
+            return new FromStringBuilder(builder.pathToContent(pathToContent), string, stringToContent);
+        }
+        public FromStringBuilder initStage(BiFunction<Stage, Pane, Stage> initStage) {
+            return new FromStringBuilder(builder.initStage(initStage), string, stringToContent);
+        }
+        public FromStringBuilder stringToContent(Function<String, ? extends ContentPane> stringToContent) {
+            return new FromStringBuilder(builder, string, stringToContent);
+        }
+        public Stage build() {
+            var ctx = builder.context();
+            return ctx.initStage(builder.stage(), (BranchNode) fromString(ctx, string, stringToContent));
+        }
     }
 
     record Builder(
             Stage stage,
             Supplier<? extends ContentPane> toContent,
             Function<Path, ? extends ContentPane> pathToContent,
-            Function<Pane, Stage> toStage) {
+            BiFunction<Stage, Pane, Stage> initStage) {
         public Builder(Stage stage) {
             this(Objects.requireNonNull(stage), null, null, null);
         }
         public Builder toContent(Supplier<? extends ContentPane> toContent) {
-            return new Builder(stage, toContent, pathToContent, toStage);
+            return new Builder(stage, toContent, pathToContent, initStage);
         }
         public Builder pathToContent(Function<Path, ? extends ContentPane> pathToContent) {
-            return new Builder(stage, toContent, pathToContent, toStage);
+            return new Builder(stage, toContent, pathToContent, initStage);
         }
-        public Builder toStage(Function<Pane, Stage> toStage) {
-            return new Builder(stage, toContent, pathToContent, toStage);
+        public Builder initStage(BiFunction<Stage, Pane, Stage> initStage) {
+            return new Builder(stage, toContent, pathToContent, initStage);
         }
-        public Pane build() {
+        public Stage build() {
             var ctx = context();
-            return new BranchNode(ctx, ctx.create());
+            return ctx.initStage(stage, new BranchNode(ctx, ctx.create()));
         }
         private Context context() {
             Objects.requireNonNull(toContent);
@@ -76,8 +102,7 @@ public interface MultiTabs {
                 stage,
                 toContent,
                 (pathToContent != null) ? pathToContent : _ -> toContent.get(),
-                (toStage != null) ? toStage : pane -> {
-                    Stage nextStage = new Stage();
+                (initStage != null) ? initStage : (nextStage, pane) -> {
                     nextStage.setScene(new Scene(pane));
                     return nextStage;
                 });
@@ -112,7 +137,7 @@ public interface MultiTabs {
         };
     }
 
-    private static Pane fromString(Context ctx, String str) {
+    private static Pane fromString(Context ctx, String str, Function<String, ? extends ContentPane> stringToContent) {
 
         if (str.startsWith("{") && str.endsWith("}")) {
             str = str.substring(1, str.length() - 1); // remove '{' '}'
@@ -126,7 +151,7 @@ public interface MultiTabs {
             double[] dividerPositions = new double[] { div.isBlank() ? 0.5 : Double.parseDouble(div) };
             // children
             List<TreeNode> children = splitBranch(str.substring(divClose + 1)).stream()
-                .map(s -> fromString(ctx, s))
+                .map(s -> fromString(ctx, s, stringToContent))
                 .filter(TreeNode.class::isInstance)
                 .map(TreeNode.class::cast)
                 .toList();
@@ -143,7 +168,7 @@ public interface MultiTabs {
             String[] split = str.split(",");
             List<Tab> children = Arrays.stream(split)
                 .map(MultiTabs::unescape)
-                .map(ctx::create)
+                .map(stringToContent)
                 .map(c -> new Tab(ctx, c))
                 .toList();
             // create LeafNode
