@@ -46,14 +46,12 @@ public class Context {
     private final BiFunction<Stage, Pane, Stage> initStage;
 
     public Context(
-            Stage stage,
             Supplier<? extends ContentPane> supplier,
             Function<Path, ? extends ContentPane> supplierPath,
             BiFunction<Stage, Pane, Stage> initStage) {
         this.supplier = supplier;
         this.supplierPath = supplierPath;
         this.initStage = initStage;
-        addStage(stage);
     }
 
     public void addStage(Stage stage) {
