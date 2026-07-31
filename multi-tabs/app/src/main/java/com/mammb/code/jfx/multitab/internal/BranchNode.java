@@ -26,6 +26,8 @@ import java.util.Objects;
 
 public class BranchNode extends TreeNode implements ParentOf<TreeNode> {
 
+    public static final String STYLE_CLASS = "tree-node-branch";
+
     private final SplitPane splitPane = new SplitPane();
     private final Context ctx;
     private BranchNode parent;
@@ -34,6 +36,7 @@ public class BranchNode extends TreeNode implements ParentOf<TreeNode> {
     BranchNode(Context ctx, BranchNode parent) {
         this.ctx = Objects.requireNonNull(ctx);
         this.parent = parent;
+        getStyleClass().setAll(STYLE_CLASS);
         getChildren().add(splitPane);
     }
 

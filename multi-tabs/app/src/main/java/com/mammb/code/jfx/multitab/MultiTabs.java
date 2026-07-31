@@ -43,7 +43,8 @@ public interface MultiTabs {
     }
 
     static String asString(Pane pane) {
-        return null;
+        var root = ((BranchNode) pane.lookup("." + BranchNode.STYLE_CLASS)).root();
+        return asStringRecursive(root);
     }
 
     record SceneBuilder(
@@ -72,8 +73,15 @@ public interface MultiTabs {
         }
         public Scene build() {
             var ctx = context();
-            Stage st = (stage == null) ? new Stage() : stage;
-            return ctx.toScene(st, new BranchNode(ctx, ctx.create()));
+            var st = (stage == null) ? new Stage() : stage;
+            var pane = new BranchNode(ctx, ctx.create());
+            return ctx.toScene(st, pane);
+        }
+        public Scene build(String string) {
+            var ctx = context();
+            var st = (stage == null) ? new Stage() : stage;
+            var pane = (BranchNode) fromString(ctx, string, Objects.requireNonNull(stringToContent));
+            return ctx.toScene(st, pane);
         }
         private Context context() {
             return new Context(
@@ -83,7 +91,7 @@ public interface MultiTabs {
         }
     }
 
-    private static String asString(ParentOf<?> parentOf) {
+    private static String asStringRecursive(ParentOf<?> parentOf) {
 
         return switch (parentOf) {
 
@@ -97,7 +105,7 @@ public interface MultiTabs {
                 branchNode.children().stream()
                     .filter(ParentOf.class::isInstance)
                     .map(e -> (ParentOf<?>) e)
-                    .map(MultiTabs::asString)
+                    .map(MultiTabs::asStringRecursive)
                     .collect(Collectors.joining(","))
             ) + "}";
 
