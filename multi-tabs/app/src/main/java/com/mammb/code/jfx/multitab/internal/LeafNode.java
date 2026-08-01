@@ -73,7 +73,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         tabPane.getTabs().removeListener(ctx::handleTabRemoved);
         tabPane.layoutBoundsProperty().addListener(this::handleTabPaneLayoutBoundsChanged);
         tabPane.addEventFilter(KeyEvent.KEY_PRESSED, this::handleTabPaneKeyPressed);
-        TabButton.install(tabPane, () -> new Tab(ctx, this, ctx.create()));
+        TabButton.install(tabPane, () -> new Tab(ctx, this, ctx.createContentPane()));
         initTabHeaderArea();
     }
 
@@ -172,7 +172,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
                 .filter(File::exists).filter(File::canRead).map(File::toPath).toList();
             paths.stream()
                 .filter(Objects::nonNull)
-                .map(ctx::create)
+                .map(ctx::createContentPane)
                 .map(contentPane -> new Tab(ctx, contentPane))
                 .forEach(tab -> addChildren(List.of(tab)));
             if (paths.isEmpty()) {
@@ -386,7 +386,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
 
     private ContextMenu buildTabHeaderContextMenu() {
         MenuItem newTab = new MenuItem("New");
-        newTab.setOnAction(_ -> addChildren(List.of(new Tab(ctx, ctx.create()))));
+        newTab.setOnAction(_ -> addChildren(List.of(new Tab(ctx, ctx.createContentPane()))));
         MenuItem closeAll = new MenuItem("Close All");
         closeAll.setOnAction(_ -> closeAll());
         MenuItem maximize = new MenuItem("Maximize");

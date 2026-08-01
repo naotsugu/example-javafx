@@ -36,6 +36,10 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+/**
+ * The MultiTabs.
+ * @author Naotsugu Kobayashi
+ */
 public interface MultiTabs {
 
     static SceneBuilder builder() {
@@ -74,7 +78,7 @@ public interface MultiTabs {
         public Scene build() {
             var ctx = context();
             var st = (stage == null) ? new Stage() : stage;
-            var pane = new BranchNode(ctx, ctx.create());
+            var pane = new BranchNode(ctx, ctx.createContentPane());
             return ctx.toScene(st, pane);
         }
         public Scene build(String string) {

@@ -101,10 +101,12 @@ public class Context {
             }
         }
     }
-    public ContentPane create() {
-        return create(null);
+
+    public ContentPane createContentPane() {
+        return createContentPane(null);
     }
-    public <T> ContentPane create(T arg) {
+
+    public <T> ContentPane createContentPane(T arg) {
         return switch (arg) {
             case Path path -> supplierPath.apply(path);
             case null, default -> supplier.get();
