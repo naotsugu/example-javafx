@@ -24,6 +24,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * The BranchNode.
+ * @author Naotsugu Kobayashi
+ */
 public class BranchNode extends TreeNode implements ParentOf<TreeNode> {
 
     public static final String STYLE_CLASS = "tree-node-branch";

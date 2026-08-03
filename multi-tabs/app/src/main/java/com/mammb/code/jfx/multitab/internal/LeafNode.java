@@ -38,6 +38,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * The LeafNode.
+ * @author Naotsugu Kobayashi
+ */
 public class LeafNode extends TreeNode implements ParentOf<Tab> {
 
     private static final System.Logger log = System.getLogger(LeafNode.class.getName());

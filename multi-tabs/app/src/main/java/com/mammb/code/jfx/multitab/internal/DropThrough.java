@@ -32,6 +32,10 @@ import java.io.File;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * The DropThrough.
+ * @author Naotsugu Kobayashi
+ */
 class DropThrough extends Pane {
 
     private final Stage stage;

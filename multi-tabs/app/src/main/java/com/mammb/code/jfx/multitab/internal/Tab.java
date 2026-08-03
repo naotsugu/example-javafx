@@ -35,6 +35,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * The Tab.
+ * @author Naotsugu Kobayashi
+ */
 public class Tab extends javafx.scene.control.Tab implements ChildOf<LeafNode> {
 
     static final DataFormat TAB_MOVE_FORMAT = new DataFormat(Tab.class.getSimpleName() + ":tabMove");
