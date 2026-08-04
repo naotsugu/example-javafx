@@ -29,6 +29,8 @@ import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.Arrays;
@@ -45,6 +47,9 @@ import java.util.stream.Collectors;
  * @author Naotsugu Kobayashi
  */
 public interface TabContainers {
+
+    /** The logger. */
+    System.Logger log = System.getLogger(TabContainers.class.getName());
 
     static SceneBuilder builder() {
         return new SceneBuilder();
@@ -81,7 +86,27 @@ public interface TabContainers {
         public Scene build() {
             var ctx = context();
             var st = (stage == null) ? new Stage() : stage;
-            var pane = new BranchNode(ctx, ctx.createContentPane());
+
+            double w = 600, h = 400;
+            String string = "";
+            if (resumePath != null) {
+                try {
+                    var lines = Files.readAllLines(resumePath);
+                    if (lines.size() >= 2) {
+                        String[] split = lines.getFirst().split(",");
+                        st.setX(Double.parseDouble(split[0]));
+                        st.setY(Double.parseDouble(split[1]));
+                        w = Double.parseDouble(split[2]);
+                        h = Double.parseDouble(split[3]);
+                        string = lines.get(1);
+                    }
+                } catch (IOException ignore) { }
+            }
+            st.setWidth(w);
+            st.setHeight(h);
+            var pane = string.isBlank()
+                ? new BranchNode(ctx, ctx.createContentPane())
+                : (BranchNode) fromString(ctx, string, stringToContent);
             return ctx.toScene(st, pane);
         }
         private Context context() {
@@ -92,13 +117,14 @@ public interface TabContainers {
         }
     }
 
-    private static BiFunction<Stage, Pane, Scene> wrappedToScene(BiFunction<Stage, Pane, Scene> toScene, Path path) {
+    private static BiFunction<Stage, Pane, Scene> wrappedToScene(
+            BiFunction<Stage, Pane, Scene> toScene, Path resumePath) {
         BiFunction<Stage, Pane, Scene> toSceneFun = (toScene != null)
             ? toScene
             : (stage, pane) -> new Scene(pane);
-        if (path != null) {
+        if (resumePath != null) {
             return (stage, pane) -> {
-                stage.setOnHiding(e -> handleStageHiding(e, path));
+                stage.setOnHiding(e -> handleStageHiding(e, resumePath));
                 return toSceneFun.apply(stage, pane);
             };
         } else {
@@ -106,11 +132,21 @@ public interface TabContainers {
         }
     }
 
-    private static void handleStageHiding(WindowEvent event, Path path) {
+    private static void handleStageHiding(WindowEvent event, Path resumePath) {
         if (Stage.getWindows().stream().noneMatch(Window::isShowing)) {
             if (event.getTarget() instanceof Stage stage) {
-                String string = asString(stage.getScene().getRoot());
-                System.out.println(string);
+                Scene scene = stage.getScene();
+                String loc = String.join(",",
+                    Double.toString(stage.getX()),
+                    Double.toString(stage.getY()),
+                    Double.toString(scene.getWidth()),
+                    Double.toString(scene.getHeight()));
+                String string = asString(scene.getRoot());
+                try {
+                    Files.write(resumePath, List.of(loc, string));
+                } catch (IOException e) {
+                    log.log(System.Logger.Level.ERROR, "Failed to write resume file", e);
+                }
             }
         }
     }

@@ -21,6 +21,7 @@ import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
+import java.nio.file.Path;
 
 public class ExampleApp extends Application {
 
@@ -30,8 +31,9 @@ public class ExampleApp extends Application {
         Scene scene = TabContainers.builder()
             .stage(stage)
             .toContent(LabelContent::new)
-            .pathToContent(LabelContent::new)
             .toScene(this::toScene)
+            .pathToContent(LabelContent::new)
+            .resumePath(Path.of("./resume.conf"))
             .build();
         stage.setScene(scene);
         stage.show();
@@ -40,8 +42,6 @@ public class ExampleApp extends Application {
 
     private Scene toScene(Stage stage, Pane pane) {
         stage.setTitle("example");
-        stage.setWidth(600);
-        stage.setHeight(400);
         return new Scene(new BorderPane(pane));
     }
 
