@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
  * The MultiTabs.
  * @author Naotsugu Kobayashi
  */
-public interface MultiTabs {
+public interface TabContainers {
 
     static SceneBuilder builder() {
         return new SceneBuilder();
@@ -78,6 +78,8 @@ public interface MultiTabs {
         public Scene build() {
             var ctx = context();
             var st = (stage == null) ? new Stage() : stage;
+
+
             var pane = new BranchNode(ctx, ctx.createContentPane());
             return ctx.toScene(st, pane);
         }
@@ -109,14 +111,14 @@ public interface MultiTabs {
                 branchNode.children().stream()
                     .filter(ParentOf.class::isInstance)
                     .map(e -> (ParentOf<?>) e)
-                    .map(MultiTabs::asStringRecursive)
+                    .map(TabContainers::asStringRecursive)
                     .collect(Collectors.joining(","))
             ) + "}";
 
             case LeafNode leafNode -> leafNode.children().stream()
                 .map(Tab::content)
                 .map(ContentPane::asString)
-                .map(MultiTabs::escape)
+                .map(TabContainers::escape)
                 .collect(Collectors.joining(",", "[", "]"));
 
             default -> "";
@@ -153,7 +155,7 @@ public interface MultiTabs {
             // children
             String[] split = str.split(",");
             List<Tab> children = Arrays.stream(split)
-                .map(MultiTabs::unescape)
+                .map(TabContainers::unescape)
                 .map(stringToContent)
                 .map(c -> new Tab(ctx, c))
                 .toList();

@@ -15,7 +15,7 @@
  */
 package com.mammb.code.jfx.multitab.example;
 
-import com.mammb.code.jfx.multitab.MultiTabs;
+import com.mammb.code.jfx.multitab.TabContainers;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
@@ -27,7 +27,7 @@ public class ExampleApp extends Application {
     @Override
     public void start(Stage stage) {
 
-        Scene scene = MultiTabs.builder()
+        Scene scene = TabContainers.builder()
             .stage(stage)
             .toContent(LabelContent::new)
             .pathToContent(LabelContent::new)
