@@ -22,9 +22,13 @@ import com.mammb.code.jfx.multitab.internal.ParentOf;
 import com.mammb.code.jfx.multitab.internal.Tab;
 import com.mammb.code.jfx.multitab.internal.TreeNode;
 import javafx.geometry.Orientation;
+import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
+import javafx.stage.Window;
+import javafx.stage.WindowEvent;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.Arrays;
@@ -46,55 +50,77 @@ public interface TabContainers {
         return new SceneBuilder();
     }
 
-    static String asString(Pane pane) {
-        var root = ((BranchNode) pane.lookup("." + BranchNode.STYLE_CLASS)).root();
-        return asStringRecursive(root);
-    }
-
     record SceneBuilder(
             Stage stage,
             Supplier<? extends ContentPane> toContent,
             Function<Path, ? extends ContentPane> pathToContent,
             Function<String, ? extends ContentPane> stringToContent,
-            BiFunction<Stage, Pane, Scene> toScene) {
+            BiFunction<Stage, Pane, Scene> toScene,
+            Path resumePath) {
         public SceneBuilder() {
-            this(null, null, null, null, null);
+            this(null, null, null, null, null, null);
         }
         public SceneBuilder stage(Stage stage) {
-            return new SceneBuilder(Objects.requireNonNull(stage), toContent, pathToContent, stringToContent, toScene);
+            return new SceneBuilder(Objects.requireNonNull(stage), toContent, pathToContent, stringToContent, toScene, resumePath);
         }
         public SceneBuilder toContent(Supplier<? extends ContentPane> toContent) {
-            return new SceneBuilder(stage, Objects.requireNonNull(toContent), pathToContent, stringToContent, toScene);
+            return new SceneBuilder(stage, Objects.requireNonNull(toContent), pathToContent, stringToContent, toScene, resumePath);
         }
         public SceneBuilder pathToContent(Function<Path, ? extends ContentPane> pathToContent) {
-            return new SceneBuilder(stage, toContent, Objects.requireNonNull(pathToContent), stringToContent, toScene);
+            return new SceneBuilder(stage, toContent, Objects.requireNonNull(pathToContent), stringToContent, toScene, resumePath);
         }
         public SceneBuilder stringToContent(Function<String, ? extends ContentPane> stringToContent) {
-            return new SceneBuilder(stage, toContent, pathToContent, Objects.requireNonNull(stringToContent), toScene);
+            return new SceneBuilder(stage, toContent, pathToContent, Objects.requireNonNull(stringToContent), toScene, resumePath);
         }
         public SceneBuilder toScene(BiFunction<Stage, Pane, Scene> toScene) {
-            return new SceneBuilder(stage, toContent, pathToContent, stringToContent, Objects.requireNonNull(toScene));
+            return new SceneBuilder(stage, toContent, pathToContent, stringToContent, Objects.requireNonNull(toScene), resumePath);
+        }
+        public SceneBuilder resumePath(Path resumePath) {
+            return new SceneBuilder(stage, toContent, pathToContent, stringToContent, Objects.requireNonNull(toScene), resumePath);
         }
         public Scene build() {
             var ctx = context();
             var st = (stage == null) ? new Stage() : stage;
-
-
             var pane = new BranchNode(ctx, ctx.createContentPane());
-            return ctx.toScene(st, pane);
-        }
-        public Scene build(String string) {
-            var ctx = context();
-            var st = (stage == null) ? new Stage() : stage;
-            var pane = (BranchNode) fromString(ctx, string, Objects.requireNonNull(stringToContent));
             return ctx.toScene(st, pane);
         }
         private Context context() {
             return new Context(
                 Objects.requireNonNull(toContent),
                 (pathToContent != null) ? pathToContent : _ -> toContent.get(),
-                (toScene != null) ? toScene : (stage, pane) -> new Scene(pane));
+                wrappedToScene(toScene, resumePath));
         }
+    }
+
+    private static BiFunction<Stage, Pane, Scene> wrappedToScene(BiFunction<Stage, Pane, Scene> toScene, Path path) {
+        BiFunction<Stage, Pane, Scene> toSceneFun = (toScene != null)
+            ? toScene
+            : (stage, pane) -> new Scene(pane);
+        if (path != null) {
+            return (stage, pane) -> {
+                stage.setOnHiding(e -> handleStageHiding(e, path));
+                return toSceneFun.apply(stage, pane);
+            };
+        } else {
+            return toSceneFun;
+        }
+    }
+
+    private static void handleStageHiding(WindowEvent event, Path path) {
+        if (Stage.getWindows().stream().noneMatch(Window::isShowing)) {
+            if (event.getTarget() instanceof Stage stage) {
+                String string = asString(stage.getScene().getRoot());
+                System.out.println(string);
+            }
+        }
+    }
+
+    private static String asString(Parent parent) {
+        Node node = parent.lookup("." + BranchNode.STYLE_CLASS);
+        if (node instanceof BranchNode branchNode) {
+            return asStringRecursive(branchNode.root());
+        }
+        return "";
     }
 
     private static String asStringRecursive(ParentOf<?> parentOf) {
