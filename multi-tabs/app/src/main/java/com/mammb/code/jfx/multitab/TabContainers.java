@@ -112,8 +112,11 @@ public interface TabContainers {
                     stage.setX(x);
                     stage.setY(y);
                 }
-                stage.setWidth(Double.parseDouble(split[2]));
-                stage.setHeight(Double.parseDouble(split[3]));
+
+                double w = Math.max(Double.parseDouble(split[2]), 90);
+                double h = Math.max(Double.parseDouble(split[3]), 30);
+                stage.setWidth(w);
+                stage.setHeight(h);
                 Pane pane = fromString(ctx, lines.get(1), stringToContent);
                 if (pane instanceof BranchNode branchNode) {
                     return branchNode;
