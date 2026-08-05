@@ -44,16 +44,16 @@ public class Context {
     private final ObservableMap<Scene, Tab> latestTab = FXCollections.observableHashMap();
     private final AtomicReference<Tab> dragged = new AtomicReference<>();
 
-    private final Supplier<? extends ContentPane> supplier;
-    private final Function<Path, ? extends ContentPane> supplierPath;
+    private final Supplier<? extends ContentPane> toContent;
+    private final Function<Path, ? extends ContentPane> pathToContent;
     private final BiFunction<Stage, Pane, Scene> toScene;
 
     public Context(
-            Supplier<? extends ContentPane> supplier,
-            Function<Path, ? extends ContentPane> supplierPath,
+            Supplier<? extends ContentPane> toContent,
+            Function<Path, ? extends ContentPane> pathToContent,
             BiFunction<Stage, Pane, Scene> toScene) {
-        this.supplier = supplier;
-        this.supplierPath = supplierPath;
+        this.toContent = toContent;
+        this.pathToContent = pathToContent;
         this.toScene = toScene;
     }
 
@@ -112,8 +112,8 @@ public class Context {
 
     public <T> ContentPane createContentPane(T arg) {
         return switch (arg) {
-            case Path path -> supplierPath.apply(path);
-            case null, default -> supplier.get();
+            case Path path -> pathToContent.apply(path);
+            case null, default -> toContent.get();
         };
     }
 

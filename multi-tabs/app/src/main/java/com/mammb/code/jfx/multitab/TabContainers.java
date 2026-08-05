@@ -35,11 +35,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -133,6 +135,7 @@ public interface TabContainers {
             : (stage, pane) -> new Scene(pane);
         if (resumePath != null) {
             return (stage, pane) -> {
+                stage.setOnCloseRequest(TabContainers::handleStageCloseRequest);
                 stage.setOnHiding(e -> handleStageHiding(e, resumePath));
                 return toSceneFun.apply(stage, pane);
             };
@@ -140,6 +143,30 @@ public interface TabContainers {
             return toSceneFun;
         }
     }
+
+    private static void handleStageCloseRequest(WindowEvent event) {
+        if (event.getTarget() instanceof Stage stage) {
+            Scene scene = stage.getScene();
+            if (scene != null) {
+                Node node = scene.getRoot().lookup("." + BranchNode.STYLE_CLASS);
+                if (node instanceof BranchNode branchNode) {
+                    List<ContentPane> contentPanes = branchNode.leaves().stream()
+                        .map(LeafNode::children)
+                        .flatMap(Collection::stream)
+                        .map(Tab::content)
+                        .filter(Predicate.not(ContentPane::canCloseQuiet))
+                        .toList();
+                    for (ContentPane contentPane : contentPanes) {
+                        if (!contentPane.closeRequest()) {
+                            event.consume();
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 
     private static void handleStageHiding(WindowEvent event, Path resumePath) {
         if (Stage.getWindows().stream().noneMatch(Window::isShowing)) {

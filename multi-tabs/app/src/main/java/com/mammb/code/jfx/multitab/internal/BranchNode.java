@@ -194,7 +194,7 @@ public class BranchNode extends TreeNode implements ParentOf<TreeNode> {
     }
 
 
-    List<LeafNode> leaves() {
+    public List<LeafNode> leaves() {
         return children().stream()
             .map(c -> switch (c) {
                 case LeafNode leaf -> List.of(leaf);
