@@ -26,6 +26,7 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
@@ -43,7 +44,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
- * The MultiTabs.
+ * The TabContainers.
  * @author Naotsugu Kobayashi
  */
 public interface TabContainers {
@@ -74,39 +75,16 @@ public interface TabContainers {
         public SceneBuilder pathToContent(Function<Path, ? extends ContentPane> pathToContent) {
             return new SceneBuilder(stage, toContent, Objects.requireNonNull(pathToContent), stringToContent, toScene, resumePath);
         }
-        public SceneBuilder stringToContent(Function<String, ? extends ContentPane> stringToContent) {
-            return new SceneBuilder(stage, toContent, pathToContent, Objects.requireNonNull(stringToContent), toScene, resumePath);
-        }
         public SceneBuilder toScene(BiFunction<Stage, Pane, Scene> toScene) {
             return new SceneBuilder(stage, toContent, pathToContent, stringToContent, Objects.requireNonNull(toScene), resumePath);
         }
-        public SceneBuilder resumePath(Path resumePath) {
+        public SceneBuilder resume(Path resumePath, Function<String, ? extends ContentPane> stringToContent) {
             return new SceneBuilder(stage, toContent, pathToContent, stringToContent, Objects.requireNonNull(toScene), resumePath);
         }
         public Scene build() {
             var ctx = context();
             var st = (stage == null) ? new Stage() : stage;
-
-            double w = 600, h = 400;
-            String string = "";
-            if (resumePath != null) {
-                try {
-                    var lines = Files.readAllLines(resumePath);
-                    if (lines.size() >= 2) {
-                        String[] split = lines.getFirst().split(",");
-                        st.setX(Double.parseDouble(split[0]));
-                        st.setY(Double.parseDouble(split[1]));
-                        w = Double.parseDouble(split[2]);
-                        h = Double.parseDouble(split[3]);
-                        string = lines.get(1);
-                    }
-                } catch (IOException ignore) { }
-            }
-            st.setWidth(w);
-            st.setHeight(h);
-            var pane = string.isBlank()
-                ? new BranchNode(ctx, ctx.createContentPane())
-                : (BranchNode) fromString(ctx, string, stringToContent);
+            var pane = buildNode(st, ctx, resumePath, stringToContent);
             return ctx.toScene(st, pane);
         }
         private Context context() {
@@ -116,6 +94,37 @@ public interface TabContainers {
                 wrappedToScene(toScene, resumePath));
         }
     }
+
+    private static BranchNode buildNode(Stage stage, Context ctx, Path resumePath,
+            Function<String, ? extends ContentPane> stringToContent) {
+        if (resumePath != null && stringToContent != null &&
+            Files.exists(resumePath) && Files.isRegularFile(resumePath) && Files.isReadable(resumePath)) {
+            try {
+                var lines = Files.readAllLines(resumePath);
+                String[] split = lines.getFirst().split(",");
+
+                double x = Double.parseDouble(split[0]);
+                double y = Double.parseDouble(split[1]);
+                if (Screen.getScreens().stream().anyMatch(screen ->
+                    screen.getVisualBounds().contains(x, y))) {
+                    stage.setX(x);
+                    stage.setY(y);
+                }
+                stage.setWidth(Double.parseDouble(split[2]));
+                stage.setHeight(Double.parseDouble(split[3]));
+                Pane pane = fromString(ctx, lines.get(1), stringToContent);
+                if (pane instanceof BranchNode branchNode) {
+                    return branchNode;
+                }
+            } catch (Exception e) {
+                log.log(System.Logger.Level.ERROR, "Failed to read resume file", e);
+            }
+        }
+        stage.setWidth(600);
+        stage.setHeight(400);
+        return new BranchNode(ctx, ctx.createContentPane());
+    }
+
 
     private static BiFunction<Stage, Pane, Scene> wrappedToScene(
             BiFunction<Stage, Pane, Scene> toScene, Path resumePath) {
