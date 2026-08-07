@@ -24,6 +24,14 @@ public class ContainerImpl implements Container {
         leafNode().ifPresent(l -> l.add(contentPane, side));
     }
 
+    @Override
+    public void select(Object matcher) {
+        leafNode().ifPresent(leafNode ->
+            leafNode.context().allTabs().stream()
+                .filter(tab -> tab.content().matches(matcher))
+                .forEach(Tab::requestSelect));
+    }
+
     private Optional<LeafNode> leafNode() {
         for (Node node = pane.getParent(); node != null; node = node.getParent()) {
             if (node instanceof LeafNode leafNode) {

@@ -8,4 +8,6 @@ public interface Container {
 
     void add(Side side, ContentPane contentPane);
 
+    void select(Object matcher);
+
 }

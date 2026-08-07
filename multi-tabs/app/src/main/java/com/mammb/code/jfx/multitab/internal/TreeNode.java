@@ -27,4 +27,5 @@ public abstract class TreeNode extends StackPane implements ChildOf<BranchNode> 
     public BranchNode root() {
         return isRoot() ? (BranchNode) this : parent().root();
     }
+    abstract Context context();
 }
