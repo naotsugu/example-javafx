@@ -100,7 +100,8 @@ public interface TabContainers {
     private static BranchNode buildNode(Stage stage, Context ctx, Path resumePath,
             Function<String, ? extends ContentPane> stringToContent) {
         if (resumePath != null && stringToContent != null &&
-            Files.exists(resumePath) && Files.isRegularFile(resumePath) && Files.isReadable(resumePath)) {
+            Files.exists(resumePath) && Files.isRegularFile(resumePath) &&
+            Files.isReadable(resumePath)) {
             try {
                 var lines = Files.readAllLines(resumePath);
                 String[] split = lines.getFirst().split(",");
@@ -153,14 +154,20 @@ public interface TabContainers {
             if (scene == null) {
                 return;
             }
-            Node node = scene.getRoot().lookup("." + BranchNode.STYLE_CLASS);
-            if (node instanceof BranchNode branchNode) {
+
+            if (scene.getRoot().lookup("." + BranchNode.STYLE_CLASS) instanceof BranchNode branchNode) {
+
+                Predicate<ContentPane> predicate = (Stage.getWindows().size() > 1)
+                    ? ContentPane::canCloseQuiet
+                    : ContentPane::canExitQuiet;
+
                 List<ContentPane> contentPanes = branchNode.leaves().stream()
                     .map(LeafNode::children)
                     .flatMap(Collection::stream)
                     .map(Tab::content)
-                    .filter(Predicate.not(ContentPane::canCloseQuiet))
+                    .filter(Predicate.not(predicate))
                     .toList();
+
                 for (ContentPane contentPane : contentPanes) {
                     if (!contentPane.closeRequest()) {
                         event.consume();
