@@ -40,6 +40,10 @@ public abstract class ContentPane extends StackPane {
      */
     abstract public boolean canCloseQuiet();
 
+    public boolean canExitQuiet() {
+        return canCloseQuiet();
+    }
+
     /**
      * Check whether the pane can be closed.
      * @return {@code true}, if the pane can be closed
