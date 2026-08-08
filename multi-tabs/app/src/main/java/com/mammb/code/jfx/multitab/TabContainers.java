@@ -157,7 +157,7 @@ public interface TabContainers {
 
             if (scene.getRoot().lookup("." + BranchNode.STYLE_CLASS) instanceof BranchNode branchNode) {
 
-                Predicate<ContentPane> predicate = (Stage.getWindows().size() > 1)
+                Predicate<ContentPane> predicate = (Stage.getWindows().stream().filter(Window::isShowing).count() > 1)
                     ? ContentPane::canCloseQuiet
                     : ContentPane::canExitQuiet;
 
