@@ -60,28 +60,32 @@ public interface TabContainers {
 
     record SceneBuilder(
             Stage stage,
+            boolean dupContentAllowed,
             Supplier<? extends ContentPane> toContent,
             Function<Path, ? extends ContentPane> pathToContent,
             Function<String, ? extends ContentPane> stringToContent,
             BiFunction<Stage, Pane, Scene> toScene,
             Path resumePath) {
         public SceneBuilder() {
-            this(null, null, null, null, null, null);
+            this(null, false, null, null, null, null, null);
         }
         public SceneBuilder stage(Stage stage) {
-            return new SceneBuilder(Objects.requireNonNull(stage), toContent, pathToContent, stringToContent, toScene, resumePath);
+            return new SceneBuilder(Objects.requireNonNull(stage), dupContentAllowed, toContent, pathToContent, stringToContent, toScene, resumePath);
         }
         public SceneBuilder toContent(Supplier<? extends ContentPane> toContent) {
-            return new SceneBuilder(stage, Objects.requireNonNull(toContent), pathToContent, stringToContent, toScene, resumePath);
+            return new SceneBuilder(stage, dupContentAllowed, Objects.requireNonNull(toContent), pathToContent, stringToContent, toScene, resumePath);
         }
         public SceneBuilder pathToContent(Function<Path, ? extends ContentPane> pathToContent) {
-            return new SceneBuilder(stage, toContent, Objects.requireNonNull(pathToContent), stringToContent, toScene, resumePath);
+            return new SceneBuilder(stage, dupContentAllowed, toContent, Objects.requireNonNull(pathToContent), stringToContent, toScene, resumePath);
         }
         public SceneBuilder toScene(BiFunction<Stage, Pane, Scene> toScene) {
-            return new SceneBuilder(stage, toContent, pathToContent, stringToContent, Objects.requireNonNull(toScene), resumePath);
+            return new SceneBuilder(stage, dupContentAllowed, toContent, pathToContent, stringToContent, Objects.requireNonNull(toScene), resumePath);
         }
         public SceneBuilder resume(Path resumePath, Function<String, ? extends ContentPane> stringToContent) {
-            return new SceneBuilder(stage, toContent, pathToContent, stringToContent, Objects.requireNonNull(toScene), resumePath);
+            return new SceneBuilder(stage, dupContentAllowed, toContent, pathToContent, stringToContent, Objects.requireNonNull(toScene), resumePath);
+        }
+        public SceneBuilder dupContentAllowed(boolean dupContentAllowed) {
+            return new SceneBuilder(stage, dupContentAllowed, toContent, pathToContent, stringToContent, Objects.requireNonNull(toScene), resumePath);
         }
         public Scene build() {
             var ctx = context();
@@ -91,6 +95,7 @@ public interface TabContainers {
         }
         private Context context() {
             return new Context(
+                dupContentAllowed,
                 Objects.requireNonNull(toContent),
                 (pathToContent != null) ? pathToContent : _ -> toContent.get(),
                 wrappedToScene(toScene, resumePath));
