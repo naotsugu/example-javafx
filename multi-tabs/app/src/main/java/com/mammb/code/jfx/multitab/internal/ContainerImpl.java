@@ -36,9 +36,29 @@ public class ContainerImpl implements Container {
     }
 
     @Override
-    public void add(Path path) {
-        if (path == null || !Files.exists(path) || !Files.isRegularFile(path) || !Files.isReadable(path)) return;
-        leafNode().ifPresent(leaf -> leaf.add(leaf.context().createContentPane(path)));
+    public ContentPane add() {
+        var leafNode = leafNode();
+        if (leafNode.isEmpty()) {
+            return null;
+        }
+        var leaf = leafNode.get();
+        ContentPane contentPane = leaf.context().createContentPane();
+        leaf.add(contentPane);
+        return contentPane;
+    }
+
+    @Override
+    public ContentPane add(Path path) {
+        if (path == null || !Files.exists(path) ||
+            !Files.isRegularFile(path) || !Files.isReadable(path)) return null;
+        var leafNode = leafNode();
+        if (leafNode.isEmpty()) {
+            return null;
+        }
+        var leaf = leafNode.get();
+        ContentPane contentPane = leaf.context().createContentPane(path);
+        leaf.add(contentPane);
+        return contentPane;
     }
 
     @Override
