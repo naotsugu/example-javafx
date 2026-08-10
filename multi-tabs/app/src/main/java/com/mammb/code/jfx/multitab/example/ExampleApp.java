@@ -32,8 +32,7 @@ public class ExampleApp extends Application {
             .stage(stage)
             .toContent(LabelContent::new)
             .toScene(this::toScene)
-            .pathToContent(LabelContent::new)
-            .resume(Path.of("./build/tab-resume.conf"), LabelContent::new)
+            .resume(Path.of("./build/tab-resume.conf"))
             .build();
 
         stage.setScene(scene);

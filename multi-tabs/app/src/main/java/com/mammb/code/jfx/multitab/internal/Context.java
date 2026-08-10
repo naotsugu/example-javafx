@@ -32,7 +32,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 /**
  * The Context.
@@ -47,18 +46,15 @@ public class Context {
 
     private final boolean duplicateContentAllowed;
 
-    private final Supplier<? extends ContentPane> toContent;
-    private final Function<Path, ? extends ContentPane> pathToContent;
+    private final Function<Object, ? extends ContentPane> toContent;
     private final BiFunction<Stage, Pane, Scene> toScene;
 
     public Context(
             boolean duplicateContentAllowed,
-            Supplier<? extends ContentPane> toContent,
-            Function<Path, ? extends ContentPane> pathToContent,
+            Function<Object, ? extends ContentPane> toContent,
             BiFunction<Stage, Pane, Scene> toScene) {
         this.duplicateContentAllowed = duplicateContentAllowed;
         this.toContent = toContent;
-        this.pathToContent = pathToContent;
         this.toScene = toScene;
     }
 
@@ -120,20 +116,20 @@ public class Context {
         return switch (arg) {
             case Path path -> {
                 if (duplicateContentAllowed) {
-                    yield pathToContent.apply(path);
+                    yield toContent.apply(path);
                 } else {
                     var dup = allTabs().stream()
                         .filter(tab -> tab.content().matches(arg))
                         .toList();
                     if (dup.isEmpty()) {
-                        yield pathToContent.apply(path);
+                        yield toContent.apply(path);
                     } else {
                         dup.forEach(Tab::requestSelect);
                         yield null;
                     }
                 }
             }
-            case null, default -> toContent.get();
+            case null, default -> toContent.apply(null);
         };
     }
 

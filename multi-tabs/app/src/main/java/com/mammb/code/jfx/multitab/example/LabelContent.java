@@ -25,28 +25,20 @@ public class LabelContent extends ContentPane {
     private final SimpleObjectProperty<String> shortNameProperty = new SimpleObjectProperty<>("");
     private final SimpleObjectProperty<String> fullNameProperty = new SimpleObjectProperty<>("");
 
-    private LabelContent(String shortName, String fullName) {
-        shortNameProperty.set(shortName);
-        fullNameProperty.set(fullName);
-    }
-
-    public LabelContent() {
-        this("");
-    }
-
-    public LabelContent(Path path) {
-        this(path.getFileName().toString(), path.toString());
-    }
-
-    public LabelContent(String string) {
-        if (string == null || string.isBlank()) {
-            shortNameProperty.set("Untitled");
-        } else {
-            String[] strip = string.split(System.getProperty("path.separator", ";"), 2);
-            shortNameProperty.set(strip[0]);
-            if (strip.length > 1) {
-                fullNameProperty.set(strip[1]);
+    public LabelContent(Object arg) {
+        switch (arg) {
+            case Path path -> {
+                shortNameProperty.set(path.getFileName().toString());
+                fullNameProperty.set(path.toString());
             }
+            case String string when !string.isBlank() -> {
+                String[] strip = string.split(System.getProperty("path.separator", ";"), 2);
+                shortNameProperty.set(strip[0]);
+                if (strip.length > 1) {
+                    fullNameProperty.set(strip[1]);
+                }
+            }
+            case null, default -> shortNameProperty.set("Untitled");
         }
     }
 
