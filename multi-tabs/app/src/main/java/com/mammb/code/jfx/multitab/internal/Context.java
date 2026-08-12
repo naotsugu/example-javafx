@@ -25,7 +25,6 @@ import javafx.collections.ObservableMap;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
-import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -112,22 +111,17 @@ public class Context {
         return createContentPane(null);
     }
 
-    public <T> ContentPane createContentPane(T arg) {
-        return switch (arg) {
-            case Path path when duplicateContentAllowed -> toContent.apply(path);
-            case Path path -> {
-                var dup = allTabs().stream()
-                    .filter(tab -> tab.content().matches(arg))
-                    .toList();
-                if (dup.isEmpty()) {
-                    yield toContent.apply(path);
-                } else {
-                    dup.forEach(Tab::requestSelect);
-                    yield null;
-                }
+    public ContentPane createContentPane(Object arg) {
+        if (!duplicateContentAllowed && arg != null) {
+            var dup = allTabs().stream()
+                .filter(tab -> tab.content().matches(arg))
+                .toList();
+            if (!dup.isEmpty()) {
+                dup.getFirst().requestSelect();
+                return null;
             }
-            case null, default -> toContent.apply(null);
-        };
+        }
+        return toContent.apply(arg);
     }
 
     public Scene toScene(Stage stage, BranchNode branchNode) {
