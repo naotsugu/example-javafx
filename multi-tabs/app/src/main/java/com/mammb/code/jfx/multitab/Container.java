@@ -17,6 +17,7 @@ package com.mammb.code.jfx.multitab;
 
 import javafx.geometry.Side;
 import java.nio.file.Path;
+import java.util.List;
 
 /**
  * The Container.
@@ -31,6 +32,8 @@ public interface Container {
     void add(ContentPane contentPane);
 
     void add(Side side, ContentPane contentPane);
+
+    List<ContentPane> allContents();
 
     void select(ContentPane contentPane);
 

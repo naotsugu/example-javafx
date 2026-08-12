@@ -21,6 +21,7 @@ import javafx.geometry.Side;
 import javafx.scene.Node;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -70,6 +71,13 @@ public class ContainerImpl implements Container {
     @Override
     public void add(Side side, ContentPane contentPane) {
         leafNode().ifPresent(l -> l.add(contentPane, side));
+    }
+
+    @Override
+    public List<ContentPane> allContents() {
+        return leafNode()
+            .map(leaf -> leaf.context().allTabs().stream().map(Tab::content).toList())
+            .orElse(List.of());
     }
 
     @Override

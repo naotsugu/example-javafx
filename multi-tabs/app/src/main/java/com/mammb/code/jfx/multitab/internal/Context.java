@@ -114,19 +114,16 @@ public class Context {
 
     public <T> ContentPane createContentPane(T arg) {
         return switch (arg) {
+            case Path path when duplicateContentAllowed -> toContent.apply(path);
             case Path path -> {
-                if (duplicateContentAllowed) {
+                var dup = allTabs().stream()
+                    .filter(tab -> tab.content().matches(arg))
+                    .toList();
+                if (dup.isEmpty()) {
                     yield toContent.apply(path);
                 } else {
-                    var dup = allTabs().stream()
-                        .filter(tab -> tab.content().matches(arg))
-                        .toList();
-                    if (dup.isEmpty()) {
-                        yield toContent.apply(path);
-                    } else {
-                        dup.forEach(Tab::requestSelect);
-                        yield null;
-                    }
+                    dup.forEach(Tab::requestSelect);
+                    yield null;
                 }
             }
             case null, default -> toContent.apply(null);
