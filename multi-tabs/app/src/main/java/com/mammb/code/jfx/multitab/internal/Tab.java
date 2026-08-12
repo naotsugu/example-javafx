@@ -15,6 +15,7 @@
  */
 package com.mammb.code.jfx.multitab.internal;
 
+import com.mammb.code.jfx.multitab.Container;
 import com.mammb.code.jfx.multitab.ContentPane;
 import javafx.event.Event;
 import javafx.scene.Node;
@@ -145,6 +146,10 @@ public class Tab extends javafx.scene.control.Tab implements ChildOf<LeafNode> {
     @Override
     public void parent(LeafNode parent) {
         this.parent = parent;
+    }
+
+    public Container container() {
+        return content().container();
     }
 
     private ContextMenu buildContextMenu() {

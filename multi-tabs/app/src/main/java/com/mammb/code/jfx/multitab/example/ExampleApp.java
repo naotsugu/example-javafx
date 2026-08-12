@@ -15,6 +15,7 @@
  */
 package com.mammb.code.jfx.multitab.example;
 
+import com.mammb.code.jfx.multitab.Container;
 import com.mammb.code.jfx.multitab.TabContainers;
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -22,6 +23,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import java.nio.file.Path;
+import java.util.Objects;
 
 public class ExampleApp extends Application {
 
@@ -33,11 +35,29 @@ public class ExampleApp extends Application {
             .toContent(LabelContent::new)
             .toScene(this::toScene)
             .resume(Path.of("./build/tab-resume.conf"))
+            .onOpenRequest(this::onOpenRequest)
             .build();
 
         stage.setScene(scene);
         stage.show();
 
+    }
+
+    private boolean onOpenRequest(Object arg, Container container) {
+        if (arg instanceof Path path) {
+            var found = container.find(contentPane -> {
+                if (contentPane instanceof LabelContent labelContent) {
+                    return Objects.equals(labelContent.shortNameProperty().get(), path.getFileName().toString());
+                } else {
+                    return false;
+                }
+            });
+            if (found.isPresent()) {
+                container.select(found.get());
+                return true;
+            }
+        }
+        return false;
     }
 
     private Scene toScene(Stage stage, Pane pane) {

@@ -177,12 +177,8 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         if (e.getDragboard().hasFiles() && dragOnTabHeader) {
             List<Path> paths = db.getFiles().stream()
                 .filter(File::exists).filter(File::canRead).map(File::toPath).toList();
-            paths.stream()
-                .filter(Objects::nonNull)
-                .map(ctx::createContentPane)
-                .filter(Objects::nonNull)
-                .map(contentPane -> new Tab(ctx, contentPane))
-                .forEach(tab -> addChildren(List.of(tab)));
+            var container = children().getLast().container();
+            paths.forEach(container::add);
             if (paths.isEmpty()) {
                 e.setDropCompleted(true);
                 e.consume();
@@ -349,6 +345,10 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
             bounds.getWidth() - (gap * 2),
             bounds.getHeight() - (gap * 2)
         );
+    }
+
+    private Tab selectedTab() {
+        return (Tab) tabPane.getSelectionModel().getSelectedItem();
     }
 
     @Override

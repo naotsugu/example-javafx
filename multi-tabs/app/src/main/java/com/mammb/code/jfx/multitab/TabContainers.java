@@ -40,6 +40,7 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -59,27 +60,27 @@ public interface TabContainers {
 
     record SceneBuilder(
             Stage stage,
-            boolean dupContentAllowed,
             Function<Object, ? extends ContentPane> toContent,
             BiFunction<Stage, Pane, Scene> toScene,
+            BiPredicate<Object, Container> onOpenRequest,
             Path resumePath) {
         public SceneBuilder() {
-            this(null, false, null, null, null);
+            this(null, null, null, null, null);
         }
         public SceneBuilder stage(Stage stage) {
-            return new SceneBuilder(Objects.requireNonNull(stage), dupContentAllowed, toContent, toScene, resumePath);
+            return new SceneBuilder(Objects.requireNonNull(stage), toContent, toScene, onOpenRequest, resumePath);
         }
         public SceneBuilder toContent(Function<Object, ? extends ContentPane> toContent) {
-            return new SceneBuilder(stage, dupContentAllowed, Objects.requireNonNull(toContent), toScene, resumePath);
+            return new SceneBuilder(stage, Objects.requireNonNull(toContent), toScene, onOpenRequest, resumePath);
         }
         public SceneBuilder toScene(BiFunction<Stage, Pane, Scene> toScene) {
-            return new SceneBuilder(stage, dupContentAllowed, toContent, Objects.requireNonNull(toScene), resumePath);
+            return new SceneBuilder(stage, toContent, Objects.requireNonNull(toScene), onOpenRequest, resumePath);
+        }
+        public SceneBuilder onOpenRequest(BiPredicate<Object, Container> onOpenRequest) {
+            return new SceneBuilder(stage, Objects.requireNonNull(toContent), toScene, onOpenRequest, resumePath);
         }
         public SceneBuilder resume(Path resumePath) {
-            return new SceneBuilder(stage, dupContentAllowed, toContent, Objects.requireNonNull(toScene), resumePath);
-        }
-        public SceneBuilder dupContentAllowed(boolean dupContentAllowed) {
-            return new SceneBuilder(stage, dupContentAllowed, toContent, Objects.requireNonNull(toScene), resumePath);
+            return new SceneBuilder(stage, toContent, Objects.requireNonNull(toScene), onOpenRequest, resumePath);
         }
         public Scene build() {
             var ctx = context();
@@ -89,9 +90,9 @@ public interface TabContainers {
         }
         private Context context() {
             return new Context(
-                dupContentAllowed,
                 Objects.requireNonNull(toContent),
-                wrappedToScene(toScene, resumePath));
+                wrappedToScene(toScene, resumePath),
+                (onOpenRequest == null) ? (_, _) -> false : onOpenRequest);
         }
     }
 

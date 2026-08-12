@@ -18,6 +18,8 @@ package com.mammb.code.jfx.multitab;
 import javafx.geometry.Side;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
 
 /**
  * The Container.
@@ -33,7 +35,7 @@ public interface Container {
 
     void add(Side side, ContentPane contentPane);
 
-    List<ContentPane> allContents();
+    Optional<ContentPane> find(Predicate<ContentPane> predicate);
 
     void select(ContentPane contentPane);
 
