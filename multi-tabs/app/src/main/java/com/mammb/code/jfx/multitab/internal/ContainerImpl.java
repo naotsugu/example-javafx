@@ -21,7 +21,6 @@ import javafx.geometry.Side;
 import javafx.scene.Node;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -45,7 +44,7 @@ public class ContainerImpl implements Container {
             return null;
         }
         var leaf = leafNode.get();
-        ContentPane contentPane = leaf.context().createContentPane();
+        ContentPane contentPane = leaf.context().createEmptyContent();
         leaf.add(contentPane);
         return contentPane;
     }
@@ -62,11 +61,6 @@ public class ContainerImpl implements Container {
         ContentPane contentPane = leaf.context().createContentPane(path, pane.container());
         leaf.add(contentPane);
         return contentPane;
-    }
-
-    @Override
-    public void add(ContentPane contentPane) {
-        leafNode().ifPresent(l -> l.add(contentPane));
     }
 
     @Override

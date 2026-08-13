@@ -31,8 +31,6 @@ public interface Container {
 
     ContentPane add(Path path);
 
-    void add(ContentPane contentPane);
-
     void add(Side side, ContentPane contentPane);
 
     Optional<ContentPane> find(Predicate<ContentPane> predicate);

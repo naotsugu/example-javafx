@@ -129,7 +129,7 @@ public interface TabContainers {
         }
         stage.setWidth(600);
         stage.setHeight(400);
-        return new BranchNode(ctx, ctx.createContentPane());
+        return new BranchNode(ctx, ctx.createEmptyContent());
     }
 
 

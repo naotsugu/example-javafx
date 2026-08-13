@@ -109,7 +109,7 @@ public class Context {
         }
     }
 
-    public ContentPane createContentPane() {
+    public ContentPane createEmptyContent() {
         return toContent.apply(null);
     }
 
