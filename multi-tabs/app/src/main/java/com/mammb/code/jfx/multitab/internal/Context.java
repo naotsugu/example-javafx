@@ -110,7 +110,7 @@ public class Context {
     }
 
     public ContentPane createContentPane() {
-        return createContentPane(null);
+        return toContent.apply(null);
     }
 
     public ContentPane createContentPane(Object arg) {
