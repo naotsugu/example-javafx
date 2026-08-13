@@ -21,6 +21,7 @@ import com.mammb.code.jfx.multitab.internal.LeafNode;
 import com.mammb.code.jfx.multitab.internal.ParentOf;
 import com.mammb.code.jfx.multitab.internal.Tab;
 import com.mammb.code.jfx.multitab.internal.TreeNode;
+import javafx.application.Platform;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.Parent;
@@ -255,8 +256,8 @@ public interface TabContainers {
             // create BranchNode
             var branchNode = new BranchNode(ctx);
             branchNode.orientation(orientation);
-            branchNode.dividerPositions(dividerPositions);
             branchNode.addChildren(children);
+            Platform.runLater(() -> branchNode.dividerPositions(dividerPositions));
             return branchNode;
 
         } else if (str.startsWith("[") && str.endsWith("]")) {
