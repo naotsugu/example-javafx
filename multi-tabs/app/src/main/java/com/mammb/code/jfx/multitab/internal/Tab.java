@@ -58,20 +58,20 @@ public class Tab extends javafx.scene.control.Tab implements ChildOf<LeafNode> {
         this.ctx = Objects.requireNonNull(ctx);
         this.parent = parent;
         this.label = new Label(content.shortNameProperty().getValue());
+        label.textProperty().bind(content.shortNameProperty());
         var tooltip = new Tooltip(content.fullNameProperty().getValue());
+        tooltip.textProperty().bind(content.fullNameProperty());
 
         setContent(content);
         setGraphic(label);
         setContextMenu(buildContextMenu());
-        setTooltip(tooltip);
-        content.shortNameProperty().addListener((_, _, value) -> label.setText(value));
-        content.fullNameProperty().addListener((_, _, value) -> tooltip.setText(value));
 
         setOnCloseRequest(this::handleCloseRequest);
         setOnClosed(this::handleClosed);
         label.setOnDragDetected(this::handleTabDragDetected);
         label.setOnDragDone(this::handleDragDone);
         label.setOnMouseClicked(Event::consume);
+        label.setTooltip(tooltip);
 
     }
 
