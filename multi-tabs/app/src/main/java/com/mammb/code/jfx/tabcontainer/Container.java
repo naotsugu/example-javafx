@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mammb.code.jfx.multitab;
+package com.mammb.code.jfx.tabcontainer;
 
 import javafx.geometry.Side;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 

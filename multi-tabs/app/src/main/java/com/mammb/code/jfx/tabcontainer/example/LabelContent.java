@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mammb.code.jfx.multitab.example;
+package com.mammb.code.jfx.tabcontainer.example;
 
-import com.mammb.code.jfx.multitab.ContentPane;
+import com.mammb.code.jfx.tabcontainer.ContentPane;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import java.nio.file.Path;

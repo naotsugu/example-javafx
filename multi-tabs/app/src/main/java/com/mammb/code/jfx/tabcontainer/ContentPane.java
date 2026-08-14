@@ -13,15 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.mammb.code.jfx.multitab;
+package com.mammb.code.jfx.tabcontainer;
 
-import com.mammb.code.jfx.multitab.internal.ContainerImpl;
-import com.mammb.code.jfx.multitab.internal.LeafNode;
+import com.mammb.code.jfx.tabcontainer.internal.ContainerImpl;
 import javafx.beans.property.ReadOnlyObjectProperty;
-import javafx.geometry.Side;
-import javafx.scene.Node;
 import javafx.scene.layout.StackPane;
-import java.util.Optional;
 
 /**
  * The ContentPane.
