@@ -42,15 +42,10 @@ class TabButton extends javafx.scene.control.Tab {
         label.getStyleClass().add("add-tab-button-label");
     }
 
-    public static void install(TabPane tabPane, Supplier<Tab> tabSupplier) {
+    public static void install(TabPane tabPane, Runnable action) {
         TabButton button = new TabButton();
         tabPane.getTabs().addLast(button);
-        button.label.setOnMouseClicked(_ -> {
-            Tab newNormalTab = tabSupplier.get();
-            int addTabIndex = tabPane.getTabs().indexOf(button);
-            tabPane.getTabs().add(addTabIndex, newNormalTab);
-            tabPane.getSelectionModel().select(newNormalTab);
-        });
+        button.label.setOnMouseClicked(_ -> action.run());
 
         tabPane.getSelectionModel().selectedItemProperty()
             .addListener((_, old, selected) -> {
