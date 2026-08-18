@@ -78,7 +78,7 @@ public class Resume {
 
         stage.setWidth(600);
         stage.setHeight(400);
-        return new BranchNode(ctx, resumeToContent.apply(""));
+        return new BranchNode(ctx, ctx.createEmptyContent());
     }
 
 

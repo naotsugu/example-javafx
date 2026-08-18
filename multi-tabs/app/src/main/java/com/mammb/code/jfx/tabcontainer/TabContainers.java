@@ -19,6 +19,7 @@ import com.mammb.code.jfx.tabcontainer.internal.BranchNode;
 import com.mammb.code.jfx.tabcontainer.internal.Context;
 import com.mammb.code.jfx.tabcontainer.internal.LeafNode;
 import com.mammb.code.jfx.tabcontainer.internal.ParentOf;
+import com.mammb.code.jfx.tabcontainer.internal.Resume;
 import com.mammb.code.jfx.tabcontainer.internal.Suspend;
 import com.mammb.code.jfx.tabcontainer.internal.Tab;
 import com.mammb.code.jfx.tabcontainer.internal.TreeNode;
@@ -52,9 +53,6 @@ import java.util.stream.Collectors;
  * @author Naotsugu Kobayashi
  */
 public interface TabContainers {
-
-    /** The logger. */
-    System.Logger log = System.getLogger(TabContainers.class.getName());
 
     static SceneBuilder builder() {
         return new SceneBuilder();
@@ -104,29 +102,7 @@ public interface TabContainers {
         if (resumePath != null && resumeToContent != null &&
             Files.exists(resumePath) && Files.isRegularFile(resumePath) &&
             Files.isReadable(resumePath)) {
-            try {
-                var lines = Files.readAllLines(resumePath);
-                String[] split = lines.getFirst().split(",");
-
-                double x = Double.parseDouble(split[0]);
-                double y = Double.parseDouble(split[1]);
-                if (Screen.getScreens().stream().anyMatch(screen ->
-                    screen.getVisualBounds().contains(x, y))) {
-                    stage.setX(x);
-                    stage.setY(y);
-                }
-
-                double w = Math.max(Double.parseDouble(split[2]), 90);
-                double h = Math.max(Double.parseDouble(split[3]), 30);
-                stage.setWidth(w);
-                stage.setHeight(h);
-                Pane pane = fromString(ctx, lines.get(1), resumeToContent);
-                if (pane instanceof BranchNode branchNode) {
-                    return branchNode;
-                }
-            } catch (Exception e) {
-                log.log(System.Logger.Level.ERROR, "Failed to read resume file", e);
-            }
+            return Resume.of(ctx, resumeToContent).load(resumePath, stage);
         }
         stage.setWidth(600);
         stage.setHeight(400);
@@ -180,87 +156,12 @@ public interface TabContainers {
         }
     }
 
-
     private static void handleStageHiding(WindowEvent event, Path resumePath) {
         if (Stage.getWindows().stream().noneMatch(Window::isShowing)) {
             if (event.getTarget() instanceof Stage stage) {
                 Suspend.save(resumePath, stage);
             }
         }
-    }
-
-    private static Pane fromString(Context ctx, String str,
-            Function<String, ? extends ContentPane> resumeToContent) {
-
-        if (str.startsWith("{") && str.endsWith("}")) {
-            str = str.substring(1, str.length() - 1); // remove '{' '}'
-            // orientation
-            Orientation orientation = Objects.equals(str.charAt(0), 'H')
-                ? Orientation.HORIZONTAL
-                : Orientation.VERTICAL;
-            // dividerPositions
-            int divClose = str.indexOf(',', 2, str.length());
-            String div = str.substring(2, divClose);
-            double[] dividerPositions = new double[] { div.isBlank() ? 0.5 : Double.parseDouble(div) };
-            // children
-            List<TreeNode> children = splitBranch(str.substring(divClose + 1)).stream()
-                .map(s -> fromString(ctx, s, resumeToContent))
-                .filter(TreeNode.class::isInstance)
-                .map(TreeNode.class::cast)
-                .toList();
-            // create BranchNode
-            var branchNode = new BranchNode(ctx);
-            branchNode.orientation(orientation);
-            branchNode.addChildren(children);
-            Platform.runLater(() -> branchNode.dividerPositions(dividerPositions));
-            return branchNode;
-
-        } else if (str.startsWith("[") && str.endsWith("]")) {
-            str = str.substring(1, str.length() - 1); // remove '[' ']'
-            // children
-            String[] split = str.split(",");
-            List<Tab> children = Arrays.stream(split)
-                .map(TabContainers::unescape)
-                .map(resumeToContent)
-                .map(c -> new Tab(ctx, c))
-                .toList();
-            // create LeafNode
-            var leafNode = new LeafNode(ctx);
-            leafNode.addChildren(children);
-            return leafNode;
-        }
-        return null;
-    }
-
-    private static List<String> splitBranch(String str) {
-        Deque<Character> deque = new ArrayDeque<>();
-        char p = 0;
-        for (int i = 0; i < str.length(); i++) {
-            char c = str.charAt(i);
-            if (c == '[' || c == '{') {
-                deque.push(c);
-            } else if (c == ']' && !deque.isEmpty() && deque.peek() == '[') {
-                deque.pop();
-            } else if (c == '}' && !deque.isEmpty() && deque.peek() == '{') {
-                deque.pop();
-            } else if ((p == ']' || p == '}') && c == ',' && deque.isEmpty()) {
-                return List.of(
-                    str.substring(0, i),
-                    str.substring(i + 1));
-            }
-            p = c;
-        }
-        return List.of(str);
-    }
-
-    String[][] ESCAPES = { {"%", "%25"}, {"[", "%5B"}, {"]", "%5D"}, {"{", "%7B"}, {"}", "%7D"}, {"\"", "%22"}, {",", "%2C"} };
-
-    private static String unescape(String str) {
-        if (str == null || str.isBlank()) return null;
-        for (int i = ESCAPES.length - 1; i >= 0; i--) {
-            str = str.replace(ESCAPES[i][1], ESCAPES[i][0]);
-        }
-        return str;
     }
 
 }
