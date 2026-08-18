@@ -19,6 +19,7 @@ import com.mammb.code.jfx.tabcontainer.internal.BranchNode;
 import com.mammb.code.jfx.tabcontainer.internal.Context;
 import com.mammb.code.jfx.tabcontainer.internal.LeafNode;
 import com.mammb.code.jfx.tabcontainer.internal.ParentOf;
+import com.mammb.code.jfx.tabcontainer.internal.Suspend;
 import com.mammb.code.jfx.tabcontainer.internal.Tab;
 import com.mammb.code.jfx.tabcontainer.internal.TreeNode;
 import javafx.application.Platform;
@@ -183,56 +184,9 @@ public interface TabContainers {
     private static void handleStageHiding(WindowEvent event, Path resumePath) {
         if (Stage.getWindows().stream().noneMatch(Window::isShowing)) {
             if (event.getTarget() instanceof Stage stage) {
-                Scene scene = stage.getScene();
-                String loc = String.join(",",
-                    Double.toString(stage.getX()),
-                    Double.toString(stage.getY()),
-                    Double.toString(scene.getWidth()),
-                    Double.toString(scene.getHeight()));
-                String string = asString(scene.getRoot());
-                try {
-                    Files.write(resumePath, List.of(loc, string));
-                } catch (IOException e) {
-                    log.log(System.Logger.Level.ERROR, "Failed to write resume file", e);
-                }
+                Suspend.save(resumePath, stage);
             }
         }
-    }
-
-    private static String asString(Parent parent) {
-        Node node = parent.lookup("." + BranchNode.STYLE_CLASS);
-        if (node instanceof BranchNode branchNode) {
-            return asStringRecursive(branchNode.root());
-        }
-        return "";
-    }
-
-    private static String asStringRecursive(ParentOf<?> parentOf) {
-
-        return switch (parentOf) {
-
-            case BranchNode branchNode -> "{" + String.join(",",
-                // orientation
-                branchNode.orientation().toString().substring(0, 1),
-                // dividerPositions
-                Arrays.stream(branchNode.dividerPositions())
-                    .mapToObj(String::valueOf).findFirst().orElse("0.5"),
-                // children
-                branchNode.children().stream()
-                    .filter(ParentOf.class::isInstance)
-                    .map(e -> (ParentOf<?>) e)
-                    .map(TabContainers::asStringRecursive)
-                    .collect(Collectors.joining(","))
-            ) + "}";
-
-            case LeafNode leafNode -> leafNode.children().stream()
-                .map(Tab::content)
-                .map(ContentPane::asString)
-                .map(TabContainers::escape)
-                .collect(Collectors.joining(",", "[", "]"));
-
-            default -> "";
-        };
     }
 
     private static Pane fromString(Context ctx, String str,
@@ -300,14 +254,6 @@ public interface TabContainers {
     }
 
     String[][] ESCAPES = { {"%", "%25"}, {"[", "%5B"}, {"]", "%5D"}, {"{", "%7B"}, {"}", "%7D"}, {"\"", "%22"}, {",", "%2C"} };
-
-    private static String escape(String str) {
-        if (str == null || str.isBlank()) return null;
-        for (String[] rule : ESCAPES) {
-            str = str.replace(rule[0], rule[1]);
-        }
-        return str;
-    }
 
     private static String unescape(String str) {
         if (str == null || str.isBlank()) return null;
