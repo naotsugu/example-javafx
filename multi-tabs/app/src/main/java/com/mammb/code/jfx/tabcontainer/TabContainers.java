@@ -17,36 +17,22 @@ package com.mammb.code.jfx.tabcontainer;
 
 import com.mammb.code.jfx.tabcontainer.internal.BranchNode;
 import com.mammb.code.jfx.tabcontainer.internal.Context;
+import com.mammb.code.jfx.tabcontainer.internal.LayoutStore;
 import com.mammb.code.jfx.tabcontainer.internal.LeafNode;
-import com.mammb.code.jfx.tabcontainer.internal.ParentOf;
-import com.mammb.code.jfx.tabcontainer.internal.Resume;
-import com.mammb.code.jfx.tabcontainer.internal.Suspend;
 import com.mammb.code.jfx.tabcontainer.internal.Tab;
-import com.mammb.code.jfx.tabcontainer.internal.TreeNode;
-import javafx.application.Platform;
-import javafx.geometry.Orientation;
-import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
-import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayDeque;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Deque;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 /**
  * The TabContainers.
@@ -86,8 +72,7 @@ public interface TabContainers {
         public Scene build() {
             var ctx = context();
             var st = (stage == null) ? new Stage() : stage;
-            var pane = buildNode(st, ctx, resumePath, resumeToContent);
-            return ctx.toScene(st, pane);
+            return new LayoutStore(ctx, resumePath).load(stage, resumeToContent);
         }
         private Context context() {
             return new Context(
@@ -97,21 +82,10 @@ public interface TabContainers {
         }
     }
 
-    private static BranchNode buildNode(Stage stage, Context ctx, Path resumePath,
-            Function<String, ? extends ContentPane> resumeToContent) {
-        if (resumePath != null && resumeToContent != null &&
-            Files.exists(resumePath) && Files.isRegularFile(resumePath) &&
-            Files.isReadable(resumePath)) {
-            return Resume.of(ctx, resumeToContent).load(resumePath, stage);
-        }
-        stage.setWidth(600);
-        stage.setHeight(400);
-        return new BranchNode(ctx, ctx.createEmptyContent());
-    }
-
 
     private static BiFunction<Stage, Pane, Scene> wrappedToScene(
             BiFunction<Stage, Pane, Scene> toScene, Path resumePath) {
+
         BiFunction<Stage, Pane, Scene> toSceneFun = (toScene != null)
             ? toScene
             : (stage, pane) -> new Scene(pane);
@@ -159,7 +133,7 @@ public interface TabContainers {
     private static void handleStageHiding(WindowEvent event, Path resumePath) {
         if (Stage.getWindows().stream().noneMatch(Window::isShowing)) {
             if (event.getTarget() instanceof Stage stage) {
-                Suspend.save(resumePath, stage);
+                new LayoutStore(null, resumePath).save(stage);
             }
         }
     }
