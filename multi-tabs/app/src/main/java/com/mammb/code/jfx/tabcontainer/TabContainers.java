@@ -17,8 +17,9 @@ package com.mammb.code.jfx.tabcontainer;
 
 import com.mammb.code.jfx.tabcontainer.internal.BranchNode;
 import com.mammb.code.jfx.tabcontainer.internal.Context;
-import com.mammb.code.jfx.tabcontainer.internal.LayoutStore;
 import com.mammb.code.jfx.tabcontainer.internal.LeafNode;
+import com.mammb.code.jfx.tabcontainer.internal.Resume;
+import com.mammb.code.jfx.tabcontainer.internal.Suspend;
 import com.mammb.code.jfx.tabcontainer.internal.Tab;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
@@ -72,7 +73,7 @@ public interface TabContainers {
         public Scene build() {
             var ctx = context();
             var st = (stage == null) ? new Stage() : stage;
-            return new LayoutStore(ctx, resumePath).load(stage, resumeToContent);
+            return new Resume(ctx, resumePath).load(stage, resumeToContent);
         }
         private Context context() {
             return new Context(
@@ -133,7 +134,7 @@ public interface TabContainers {
     private static void handleStageHiding(WindowEvent event, Path resumePath) {
         if (Stage.getWindows().stream().noneMatch(Window::isShowing)) {
             if (event.getTarget() instanceof Stage stage) {
-                new LayoutStore(null, resumePath).save(stage);
+                new Suspend(resumePath).save(stage);
             }
         }
     }

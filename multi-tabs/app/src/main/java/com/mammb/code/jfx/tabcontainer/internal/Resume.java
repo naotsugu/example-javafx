@@ -15,6 +15,13 @@
  */
 package com.mammb.code.jfx.tabcontainer.internal;
 
+import com.mammb.code.jfx.tabcontainer.ContentPane;
+import javafx.application.Platform;
+import javafx.geometry.Orientation;
+import javafx.scene.Scene;
+import javafx.scene.layout.Pane;
+import javafx.stage.Screen;
+import javafx.stage.Stage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,46 +31,24 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
-import java.util.stream.Collectors;
-import com.mammb.code.jfx.tabcontainer.ContentPane;
-import javafx.application.Platform;
-import javafx.geometry.Orientation;
-import javafx.scene.Node;
-import javafx.scene.Scene;
-import javafx.scene.layout.Pane;
-import javafx.stage.Screen;
-import javafx.stage.Stage;
 
 /**
- * The LayoutStore.
+ * The Resume.
  * @author Naotsugu Kobayashi
  */
-public class LayoutStore {
+public class Resume {
 
     /** The logger. */
-    private static final System.Logger log = System.getLogger(LayoutStore.class.getName());
+    private static final System.Logger log = System.getLogger(Resume.class.getName());
 
     /** The Context. */
     private final Context ctx;
     /** The store path. */
     private final Path path;
 
-    /**
-     * Constructor.
-     * @param ctx the Context
-     * @param path the store path
-     */
-    public LayoutStore(final Context ctx, final Path path) {
-        this.ctx = ctx; // TODO Objects.requireNonNull(ctx);
+    public Resume(Context ctx, Path path) {
+        this.ctx = Objects.requireNonNull(ctx);
         this.path = Objects.requireNonNull(path);
-    }
-
-    public void save(Stage stage) {
-        try {
-            Files.write(path, asString(stage));
-        } catch (IOException e) {
-            log.log(System.Logger.Level.ERROR, "failed to write resume file", e);
-        }
     }
 
     public Scene load(Stage stage, Function<String, ? extends ContentPane> resumeToContent) {
@@ -77,58 +62,6 @@ public class LayoutStore {
         stage.setHeight(400);
         return ctx.toScene(stage, new BranchNode(ctx, ctx.createEmptyContent()));
     }
-
-
-    // -- suspend -------------------------------------------------------------
-
-    private static List<String> asString(Stage stage) {
-
-        Scene scene = stage.getScene();
-
-        String loc = String.join(",",
-            Double.toString(stage.getX()),
-            Double.toString(stage.getY()),
-            Double.toString(scene.getWidth()),
-            Double.toString(scene.getHeight()));
-
-        Node node = scene.lookup("." + BranchNode.STYLE_CLASS);
-        String str = (node instanceof BranchNode branchNode)
-            ? asStringRecursive(branchNode.root())
-            : "";
-
-        return List.of(loc, str);
-    }
-
-
-    private static String asStringRecursive(ParentOf<?> parentOf) {
-
-        return switch (parentOf) {
-
-            case BranchNode branchNode -> "{" + String.join(",",
-                // orientation
-                branchNode.orientation().toString().substring(0, 1),
-                // dividerPositions
-                Arrays.stream(branchNode.dividerPositions())
-                    .mapToObj(String::valueOf).findFirst().orElse("0.5"),
-                // children
-                branchNode.children().stream()
-                    .filter(ParentOf.class::isInstance)
-                    .map(e -> (ParentOf<?>) e)
-                    .map(LayoutStore::asStringRecursive)
-                    .collect(Collectors.joining(","))
-            ) + "}";
-
-            case LeafNode leafNode -> leafNode.children().stream()
-                .map(Tab::content)
-                .map(ContentPane::asString)
-                .map(LayoutStore::escape)
-                .collect(Collectors.joining(",", "[", "]"));
-
-            default -> "";
-        };
-    }
-
-    // -- resume --------------------------------------------------------------
 
     public BranchNode replicate(List<String> lines, Stage stage, Function<String, ? extends ContentPane> resumeToContent) {
         try {
@@ -190,7 +123,7 @@ public class LayoutStore {
             // children
             String[] split = str.split(",");
             List<Tab> children = Arrays.stream(split)
-                .map(LayoutStore::unescape)
+                .map(Resume::unescape)
                 .map(resumeToContent)
                 .map(c -> new Tab(ctx, c))
                 .toList();
@@ -223,24 +156,11 @@ public class LayoutStore {
         return List.of(str);
     }
 
-    // -- utilities -----------------------------------------------------------
-
-    private static final String[][] ESCAPES = { {"%", "%25"}, {"[", "%5B"}, {"]", "%5D"}, {"{", "%7B"}, {"}", "%7D"}, {"\"", "%22"}, {",", "%2C"} };
-
-    private static String escape(String str) {
-        if (str == null) return null;
-        if (str.isBlank()) return "";
-        for (String[] rule : ESCAPES) {
-            str = str.replace(rule[0], rule[1]);
-        }
-        return str;
-    }
-
     private static String unescape(String str) {
         if (str == null) return null;
         if (str.isBlank()) return "";
-        for (int i = ESCAPES.length - 1; i >= 0; i--) {
-            str = str.replace(ESCAPES[i][1], ESCAPES[i][0]);
+        for (int i = Suspend.ESCAPES.length - 1; i >= 0; i--) {
+            str = str.replace(Suspend.ESCAPES[i][1], Suspend.ESCAPES[i][0]);
         }
         return str;
     }
