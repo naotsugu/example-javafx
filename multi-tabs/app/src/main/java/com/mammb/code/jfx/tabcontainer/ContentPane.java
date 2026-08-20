@@ -63,8 +63,8 @@ public abstract class ContentPane extends StackPane {
 
     abstract public ReadOnlyObjectProperty<String> fullNameProperty();
 
-    public Container container() {
-        return new ContainerImpl(this);
-    }
+//    public Container container() {
+//        return new ContainerImpl(this);
+//    }
 
 }

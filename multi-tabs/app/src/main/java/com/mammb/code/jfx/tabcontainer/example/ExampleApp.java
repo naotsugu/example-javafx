@@ -16,8 +16,10 @@
 package com.mammb.code.jfx.tabcontainer.example;
 
 import com.mammb.code.jfx.tabcontainer.Container;
+import com.mammb.code.jfx.tabcontainer.TabContainer;
 import com.mammb.code.jfx.tabcontainer.TabContainer.*;
 import com.mammb.code.jfx.tabcontainer.TabContainers;
+import com.mammb.code.jfx.tabcontainer.internal.Resume;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
@@ -31,15 +33,18 @@ public class ExampleApp extends Application {
     @Override
     public void start(Stage stage) {
 
-        Scene scene = TabContainers.builder()
-            .stage(stage)
-            .toContent(LabelContent::new)
-            .toScene(this::toScene)
-            .onOpenRequest(this::onOpenRequest)
-            .resume(Path.of("./build/tab-resume.conf"), LabelContent::new)
-            .build();
+        TabContainer tabContainer = TabContainer.of(this::handleRequireContent, this::handleRequestContent, this::handleRequireStage);
+        Pane pane = tabContainer.resume(stage, Path.of("./build/tab-resume.conf"), LabelContent::new);
 
-        stage.setScene(scene);
+//        Scene scene = TabContainers.builder()
+//            .stage(stage)
+//            .toContent(LabelContent::new)
+//            .toScene(this::toScene)
+//            .onOpenRequest(this::onOpenRequest)
+//            .resume(Path.of("./build/tab-resume.conf"), LabelContent::new)
+//            .build();
+
+        intiStage(stage, pane);
         stage.show();
 
     }
@@ -49,10 +54,13 @@ public class ExampleApp extends Application {
     }
 
     private void handleRequireStage(RequireStage e) {
-        Stage stage = new Stage();
+        e.accept(intiStage(new Stage(), e.pane()));
+    }
+
+    private Stage intiStage(Stage stage, Pane pane) {
         stage.setTitle("example");
-        stage.setScene(new Scene(new BorderPane(e.pane())));
-        e.accept(stage);
+        stage.setScene(new Scene(new BorderPane(pane)));
+        return stage;
     }
 
     private void handleRequestContent(RequestContent e) {
@@ -73,23 +81,23 @@ public class ExampleApp extends Application {
         }
     }
 
-
-    private boolean onOpenRequest(Object arg, Container container) {
-        if (arg instanceof Path path) {
-            var found = container.find(contentPane -> {
-                if (contentPane instanceof LabelContent labelContent) {
-                    return Objects.equals(labelContent.shortNameProperty().get(), path.getFileName().toString());
-                } else {
-                    return false;
-                }
-            });
-            if (found.isPresent()) {
-                container.select(found.get());
-                return true;
-            }
-        }
-        return false;
-    }
+//
+//    private boolean onOpenRequest(Object arg, Container container) {
+//        if (arg instanceof Path path) {
+//            var found = container.find(contentPane -> {
+//                if (contentPane instanceof LabelContent labelContent) {
+//                    return Objects.equals(labelContent.shortNameProperty().get(), path.getFileName().toString());
+//                } else {
+//                    return false;
+//                }
+//            });
+//            if (found.isPresent()) {
+//                container.select(found.get());
+//                return true;
+//            }
+//        }
+//        return false;
+//    }
 
     private Scene toScene(Stage stage, Pane pane) {
         stage.setTitle("example");

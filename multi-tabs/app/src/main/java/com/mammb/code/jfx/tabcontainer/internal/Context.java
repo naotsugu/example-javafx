@@ -45,18 +45,10 @@ public class Context {
     private final ObservableList<Stage> stages = FXCollections.observableArrayList();
     private final ObservableMap<Scene, Tab> latestTab = FXCollections.observableHashMap();
     private final AtomicReference<Tab> dragged = new AtomicReference<>();
+    private final Handlers handlers;
 
-    private final Function<Object, ? extends ContentPane> toContent;
-    private final BiPredicate<Object, Container> onOpenRequest;
-    private final BiFunction<Stage, Pane, Scene> toScene;
-
-    public Context(
-            Function<Object, ? extends ContentPane> toContent,
-            BiFunction<Stage, Pane, Scene> toScene,
-            BiPredicate<Object, Container> onOpenRequest) {
-        this.toContent = toContent;
-        this.toScene = toScene;
-        this.onOpenRequest = onOpenRequest;
+    public Context(Handlers handlers) {
+        this.handlers = handlers;
     }
 
     public void addStage(Stage stage) {
@@ -109,23 +101,8 @@ public class Context {
         }
     }
 
-    public ContentPane createEmptyContent() {
-        return toContent.apply(null);
-    }
-
-    public ContentPane createContentPane(Object arg) {
-        return toContent.apply(arg);
-    }
-
-    public ContentPane createContentPane(Object arg, Container container) {
-        boolean consumed = onOpenRequest.test(arg, container);
-        if (consumed) return null;
-        return toContent.apply(arg);
-    }
-
-    public Scene toScene(Stage stage, BranchNode branchNode) {
-        addStage(stage);
-        return toScene.apply(stage, branchNode);
+    Handlers handlers() {
+        return handlers;
     }
 
     Optional<ContentPane> find(Predicate<ContentPane> predicate) {

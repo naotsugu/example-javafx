@@ -1,11 +1,16 @@
 package com.mammb.code.jfx.tabcontainer;
 
+import com.mammb.code.jfx.tabcontainer.internal.Context;
 import com.mammb.code.jfx.tabcontainer.internal.Handlers;
+import com.mammb.code.jfx.tabcontainer.internal.Resume;
+import com.mammb.code.jfx.tabcontainer.internal.TabContainerImpl;
 import javafx.geometry.Side;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
+import javax.swing.text.AbstractDocument;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 public interface TabContainer {
@@ -30,8 +35,11 @@ public interface TabContainer {
         var handlers = new Handlers(requireContentHandler,
             requestContentHandler,
             requireStageHandler);
-        return null;
+
+        return new TabContainerImpl(new Context(handlers));
     }
+
+    Pane resume(Stage stage, Path path, Function<String, ? extends ContentPane> resumeToContent);
 
     void add(ContentPane contentPane);
 

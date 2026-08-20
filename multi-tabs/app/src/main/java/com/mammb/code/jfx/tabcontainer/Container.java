@@ -26,14 +26,14 @@ import java.util.function.Predicate;
  */
 public interface Container {
 
-    ContentPane add();
-
-    ContentPane add(Path path);
-
-    void add(Side side, ContentPane contentPane);
-
-    Optional<ContentPane> find(Predicate<ContentPane> predicate);
-
-    void select(ContentPane contentPane);
+//    ContentPane add();
+//
+//    ContentPane add(Path path);
+//
+//    void add(Side side, ContentPane contentPane);
+//
+//    Optional<ContentPane> find(Predicate<ContentPane> predicate);
+//
+//    void select(ContentPane contentPane);
 
 }

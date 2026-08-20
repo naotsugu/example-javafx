@@ -31,62 +31,62 @@ import java.util.function.Predicate;
  */
 public class ContainerImpl implements Container {
 
-    private final ContentPane pane;
-
-    public ContainerImpl(ContentPane pane) {
-        this.pane = pane;
-    }
-
-    @Override
-    public ContentPane add() {
-        var leafNode = leafNode();
-        if (leafNode.isEmpty()) {
-            return null;
-        }
-        var leaf = leafNode.get();
-        ContentPane contentPane = leaf.context().createEmptyContent();
-        leaf.add(contentPane);
-        return contentPane;
-    }
-
-    @Override
-    public ContentPane add(Path path) {
-        if (path == null || !Files.exists(path) ||
-            !Files.isRegularFile(path) || !Files.isReadable(path)) return null;
-        var leafNode = leafNode();
-        if (leafNode.isEmpty()) {
-            return null;
-        }
-        var leaf = leafNode.get();
-        ContentPane contentPane = leaf.context().createContentPane(path, pane.container());
-        leaf.add(contentPane);
-        return contentPane;
-    }
-
-    @Override
-    public void add(Side side, ContentPane contentPane) {
-        leafNode().ifPresent(l -> l.add(contentPane, side));
-    }
-
-    @Override
-    public Optional<ContentPane> find(Predicate<ContentPane> predicate) {
-        return leafNode().flatMap(leaf -> leaf.context().find(predicate));
-    }
-
-    @Override
-    public void select(ContentPane contentPane) {
-        leafNode().ifPresent(leafNode ->
-            leafNode.context().allTabs().stream()
-                .filter(tab -> Objects.equals(tab.content(), contentPane))
-                .forEach(Tab::requestSelect));
-    }
-
-    private Optional<LeafNode> leafNode() {
-        for (Node node = pane.getParent(); node != null; node = node.getParent()) {
-            if (node instanceof LeafNode leafNode) {
-                return Optional.of(leafNode);
-            }
-        }
-        return Optional.empty();
-    }
+//    private final ContentPane pane;
+//
+//    public ContainerImpl(ContentPane pane) {
+//        this.pane = pane;
+//    }
+//
+//    @Override
+//    public ContentPane add() {
+//        var leafNode = leafNode();
+//        if (leafNode.isEmpty()) {
+//            return null;
+//        }
+//        var leaf = leafNode.get();
+//        ContentPane contentPane = leaf.context().createEmptyContent();
+//        leaf.add(contentPane);
+//        return contentPane;
+//    }
+//
+//    @Override
+//    public ContentPane add(Path path) {
+//        if (path == null || !Files.exists(path) ||
+//            !Files.isRegularFile(path) || !Files.isReadable(path)) return null;
+//        var leafNode = leafNode();
+//        if (leafNode.isEmpty()) {
+//            return null;
+//        }
+//        var leaf = leafNode.get();
+//        ContentPane contentPane = leaf.context().createContentPane(path, pane.container());
+//        leaf.add(contentPane);
+//        return contentPane;
+//    }
+//
+//    @Override
+//    public void add(Side side, ContentPane contentPane) {
+//        leafNode().ifPresent(l -> l.add(contentPane, side));
+//    }
+//
+//    @Override
+//    public Optional<ContentPane> find(Predicate<ContentPane> predicate) {
+//        return leafNode().flatMap(leaf -> leaf.context().find(predicate));
+//    }
+//
+//    @Override
+//    public void select(ContentPane contentPane) {
+//        leafNode().ifPresent(leafNode ->
+//            leafNode.context().allTabs().stream()
+//                .filter(tab -> Objects.equals(tab.content(), contentPane))
+//                .forEach(Tab::requestSelect));
+//    }
+//
+//    private Optional<LeafNode> leafNode() {
+//        for (Node node = pane.getParent(); node != null; node = node.getParent()) {
+//            if (node instanceof LeafNode leafNode) {
+//                return Optional.of(leafNode);
+//            }
+//        }
+//        return Optional.empty();
+//    }
 }

@@ -18,7 +18,6 @@ package com.mammb.code.jfx.tabcontainer.internal;
 import com.mammb.code.jfx.tabcontainer.ContentPane;
 import javafx.application.Platform;
 import javafx.geometry.Orientation;
-import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
@@ -51,16 +50,16 @@ public class Resume {
         this.path = Objects.requireNonNull(path);
     }
 
-    public Scene load(Stage stage, Function<String, ? extends ContentPane> resumeToContent) {
+    public Pane load(Stage stage, Function<String, ? extends ContentPane> resumeToContent) {
         try {
             var lines = Files.readAllLines(path);
-            return ctx.toScene(stage, replicate(lines, stage, resumeToContent));
+            return replicate(lines, stage, resumeToContent);
         } catch (IOException e) {
             log.log(System.Logger.Level.ERROR, "failed to read resume file", e);
         }
         stage.setWidth(600);
         stage.setHeight(400);
-        return ctx.toScene(stage, new BranchNode(ctx, ctx.createEmptyContent()));
+        return new BranchNode(ctx, ctx.handlers().requireContent());
     }
 
     public BranchNode replicate(List<String> lines, Stage stage, Function<String, ? extends ContentPane> resumeToContent) {
@@ -89,7 +88,7 @@ public class Resume {
 
         stage.setWidth(600);
         stage.setHeight(400);
-        return new BranchNode(ctx, ctx.createEmptyContent());
+        return new BranchNode(ctx, ctx.handlers().requireContent());
     }
 
 

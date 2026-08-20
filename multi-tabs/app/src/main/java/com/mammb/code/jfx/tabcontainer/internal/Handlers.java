@@ -15,7 +15,12 @@
  */
 package com.mammb.code.jfx.tabcontainer.internal;
 
+import com.mammb.code.jfx.tabcontainer.ContentPane;
+import com.mammb.code.jfx.tabcontainer.TabContainer;
 import com.mammb.code.jfx.tabcontainer.TabContainer.*;
+import javafx.scene.layout.Pane;
+import javafx.stage.Stage;
+import java.nio.file.Path;
 import java.util.Objects;
 
 /**
@@ -41,12 +46,43 @@ public class Handlers {
         requireContentHandler.handle(requireContent);
     }
 
-    public void handle(RequestContent requestContent) {
+    private void handle(RequestContent requestContent) {
         requestContentHandler.handle(requestContent);
     }
 
-    public void handle(RequireStage requireStage) {
+    private void handle(RequireStage requireStage) {
         requireStageHandler.handle(requireStage);
     }
+
+    public ContentPane requireContent() {
+        var e = new RequireContent() {
+            ContentPane ret;
+            @Override public void accept(ContentPane contentPane) { ret = contentPane; }
+        };
+        handle(e);
+        return e.ret;
+    }
+
+    public void requestContent(Path path, TabContainer container) {
+        record RequestContentRecord(Path argument, TabContainer container) implements RequestContent {}
+        handle(new RequestContentRecord(path, container));
+    }
+
+    public Stage requireStage(Pane pane) {
+        var e = new RequireStage() {
+            Stage ret;
+            @Override public void accept(Stage stage) { ret = stage; }
+            @Override public Pane pane() { return pane; }
+        };
+        handle(e);
+        return e.ret;
+    }
+
+//    public void requireStage(Pane pane, Require<Stage> requireStage) {
+//        record RequireStageRecord(Pane pane, Require<Stage> requireStage) implements RequireStage {
+//            public void accept(Stage stage) { requireStage.accept(stage);}
+//        }
+//        handle(new RequireStageRecord(pane, requireStage));
+//    }
 
 }
