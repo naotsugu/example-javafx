@@ -132,6 +132,11 @@ public class Context {
         return allTabs().stream().map(Tab::content).filter(predicate).findFirst();
     }
 
+    Tab currentTab() {
+        var tab = latestTab.get(stages.getLast().getScene());
+        return (tab == null) ? latestTab.values().stream().findFirst().get() : tab;
+    }
+
     List<Tab> allTabs() {
         return stages.stream()
             .map(stage -> stage.getScene().getRoot().lookupAll("." + LeafNode.STYLE_CLASS))
