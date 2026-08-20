@@ -16,6 +16,7 @@
 package com.mammb.code.jfx.tabcontainer.example;
 
 import com.mammb.code.jfx.tabcontainer.Container;
+import com.mammb.code.jfx.tabcontainer.TabContainer.*;
 import com.mammb.code.jfx.tabcontainer.TabContainers;
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -42,6 +43,36 @@ public class ExampleApp extends Application {
         stage.show();
 
     }
+
+    private void handleRequireContent(RequireContent e) {
+        e.accept(new LabelContent(null));
+    }
+
+    private void handleRequireStage(RequireStage e) {
+        Stage stage = new Stage();
+        stage.setTitle("example");
+        stage.setScene(new Scene(new BorderPane(e.pane())));
+        e.accept(stage);
+    }
+
+    private void handleRequestContent(RequestContent e) {
+        if (e.argument() == null) {
+            return;
+        }
+        var found = e.container().find(contentPane -> {
+            if (contentPane instanceof LabelContent labelContent) {
+                return Objects.equals(labelContent.shortNameProperty().get(), e.argument().getFileName().toString());
+            } else {
+                return false;
+            }
+        });
+        if (found.isPresent()) {
+            e.container().select(found.get());
+        } else {
+            e.container().add(new LabelContent(e.argument()));
+        }
+    }
+
 
     private boolean onOpenRequest(Object arg, Container container) {
         if (arg instanceof Path path) {
