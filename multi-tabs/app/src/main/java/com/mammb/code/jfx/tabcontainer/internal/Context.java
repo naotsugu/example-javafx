@@ -106,8 +106,15 @@ public class Context {
     }
 
     Tab currentTab() {
-        var tab = latestTab.get(stages.getLast().getScene());
-        return (tab == null) ? latestTab.values().stream().findFirst().get() : tab;
+        Scene scene = stages.getLast().getScene();
+        var tab = latestTab.get(scene);
+        if (tab != null) {
+            return tab;
+        } else if (!latestTab.isEmpty()) {
+            return latestTab.values().stream().findFirst().get();
+        } else {
+            return allTabs().getLast();
+        }
     }
 
     List<Tab> allTabs() {
