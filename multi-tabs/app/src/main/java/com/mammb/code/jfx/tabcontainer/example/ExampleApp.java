@@ -15,11 +15,10 @@
  */
 package com.mammb.code.jfx.tabcontainer.example;
 
-import com.mammb.code.jfx.tabcontainer.Container;
+import com.mammb.code.jfx.tabcontainer.ContainerHandle;
+import com.mammb.code.jfx.tabcontainer.ContentPane;
 import com.mammb.code.jfx.tabcontainer.TabContainer;
 import com.mammb.code.jfx.tabcontainer.TabContainer.*;
-import com.mammb.code.jfx.tabcontainer.TabContainers;
-import com.mammb.code.jfx.tabcontainer.internal.Resume;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
@@ -33,28 +32,22 @@ public class ExampleApp extends Application {
     @Override
     public void start(Stage stage) {
 
-        TabContainer tabContainer = TabContainer.of(this::handleRequireContent, this::handleRequestContent, this::handleRequireStage);
-        Pane pane = tabContainer.resume(stage, Path.of("./build/tab-resume.conf"), LabelContent::new);
-
-//        Scene scene = TabContainers.builder()
-//            .stage(stage)
-//            .toContent(LabelContent::new)
-//            .toScene(this::toScene)
-//            .onOpenRequest(this::onOpenRequest)
-//            .resume(Path.of("./build/tab-resume.conf"), LabelContent::new)
-//            .build();
+        var tabContainer = TabContainer.of(
+            this::handleRequireContent, this::handleRequestContent, this::handleRequireStage);
+        var pane = tabContainer.resume(stage, Path.of("./build/tab-resume.conf"),
+            LabelContent::new);
 
         intiStage(stage, pane);
         stage.show();
 
     }
 
-    private void handleRequireContent(RequireContent e) {
-        e.accept(new LabelContent(null));
+    private ContentPane handleRequireContent() {
+        return new LabelContent(null);
     }
 
-    private void handleRequireStage(RequireStage e) {
-        e.accept(intiStage(new Stage(), e.pane()));
+    private Stage handleRequireStage(Pane pane) {
+        return intiStage(new Stage(), pane);
     }
 
     private Stage intiStage(Stage stage, Pane pane) {
@@ -63,45 +56,22 @@ public class ExampleApp extends Application {
         return stage;
     }
 
-    private void handleRequestContent(RequestContent e) {
-        if (e.argument() == null) {
+    private void handleRequestContent(Path path, ContainerHandle containerHandle) {
+        if (path == null) {
             return;
         }
-        var found = e.container().find(contentPane -> {
+        var found = containerHandle.find(contentPane -> {
             if (contentPane instanceof LabelContent labelContent) {
-                return Objects.equals(labelContent.shortNameProperty().get(), e.argument().getFileName().toString());
+                return Objects.equals(labelContent.shortNameProperty().get(), path.getFileName().toString());
             } else {
                 return false;
             }
         });
         if (found.isPresent()) {
-            e.container().select(found.get());
+            containerHandle.select(found.get());
         } else {
-            e.container().add(new LabelContent(e.argument()));
+            containerHandle.add(new LabelContent(path));
         }
-    }
-
-//
-//    private boolean onOpenRequest(Object arg, Container container) {
-//        if (arg instanceof Path path) {
-//            var found = container.find(contentPane -> {
-//                if (contentPane instanceof LabelContent labelContent) {
-//                    return Objects.equals(labelContent.shortNameProperty().get(), path.getFileName().toString());
-//                } else {
-//                    return false;
-//                }
-//            });
-//            if (found.isPresent()) {
-//                container.select(found.get());
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
-
-    private Scene toScene(Stage stage, Pane pane) {
-        stage.setTitle("example");
-        return new Scene(new BorderPane(pane));
     }
 
 }

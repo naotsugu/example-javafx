@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -42,6 +43,7 @@ public class Suspend {
     public Suspend(Path path) {
         this.path = Objects.requireNonNull(path);
     }
+
 
     public void save(Stage stage) {
         try {

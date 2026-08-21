@@ -15,8 +15,8 @@
  */
 package com.mammb.code.jfx.tabcontainer.internal;
 
+import com.mammb.code.jfx.tabcontainer.ContainerHandle;
 import com.mammb.code.jfx.tabcontainer.ContentPane;
-import com.mammb.code.jfx.tabcontainer.TabContainer;
 import com.mammb.code.jfx.tabcontainer.TabContainer.*;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
@@ -29,60 +29,35 @@ import java.util.Objects;
  */
 public class Handlers {
 
-    private final Handler<RequireContent> requireContentHandler;
-    private final Handler<RequestContent> requestContentHandler;
-    private final Handler<RequireStage> requireStageHandler;
+    interface StageHandler { Stage apply(Stage stage); }
+    private final RequireContent requireContent;
+    private final RequestContent requestContent;
+    private final RequireStage requireStage;
+    private StageHandler stageHandler = stage -> stage;
 
     public Handlers(
-        Handler<RequireContent> requireContentHandler,
-        Handler<RequestContent> requestContentHandler,
-        Handler<RequireStage> requireStageHandler) {
-        this.requireContentHandler = Objects.requireNonNull(requireContentHandler);
-        this.requestContentHandler = Objects.requireNonNull(requestContentHandler);
-        this.requireStageHandler = Objects.requireNonNull(requireStageHandler);
-    }
-
-    public void handle(RequireContent requireContent) {
-        requireContentHandler.handle(requireContent);
-    }
-
-    private void handle(RequestContent requestContent) {
-        requestContentHandler.handle(requestContent);
-    }
-
-    private void handle(RequireStage requireStage) {
-        requireStageHandler.handle(requireStage);
+        RequireContent requireContent,
+        RequestContent requestContent,
+        RequireStage requireStage) {
+        this.requireContent = Objects.requireNonNull(requireContent);
+        this.requestContent = Objects.requireNonNull(requestContent);
+        this.requireStage = Objects.requireNonNull(requireStage);
     }
 
     public ContentPane requireContent() {
-        var e = new RequireContent() {
-            ContentPane ret;
-            @Override public void accept(ContentPane contentPane) { ret = contentPane; }
-        };
-        handle(e);
-        return e.ret;
+        return requireContent.content();
     }
 
-    public void requestContent(Path path, TabContainer container) {
-        record RequestContentRecord(Path argument, TabContainer container) implements RequestContent {}
-        handle(new RequestContentRecord(path, container));
+    public void requestContent(Path path, ContainerHandle container) {
+        requestContent.accept(path, container);
     }
 
     public Stage requireStage(Pane pane) {
-        var e = new RequireStage() {
-            Stage ret;
-            @Override public void accept(Stage stage) { ret = stage; }
-            @Override public Pane pane() { return pane; }
-        };
-        handle(e);
-        return e.ret;
+        return stageHandler.apply(requireStage.stage(pane));
     }
 
-//    public void requireStage(Pane pane, Require<Stage> requireStage) {
-//        record RequireStageRecord(Pane pane, Require<Stage> requireStage) implements RequireStage {
-//            public void accept(Stage stage) { requireStage.accept(stage);}
-//        }
-//        handle(new RequireStageRecord(pane, requireStage));
-//    }
+    void stageHandler(StageHandler stageHandler) {
+        this.stageHandler = Objects.requireNonNull(stageHandler);
+    }
 
 }

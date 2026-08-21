@@ -1,3 +1,18 @@
+/*
+ * Copyright 2026- the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.mammb.code.jfx.tabcontainer;
 
 import com.mammb.code.jfx.tabcontainer.internal.Context;
@@ -13,40 +28,34 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+/**
+ * The TabContainer.
+ * @author Naotsugu Kobayashi
+ */
 public interface TabContainer {
 
-    interface Require<T> { void accept(T t); }
-    interface Argument<T> { T argument(); }
-    interface ContainerAware<T> { T container(); }
-
-    interface RequireContent extends Require<ContentPane> { }
-    interface RequireStage extends Require<Stage> {
-        Pane pane();
-    }
-    interface RequestContent extends Argument<Path>, ContainerAware<TabContainer> { }
-
-    interface Handler<T> { void handle(T event); }
+    interface RequireContent { ContentPane content(); }
+    interface RequireStage { Stage stage(Pane pane); }
+    interface RequestContent { void accept(Path path, ContainerHandle containerHandle); }
 
     static TabContainer of(
-        Handler<RequireContent> requireContentHandler,
-        Handler<RequestContent> requestContentHandler,
-        Handler<RequireStage> requireStageHandler) {
+        RequireContent requireContent,
+        RequestContent requestContent,
+        RequireStage requireStage) {
 
-        var handlers = new Handlers(requireContentHandler,
-            requestContentHandler,
-            requireStageHandler);
+        var handlers = new Handlers(
+            requireContent,
+            requestContent,
+            requireStage);
 
         return new TabContainerImpl(new Context(handlers));
     }
 
     Pane resume(Stage stage, Path path, Function<String, ? extends ContentPane> resumeToContent);
 
+    Pane create(Stage stage);
+
     void add(ContentPane contentPane);
 
-    void add(Side side, ContentPane contentPane);
-
-    Optional<ContentPane> find(Predicate<ContentPane> predicate);
-
-    void select(ContentPane contentPane);
 
 }

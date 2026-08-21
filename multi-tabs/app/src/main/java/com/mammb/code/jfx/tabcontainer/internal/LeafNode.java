@@ -80,7 +80,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         tabPane.getTabs().removeListener(ctx::handleTabRemoved);
         tabPane.layoutBoundsProperty().addListener(this::handleTabPaneLayoutBoundsChanged);
         tabPane.addEventFilter(KeyEvent.KEY_PRESSED, this::handleTabPaneKeyPressed);
-        TabButton.install(tabPane, () -> ctx.handlers().handle(this::add));
+        TabButton.install(tabPane, () -> add(ctx.handlers().requireContent()));
         initTabHeaderArea();
     }
 
@@ -410,7 +410,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
 
     private ContextMenu buildTabHeaderContextMenu() {
         MenuItem newTab = new MenuItem("New");
-        newTab.setOnAction(_ -> ctx.handlers().handle(this::add));
+        newTab.setOnAction(_ -> add(ctx.handlers().requireContent()));
         MenuItem closeAll = new MenuItem("Close All");
         closeAll.setOnAction(_ -> closeAll());
         MenuItem maximize = new MenuItem("Maximize");

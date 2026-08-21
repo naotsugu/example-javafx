@@ -15,7 +15,6 @@
  */
 package com.mammb.code.jfx.tabcontainer.internal;
 
-import com.mammb.code.jfx.tabcontainer.Container;
 import com.mammb.code.jfx.tabcontainer.ContentPane;
 import javafx.application.Platform;
 import javafx.beans.value.ObservableValue;
@@ -24,15 +23,11 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 import javafx.scene.Scene;
-import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiFunction;
-import java.util.function.BiPredicate;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
