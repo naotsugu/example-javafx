@@ -15,47 +15,32 @@
  */
 package com.mammb.code.jfx.tabcontainer;
 
-import com.mammb.code.jfx.tabcontainer.internal.Context;
-import com.mammb.code.jfx.tabcontainer.internal.Handlers;
-import com.mammb.code.jfx.tabcontainer.internal.Resume;
 import com.mammb.code.jfx.tabcontainer.internal.TabContainerImpl;
-import javafx.geometry.Side;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
-import javax.swing.text.AbstractDocument;
 import java.nio.file.Path;
-import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * The TabContainer.
  * @author Naotsugu Kobayashi
  */
-public interface TabContainer {
+public interface TabContainer extends ContainerHandle {
 
     interface RequireContent { ContentPane content(); }
     interface RequireStage { Stage stage(Pane pane); }
     interface RequestContent { void accept(Path path, ContainerHandle containerHandle); }
 
     static TabContainer of(
-        RequireContent requireContent,
-        RequestContent requestContent,
-        RequireStage requireStage) {
-
-        var handlers = new Handlers(
-            requireContent,
-            requestContent,
-            requireStage);
-
-        return new TabContainerImpl(new Context(handlers));
+            RequireContent requireContent,
+            RequestContent requestContent,
+            RequireStage requireStage) {
+        return new TabContainerImpl(requireContent, requestContent, requireStage);
     }
 
     Pane resume(Stage stage, Path path, Function<String, ? extends ContentPane> resumeToContent);
 
     Pane create(Stage stage);
-
-    void add(ContentPane contentPane);
 
 
 }

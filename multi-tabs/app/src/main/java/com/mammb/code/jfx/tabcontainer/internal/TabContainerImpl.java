@@ -16,9 +16,23 @@ public class TabContainerImpl implements TabContainer, ContainerHandle {
 
     private final Context ctx;
 
-    public TabContainerImpl(Context ctx) {
+    private TabContainerImpl(Context ctx) {
         this.ctx = Objects.requireNonNull(ctx);
     }
+
+    public TabContainerImpl(
+            RequireContent requireContent,
+            RequestContent requestContent,
+            RequireStage requireStage) {
+
+        var handlers = new Handlers(
+            requireContent,
+            requestContent,
+            requireStage);
+
+        this(new Context(handlers));
+    }
+
 
     @Override
     public Pane resume(Stage stage, Path path, Function<String, ? extends ContentPane> resumeToContent) {
