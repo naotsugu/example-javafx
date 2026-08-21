@@ -44,6 +44,7 @@ public class Context {
 
     public Context(Handlers handlers) {
         this.handlers = handlers;
+        handlers.addStageHandler(this::addStage);
     }
 
     public void addStage(Stage stage) {

@@ -21,6 +21,8 @@ import com.mammb.code.jfx.tabcontainer.TabContainer.*;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -29,11 +31,11 @@ import java.util.Objects;
  */
 public class Handlers {
 
-    interface StageHandler { Stage apply(Stage stage); }
+    interface StageHandler { void apply(Stage stage); }
     private final RequireContent requireContent;
     private final RequestContent requestContent;
     private final RequireStage requireStage;
-    private StageHandler stageHandler = stage -> stage;
+    private final List<StageHandler> stageHandlers = new ArrayList<>();
 
     public Handlers(
         RequireContent requireContent,
@@ -53,11 +55,13 @@ public class Handlers {
     }
 
     public Stage requireStage(Pane pane) {
-        return stageHandler.apply(requireStage.stage(pane));
+        Stage stage = requireStage.stage(pane);
+        stageHandlers.forEach(h -> h.apply(stage));
+        return stage;
     }
 
-    void stageHandler(StageHandler stageHandler) {
-        this.stageHandler = Objects.requireNonNull(stageHandler);
+    void addStageHandler(StageHandler stageHandler) {
+        stageHandlers.add(Objects.requireNonNull(stageHandler));
     }
 
 }

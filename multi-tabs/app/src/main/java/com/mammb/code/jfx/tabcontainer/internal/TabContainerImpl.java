@@ -55,12 +55,11 @@ public class TabContainerImpl implements TabContainer, ContainerHandle {
 
     @Override
     public Pane resume(Stage stage, Path path, Function<String, ? extends ContentPane> resumeToContent) {
-
         var suspend = new Suspend(path);
         var suspendHandler = new SuspendHandler(suspend);
         suspendHandler.bind(stage);
-        ctx.handlers().stageHandler(suspendHandler::bind);
-
+        ctx.handlers().addStageHandler(suspendHandler::bind);
+        ctx.addStage(stage);
         return new Resume(ctx, path).load(stage, resumeToContent);
     }
 
@@ -68,6 +67,7 @@ public class TabContainerImpl implements TabContainer, ContainerHandle {
     public Pane create(Stage stage) {
         stage.setWidth(600);
         stage.setHeight(400);
+        ctx.addStage(stage);
         return new BranchNode(ctx, ctx.handlers().requireContent());
     }
 
