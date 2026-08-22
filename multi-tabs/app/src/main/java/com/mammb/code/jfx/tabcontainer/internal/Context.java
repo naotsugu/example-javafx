@@ -100,10 +100,10 @@ public class Context {
 
     void focus(Tab tab) {
         Platform.runLater(() -> tab.content().focus());
-        latestTab.put(tab.parent().getScene(), tab);
         var key = tab.parent().getScene();
         Optional.ofNullable(latestTab.get(key)).ifPresent(this::unfocus);
         tab.getStyleClass().add(TAB_SELECTED);
+        latestTab.put(tab.parent().getScene(), tab);
     }
 
     void unfocus(Tab tab) {

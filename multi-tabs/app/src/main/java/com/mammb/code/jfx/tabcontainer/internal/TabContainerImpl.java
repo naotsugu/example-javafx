@@ -23,6 +23,7 @@ import javafx.geometry.Side;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
@@ -61,7 +62,9 @@ public class TabContainerImpl implements TabContainer, ContainerHandle {
         suspendHandler.bind(stage);
         ctx.handlers().addStageHandler(suspendHandler::bind);
         ctx.addStage(stage);
-        return new Resume(ctx, path).load(stage, resumeToContent);
+        var pane = new Resume(ctx, path).load(stage, resumeToContent);
+        Platform.runLater(() -> select(null));
+        return pane;
     }
 
     @Override
@@ -69,7 +72,9 @@ public class TabContainerImpl implements TabContainer, ContainerHandle {
         stage.setWidth(600);
         stage.setHeight(400);
         ctx.addStage(stage);
-        return new BranchNode(ctx, ctx.handlers().requireContent());
+        var pane = new BranchNode(ctx, ctx.handlers().requireContent());
+        Platform.runLater(() -> select(null));
+        return pane;
     }
 
     @Override
@@ -89,9 +94,13 @@ public class TabContainerImpl implements TabContainer, ContainerHandle {
 
     @Override
     public void select(ContentPane contentPane) {
-        ctx.allTabs().stream()
+        List<Tab> tabs = ctx.allTabs();
+        tabs.stream()
             .filter(tab -> Objects.equals(tab.content(), contentPane))
-            .forEach(tab -> Platform.runLater(tab::requestSelect));
+            .findFirst().ifPresentOrElse(
+                Tab::requestSelect,
+                () -> tabs.getFirst().requestSelect()
+            );
     }
 
 }

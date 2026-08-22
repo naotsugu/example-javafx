@@ -39,7 +39,7 @@ public class ExampleApp extends Application {
 
         intiStage(stage, pane);
         stage.show();
-
+        tabContainer.select(null);
     }
 
     private ContentPane handleRequireContent() {
