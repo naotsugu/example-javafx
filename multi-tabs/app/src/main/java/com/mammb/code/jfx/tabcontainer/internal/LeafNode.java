@@ -255,6 +255,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
     }
 
     void requestSelect(Tab node) {
+        tabPane.requestFocus();
         tabPane.getSelectionModel().select(node);
         node.content().focus();
     }
@@ -380,8 +381,8 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
     }
 
     private void handleTabPaneFocused(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean focused) {
-        if (focused && tabPane.getSelectionModel().getSelectedItem().getContent() instanceof ContentPane contentPane) {
-            contentPane.focus();
+        if (focused && tabPane.getSelectionModel().getSelectedItem() instanceof Tab tab) {
+            ctx.focus(tab);
         }
     }
 

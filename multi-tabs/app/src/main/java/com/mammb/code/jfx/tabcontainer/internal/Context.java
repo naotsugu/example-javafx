@@ -36,6 +36,8 @@ import java.util.function.Predicate;
  */
 public class Context {
 
+    static final String TAB_SELECTED = "tab-container-selected";
+
     // last -> front
     private final ObservableList<Stage> stages = FXCollections.observableArrayList();
     private final ObservableMap<Scene, Tab> latestTab = FXCollections.observableHashMap();
@@ -82,8 +84,7 @@ public class Context {
     public void handleTabSelected(ObservableValue<? extends javafx.scene.control.Tab> observable,
             javafx.scene.control.Tab oldValue, javafx.scene.control.Tab newValue) {
         if (newValue instanceof Tab selected && selected.parent() != null && selected.parent().getScene() != null) {
-            Platform.runLater(() -> selected.content().focus());
-            latestTab.put(selected.parent().getScene(), selected);
+            focus(selected);
         }
     }
 
@@ -91,11 +92,24 @@ public class Context {
         while (change.next()) {
             for (var removed : change.getRemoved()) {
                 if (removed instanceof Tab tab && tab.parent() != null && tab.parent().getScene() != null) {
-                    latestTab.remove(tab.parent().getScene(), tab);
+                    unfocus(tab);
                 }
             }
         }
     }
+
+    void focus(Tab tab) {
+        Platform.runLater(() -> tab.content().focus());
+        latestTab.put(tab.parent().getScene(), tab);
+        var key = tab.parent().getScene();
+        Optional.ofNullable(latestTab.get(key)).ifPresent(this::unfocus);
+        tab.getStyleClass().add(TAB_SELECTED);
+    }
+
+    void unfocus(Tab tab) {
+        tab.getStyleClass().remove(TAB_SELECTED);
+    }
+
 
     Handlers handlers() {
         return handlers;

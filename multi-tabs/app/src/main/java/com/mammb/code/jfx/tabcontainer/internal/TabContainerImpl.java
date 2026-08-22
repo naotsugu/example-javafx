@@ -18,6 +18,7 @@ package com.mammb.code.jfx.tabcontainer.internal;
 import com.mammb.code.jfx.tabcontainer.ContainerHandle;
 import com.mammb.code.jfx.tabcontainer.ContentPane;
 import com.mammb.code.jfx.tabcontainer.TabContainer;
+import javafx.application.Platform;
 import javafx.geometry.Side;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
@@ -90,7 +91,7 @@ public class TabContainerImpl implements TabContainer, ContainerHandle {
     public void select(ContentPane contentPane) {
         ctx.allTabs().stream()
             .filter(tab -> Objects.equals(tab.content(), contentPane))
-            .forEach(Tab::requestSelect);
+            .forEach(tab -> Platform.runLater(tab::requestSelect));
     }
 
 }
