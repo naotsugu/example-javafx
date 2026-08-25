@@ -37,17 +37,17 @@ public class Handlers {
     private final RequireContent requireContent;
     private final RequestContent requestContent;
     private final RequireStage requireStage;
-    private final MenuItemDecorator tabMenuDecorator;
-    private final MenuItemDecorator tabHeaderMenuDecorator;
+    private final TabMenuItemDecorator tabMenuDecorator;
+    private final TabHeaderMenuItemDecorator tabHeaderMenuDecorator;
     private final List<StageHandler> stageHandlers = new ArrayList<>();
 
     public Handlers(
-        ContainerHandle containerHandle,
-        RequireContent requireContent,
-        RequestContent requestContent,
-        RequireStage requireStage,
-        MenuItemDecorator tabMenuDecorator,
-        MenuItemDecorator tabHeaderMenuDecorator) {
+            ContainerHandle containerHandle,
+            RequireContent requireContent,
+            RequestContent requestContent,
+            RequireStage requireStage,
+            TabMenuItemDecorator tabMenuDecorator,
+            TabHeaderMenuItemDecorator tabHeaderMenuDecorator) {
         this.containerHandle = Objects.requireNonNull(containerHandle);
         this.requireContent = Objects.requireNonNull(requireContent);
         this.requestContent = Objects.requireNonNull(requestContent);
@@ -70,8 +70,8 @@ public class Handlers {
         return stage;
     }
 
-    public MenuItem[] decorateTabMenu(MenuItem... items) {
-        return tabMenuDecorator.apply(containerHandle, items);
+    public MenuItem[] decorateTabMenu(ContentPane contentPane, MenuItem... items) {
+        return tabMenuDecorator.apply(contentPane, items);
     }
 
     public MenuItem[] decorateTabHeaderMenu(MenuItem... items) {

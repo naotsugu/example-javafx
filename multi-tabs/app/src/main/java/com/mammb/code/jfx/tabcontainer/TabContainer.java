@@ -31,8 +31,8 @@ public interface TabContainer extends ContainerHandle {
     interface RequireContent { ContentPane content(); }
     interface RequireStage { Stage stage(Pane pane); }
     interface RequestContent { void accept(ContainerHandle containerHandle, Path path); }
-    interface MenuItemDecorator { MenuItem[] apply(ContainerHandle containerHandle, MenuItem... items); }
-
+    interface TabMenuItemDecorator { MenuItem[] apply(ContentPane contentPane, MenuItem... items); }
+    interface TabHeaderMenuItemDecorator { MenuItem[] apply(ContainerHandle containerHandle, MenuItem... items); }
 
     static TabContainer of(
             RequireContent requireContent,
@@ -50,8 +50,8 @@ public interface TabContainer extends ContainerHandle {
         RequireContent requireContent,
         RequestContent requestContent,
         RequireStage requireStage,
-        MenuItemDecorator tabMenuDecorator,
-        MenuItemDecorator tabHeaderMenuDecorator) {
+        TabMenuItemDecorator tabMenuDecorator,
+        TabHeaderMenuItemDecorator tabHeaderMenuDecorator) {
         return new TabContainerImpl(
             requireContent,
             requestContent,
