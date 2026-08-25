@@ -20,7 +20,6 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.function.Function;
 
 /**
@@ -31,15 +30,20 @@ public interface TabContainer extends ContainerHandle {
 
     interface RequireContent { ContentPane content(); }
     interface RequireStage { Stage stage(Pane pane); }
-    interface RequestContent { void accept(Path path, ContainerHandle containerHandle); }
-    interface MenuItemDecorator { MenuItem[] apply(MenuItem... items); }
+    interface RequestContent { void accept(ContainerHandle containerHandle, Path path); }
+    interface MenuItemDecorator { MenuItem[] apply(ContainerHandle containerHandle, MenuItem... items); }
 
 
     static TabContainer of(
             RequireContent requireContent,
             RequestContent requestContent,
             RequireStage requireStage) {
-        return new TabContainerImpl(requireContent, requestContent, requireStage, items -> items, items -> items);
+        return new TabContainerImpl(
+            requireContent,
+            requestContent,
+            requireStage,
+            (_, items) -> items,
+            (_, items) -> items);
     }
 
     static TabContainer of(
@@ -48,7 +52,12 @@ public interface TabContainer extends ContainerHandle {
         RequireStage requireStage,
         MenuItemDecorator tabMenuDecorator,
         MenuItemDecorator tabHeaderMenuDecorator) {
-        return new TabContainerImpl(requireContent, requestContent, requireStage, tabMenuDecorator, tabHeaderMenuDecorator);
+        return new TabContainerImpl(
+            requireContent,
+            requestContent,
+            requireStage,
+            tabMenuDecorator,
+            tabHeaderMenuDecorator);
     }
 
     Pane resume(Stage stage, Path path, Function<String, ? extends ContentPane> resumeToContent);

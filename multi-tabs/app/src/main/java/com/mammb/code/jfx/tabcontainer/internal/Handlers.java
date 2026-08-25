@@ -33,6 +33,7 @@ import java.util.Objects;
 public class Handlers {
 
     interface StageHandler { void apply(Stage stage); }
+    private final ContainerHandle containerHandle;
     private final RequireContent requireContent;
     private final RequestContent requestContent;
     private final RequireStage requireStage;
@@ -41,11 +42,13 @@ public class Handlers {
     private final List<StageHandler> stageHandlers = new ArrayList<>();
 
     public Handlers(
+        ContainerHandle containerHandle,
         RequireContent requireContent,
         RequestContent requestContent,
         RequireStage requireStage,
         MenuItemDecorator tabMenuDecorator,
         MenuItemDecorator tabHeaderMenuDecorator) {
+        this.containerHandle = Objects.requireNonNull(containerHandle);
         this.requireContent = Objects.requireNonNull(requireContent);
         this.requestContent = Objects.requireNonNull(requestContent);
         this.requireStage = Objects.requireNonNull(requireStage);
@@ -57,8 +60,8 @@ public class Handlers {
         return requireContent.content();
     }
 
-    public void requestContent(Path path, ContainerHandle container) {
-        requestContent.accept(path, container);
+    public void requestContent(Path path) {
+        requestContent.accept(containerHandle, path);
     }
 
     public Stage requireStage(Pane pane) {
@@ -68,11 +71,11 @@ public class Handlers {
     }
 
     public MenuItem[] decorateTabMenu(MenuItem... items) {
-        return tabMenuDecorator.apply(items);
+        return tabMenuDecorator.apply(containerHandle, items);
     }
 
     public MenuItem[] decorateTabHeaderMenu(MenuItem... items) {
-        return tabHeaderMenuDecorator.apply(items);
+        return tabHeaderMenuDecorator.apply(containerHandle, items);
     }
 
     void addStageHandler(StageHandler stageHandler) {

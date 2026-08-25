@@ -56,7 +56,7 @@ public class ExampleApp extends Application {
         return stage;
     }
 
-    private void handleRequestContent(Path path, ContainerHandle containerHandle) {
+    private void handleRequestContent(ContainerHandle containerHandle, Path path) {
         if (path == null) {
             return;
         }

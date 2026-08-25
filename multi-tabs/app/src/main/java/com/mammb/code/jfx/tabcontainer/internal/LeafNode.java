@@ -178,8 +178,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         if (e.getDragboard().hasFiles() && dragOnTabHeader) {
             List<Path> paths = db.getFiles().stream()
                 .filter(File::exists).filter(File::canRead).map(File::toPath).toList();
-            paths.forEach(path ->
-                ctx.handlers().requestContent(path, new TabContainerImpl(ctx)));
+            paths.forEach(path -> ctx.handlers().requestContent(path));
             if (paths.isEmpty()) {
                 e.setDropCompleted(true);
                 e.consume();
