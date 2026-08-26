@@ -41,6 +41,8 @@ import java.util.function.Predicate;
  */
 public class Context {
 
+    private static final System.Logger log = System.getLogger(Context.class.getName());
+
     static final String TAB_SELECTED = "tab-container-selected";
 
     // last -> front
@@ -99,12 +101,16 @@ public class Context {
     public void handleTabChanged(ListChangeListener.Change<? extends javafx.scene.control.Tab> change) {
         while (change.next()) {
             for (var added : change.getAddedSubList()) {
-                if (added instanceof Tab tab && tab.parent() != null && tab.parent().getScene() != null) {
-                    referOnLru(tab);
+                if (added instanceof Tab tab) {
+                    if (tab.parent() != null && tab.parent().getScene() != null) {
+                        referOnLru(tab);
+                    } else {
+                        log.log(System.Logger.Level.WARNING, "Tab " + tab.parent().getScene() + " has no scene");
+                    }
                 }
             }
             for (var removed : change.getRemoved()) {
-                if (removed instanceof Tab tab && tab.parent() != null && tab.parent().getScene() != null) {
+                if (removed instanceof Tab tab) {
                     removeOnLru(tab);
                 }
             }
@@ -127,7 +133,7 @@ public class Context {
     Tab currentTab() {
         Stage stage = (Stage) stages.getLast().getScene().getWindow();
         SequencedSet<Tab> lru = lruTabs.get(stage);
-        return lruTabs.get(stage).getFirst();
+        return lru.getFirst();
     }
 
     List<Tab> allTabs() {
@@ -146,17 +152,16 @@ public class Context {
     }
 
     void removeOnLru(Tab tab) {
-        Stage stage = (Stage) tab.parent().getScene().getWindow();
-        SequencedSet<Tab> lru = lruTabs.get(stage);
-        if (Objects.equals(lru.getFirst(), tab)) {
-            lru.remove(tab);
-            if (!lru.isEmpty()) {
-                lru.getFirst().getStyleClass().add(TAB_SELECTED);
+        for (Stage stage : stages) {
+            if (lruTabs.get(stage).remove(tab)) {
+                if (tab.getStyleClass().contains(TAB_SELECTED)) {
+                    lruTabs.get(stages.getLast()).getFirst().getStyleClass().add(TAB_SELECTED);
+                }
+                break;
             }
-        } else {
-            lru.remove(tab);
         }
     }
+
     private void findAllTabs() {
         for (Stage stage : stages) {
             SequencedSet<Tab> lru = lruTabs.get(stage);
