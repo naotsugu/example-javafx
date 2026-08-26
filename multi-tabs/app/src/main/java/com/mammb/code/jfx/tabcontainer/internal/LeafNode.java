@@ -347,7 +347,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         );
     }
 
-    private Tab selectedTab() {
+    Tab selectedTab() {
         return (Tab) tabPane.getSelectionModel().getSelectedItem();
     }
 
