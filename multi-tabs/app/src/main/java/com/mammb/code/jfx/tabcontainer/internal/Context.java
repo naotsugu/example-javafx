@@ -96,18 +96,13 @@ public class Context {
         }
     }
 
-    public void handleTabAdded(ListChangeListener.Change<? extends javafx.scene.control.Tab> change) {
+    public void handleTabChanged(ListChangeListener.Change<? extends javafx.scene.control.Tab> change) {
         while (change.next()) {
             for (var added : change.getAddedSubList()) {
                 if (added instanceof Tab tab && tab.parent() != null && tab.parent().getScene() != null) {
                     referOnLru(tab);
                 }
             }
-        }
-    }
-
-    public void handleTabRemoved(ListChangeListener.Change<? extends javafx.scene.control.Tab> change) {
-        while (change.next()) {
             for (var removed : change.getRemoved()) {
                 if (removed instanceof Tab tab && tab.parent() != null && tab.parent().getScene() != null) {
                     removeOnLru(tab);

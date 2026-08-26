@@ -77,8 +77,7 @@ public class LeafNode extends TreeNode implements ParentOf<Tab> {
         tabPane.tabClosingPolicyProperty().set(TabPane.TabClosingPolicy.ALL_TABS);
         tabPane.focusedProperty().addListener(this::handleTabPaneFocused);
         tabPane.getSelectionModel().selectedItemProperty().addListener(ctx::handleTabSelected);
-        tabPane.getTabs().addListener(ctx::handleTabAdded);
-        tabPane.getTabs().removeListener(ctx::handleTabRemoved);
+        tabPane.getTabs().addListener(ctx::handleTabChanged);
         tabPane.layoutBoundsProperty().addListener(this::handleTabPaneLayoutBoundsChanged);
         tabPane.addEventFilter(KeyEvent.KEY_PRESSED, this::handleTabPaneKeyPressed);
         TabButton.install(tabPane, () -> add(ctx.handlers().requireContent()));
