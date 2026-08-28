@@ -50,6 +50,19 @@ public interface TabContainer extends ContainerHandle {
         RequireContent requireContent,
         RequestContent requestContent,
         RequireStage requireStage,
+        TabMenuItemDecorator tabMenuDecorator) {
+        return new TabContainerImpl(
+            requireContent,
+            requestContent,
+            requireStage,
+            tabMenuDecorator,
+            (_, items) -> items);
+    }
+
+    static TabContainer of(
+        RequireContent requireContent,
+        RequestContent requestContent,
+        RequireStage requireStage,
         TabMenuItemDecorator tabMenuDecorator,
         TabHeaderMenuItemDecorator tabHeaderMenuDecorator) {
         return new TabContainerImpl(
