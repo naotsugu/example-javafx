@@ -34,6 +34,10 @@ public interface ContainerHandle {
 
     List<ContentPane> find(Predicate<ContentPane> predicate);
 
+    default <T extends ContentPane> List<T> find(Class<T> clazz) {
+        return find(clazz::isInstance).stream().map(clazz::cast).toList();
+    }
+
     void select(ContentPane contentPane);
 
 }
