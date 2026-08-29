@@ -18,7 +18,6 @@ package com.mammb.code.jfx.tabcontainer.example;
 import com.mammb.code.jfx.tabcontainer.ContainerHandle;
 import com.mammb.code.jfx.tabcontainer.ContentPane;
 import com.mammb.code.jfx.tabcontainer.TabContainer;
-import com.mammb.code.jfx.tabcontainer.TabContainer.*;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
@@ -60,7 +59,7 @@ public class ExampleApp extends Application {
         if (path == null) {
             return;
         }
-        var found = containerHandle.find(contentPane -> {
+        var found = containerHandle.findFirst(contentPane -> {
             if (contentPane instanceof LabelContent labelContent) {
                 return Objects.equals(labelContent.shortNameProperty().get(), path.getFileName().toString());
             } else {

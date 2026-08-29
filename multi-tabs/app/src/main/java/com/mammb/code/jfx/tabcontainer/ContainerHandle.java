@@ -16,6 +16,7 @@
 package com.mammb.code.jfx.tabcontainer;
 
 import javafx.geometry.Side;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 
@@ -29,7 +30,9 @@ public interface ContainerHandle {
 
     void add(Side side, ContentPane contentPane);
 
-    Optional<ContentPane> find(Predicate<ContentPane> predicate);
+    Optional<ContentPane> findFirst(Predicate<ContentPane> predicate);
+
+    List<ContentPane> find(Predicate<ContentPane> predicate);
 
     void select(ContentPane contentPane);
 

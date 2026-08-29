@@ -26,7 +26,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -86,7 +85,12 @@ public class TabContainerImpl implements TabContainer, ContainerHandle {
     }
 
     @Override
-    public Optional<ContentPane> find(Predicate<ContentPane> predicate) {
+    public Optional<ContentPane> findFirst(Predicate<ContentPane> predicate) {
+        return ctx.findFirst(predicate);
+    }
+
+    @Override
+    public List<ContentPane> find(Predicate<ContentPane> predicate) {
         return ctx.find(predicate);
     }
 

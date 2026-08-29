@@ -23,12 +23,10 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 import javafx.scene.Node;
-import javafx.scene.Scene;
 import javafx.stage.Stage;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.SequencedSet;
 import java.util.Set;
@@ -131,8 +129,12 @@ public class Context {
         return handlers;
     }
 
-    Optional<ContentPane> find(Predicate<ContentPane> predicate) {
+    Optional<ContentPane> findFirst(Predicate<ContentPane> predicate) {
         return allTabs().stream().map(Tab::content).filter(predicate).findFirst();
+    }
+
+    List<ContentPane> find(Predicate<ContentPane> predicate) {
+        return allTabs().stream().map(Tab::content).filter(predicate).toList();
     }
 
     Tab currentTab() {
