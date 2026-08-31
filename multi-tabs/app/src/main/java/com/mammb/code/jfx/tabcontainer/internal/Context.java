@@ -162,7 +162,10 @@ public class Context {
         for (Stage stage : stages) {
             if (lruTabs.get(stage).remove(tab)) {
                 if (tab.getStyleClass().contains(TAB_SELECTED)) {
-                    lruTabs.get(stages.getLast()).getFirst().getStyleClass().add(TAB_SELECTED);
+                    var seq = lruTabs.get(stages.getLast());
+                    if (seq != null && !seq.isEmpty()) {
+                        seq.getFirst().getStyleClass().add(TAB_SELECTED);
+                    }
                 }
                 break;
             }
