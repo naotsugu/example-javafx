@@ -103,7 +103,11 @@ public class Context {
                     if (tab.parent() != null && tab.parent().getScene() != null) {
                         referOnLru(tab);
                     } else {
-                        log.log(System.Logger.Level.WARNING, "Tab " + tab.parent().getScene() + " has no scene");
+                        Platform.runLater(() -> {
+                            if (tab.parent() != null && tab.parent().getScene() != null) {
+                                referOnLru(tab);
+                            }
+                        });
                     }
                 }
             }
