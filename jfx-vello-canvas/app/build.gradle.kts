@@ -32,8 +32,12 @@ java {
     }
 }
 
+sourceSets.main {
+    java.srcDir(jextractOutDir)
+}
+
 application {
-    mainClass = "org.example.App"
+    mainClass = "com.mammb.code.jfx.canvas.example.Main"
 }
 
 tasks.named<Test>("test") {
@@ -86,8 +90,8 @@ tasks.register<Exec>("jextract") {
     group = "jextract"
     description = "Generates Java bindings from C header using jextract"
 
-    inputs.files(cbindhFile).withPropertyName("cbindHeaderFile")
-    outputs.dir(jextractOutDir).withPropertyName("jextractOutputDir")
+    inputs.files(cbindhFile)
+    outputs.dir(jextractOutDir)
 
     val jextract = layout.buildDirectory.dir("jextract/jextract-25/bin/jextract")
         .get().asFile.absolutePath + if (os.isWindows) ".bat" else ""
@@ -95,13 +99,22 @@ tasks.register<Exec>("jextract") {
     commandLine(jextract,
         cbindhFile.absolutePath,
         "--output", jextractOutDir.absolutePath,
-        "-t", "com.mammb.code.canvas.lib",
-        "-l", "lib"
+        "--target-package", "com.mammb.code.canvas.lib",
+        "--library", "lib"
     )
 }
 
 tasks.named("compileJava") {
     dependsOn("jextract")
+}
+
+tasks.named<Jar>("jar") {
+    from(when {
+        os.isMacOsX  -> rustTgtDir.resolve("release/liblib.dylib")
+        os.isLinux   -> rustTgtDir.resolve("release/liblib.so")
+        os.isWindows -> rustTgtDir.resolve("release/lib.dll")
+        else -> throw Error("Unsupported OS: $os")
+    })
 }
 
 tasks.named<JavaExec>("run") {
