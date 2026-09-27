@@ -9,6 +9,8 @@ val rustTgtDir = rustPrjDir.resolve("target")
 val rustSrcDir = rustPrjDir.resolve("src")
 val cbindhFile = rustTgtDir.resolve("lib.h")
 
+val nativeResDir = layout.buildDirectory.dir("nativeResources").get().asFile
+
 // jextract
 val jextractUrl = "https://download.java.net/java/early_access/jextract/25/2/"
 val jextractOutDir = layout.buildDirectory.dir("generated/main/java").get().asFile
@@ -34,6 +36,7 @@ java {
 
 sourceSets.main {
     java.srcDir(jextractOutDir)
+    resources.srcDir(nativeResDir)
 }
 
 application {
@@ -52,6 +55,18 @@ tasks.register<Exec>("cargoBuild") {
     inputs.files(rustPrjDir.resolve("Cargo.toml")).withPropertyName("cargoToml")
     outputs.dir(rustTgtDir).withPropertyName("rustTargetDir")
     commandLine = listOf(cargo.absolutePath, "build", "--release")
+}
+
+tasks.register<Copy>("processNativeResources") {
+    dependsOn("cargoBuild")
+    description = "Copy native resources"
+    from(when {
+        os.isMacOsX  -> rustTgtDir.resolve("release/liblib.dylib")
+        os.isLinux   -> rustTgtDir.resolve("release/liblib.so")
+        os.isWindows -> rustTgtDir.resolve("release/lib.dll")
+        else -> throw Error("Unsupported OS: $os")
+    })
+    into(nativeResDir)
 }
 
 tasks.register<Exec>("cargoClean") {
