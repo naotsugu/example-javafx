@@ -3,33 +3,45 @@ package com.mammb.code.jfx.canvas;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.foreign.Arena;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.Linker;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SymbolLookup;
-import java.lang.foreign.ValueLayout;
-import java.lang.invoke.MethodHandle;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Arrays;
 
 public final class NativeLibraryLoader {
+
+    /** The logger. */
+    private static final System.Logger log = System.getLogger(NativeLibraryLoader.class.getName());
 
     private NativeLibraryLoader() {
     }
 
-    /**
-     * @param name the name ("mylib" for libmylib.so / mylib.dll / libmylib.dylib)
-     */
     public static void loadByName(String name) {
+
+        // `mylib` for libmylib.so / mylib.dll / libmylib.dylib
+        String mappedName = System.mapLibraryName(name);
+
+        String os = System.getProperty("os.name").toLowerCase();
+        String env;
+        if (os.contains("win")) {
+            env = System.getenv("PATH");
+        } else if (os.contains("mac") || os.contains("darwin")) {
+            env = System.getenv("DYLD_LIBRARY_PATH");
+        } else {
+            env = System.getenv("LD_LIBRARY_PATH");
+        }
+        if (env != null && Arrays.stream(env.split(File.pathSeparator))
+                .anyMatch(path -> path.contains(mappedName))) {
+            return;
+        }
+
         try {
-            String mappedName = System.mapLibraryName(name);
             URI uri = getUrl(mappedName).toURI();
             Path libraryPath = resolveOrExtract(uri, mappedName);
-            System.load(libraryPath.toString());
+            log.log(System.Logger.Level.INFO, "libraryPath: {0}", libraryPath.toAbsolutePath().toString());
+            System.load(libraryPath.toAbsolutePath().toString());
         } catch (Exception e) {
             throw new RuntimeException("failed to load native library: " + name, e);
         }

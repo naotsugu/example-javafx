@@ -41,6 +41,7 @@ sourceSets.main {
 
 application {
     mainClass = "com.mammb.code.jfx.canvas.example.Main"
+    applicationDefaultJvmArgs = listOf("--enable-native-access=ALL-UNNAMED")
 }
 
 tasks.named<Test>("test") {
@@ -115,7 +116,8 @@ tasks.register<Exec>("jextract") {
         cbindhFile.absolutePath,
         "--output", jextractOutDir.absolutePath,
         "--target-package", "com.mammb.code.canvas.lib",
-        "--library", "lib"
+        "--library", "lib",
+        //"--use-system-load-library"
     )
 }
 
@@ -125,15 +127,6 @@ tasks.named("processResources") {
 
 tasks.named("compileJava") {
     dependsOn("jextract")
-}
-
-tasks.named<Jar>("jar") {
-    from(when {
-        os.isMacOsX  -> rustTgtDir.resolve("release/liblib.dylib")
-        os.isLinux   -> rustTgtDir.resolve("release/liblib.so")
-        os.isWindows -> rustTgtDir.resolve("release/lib.dll")
-        else -> throw Error("Unsupported OS: $os")
-    })
 }
 
 tasks.named<JavaExec>("run") {
