@@ -119,6 +119,10 @@ tasks.register<Exec>("jextract") {
     )
 }
 
+tasks.named("processResources") {
+    dependsOn("processNativeResources")
+}
+
 tasks.named("compileJava") {
     dependsOn("jextract")
 }
