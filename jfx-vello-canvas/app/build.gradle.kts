@@ -117,7 +117,6 @@ tasks.register<Exec>("jextract") {
         "--output", jextractOutDir.absolutePath,
         "--target-package", "com.mammb.code.canvas.lib",
         "--library", "lib",
-        //"--use-system-load-library"
     )
 }
 
