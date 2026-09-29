@@ -3,6 +3,8 @@ package com.mammb.code.jfx.canvas;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.foreign.Arena;
+import java.lang.foreign.SymbolLookup;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
@@ -14,6 +16,8 @@ public final class NativeLibraryLoader {
 
     /** The logger. */
     private static final System.Logger log = System.getLogger(NativeLibraryLoader.class.getName());
+
+    private static final Arena ARENA = Arena.global();
 
     private NativeLibraryLoader() {
     }
@@ -41,7 +45,8 @@ public final class NativeLibraryLoader {
             URI uri = getUrl(mappedName).toURI();
             Path libraryPath = resolveOrExtract(uri, mappedName);
             log.log(System.Logger.Level.INFO, "libraryPath: {0}", libraryPath.toAbsolutePath().toString());
-            System.load(libraryPath.toAbsolutePath().toString());
+            SymbolLookup.libraryLookup(libraryPath, ARENA);
+            //System.load(libraryPath.toAbsolutePath().toString());
         } catch (Exception e) {
             throw new RuntimeException("failed to load native library: " + name, e);
         }
