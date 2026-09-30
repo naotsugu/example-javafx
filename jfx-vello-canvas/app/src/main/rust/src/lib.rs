@@ -4,6 +4,7 @@ pub extern "C" fn add(a: i32, b: i32) -> i32 {
     a + b
 }
 
+use std::slice;
 use vello_cpu::{RenderContext, Resources, Pixmap};
 use vello_cpu::{color::{palette::css, PremulRgba8}, kurbo::Rect};
 
@@ -36,5 +37,25 @@ pub extern "C" fn destroy_ctx(ctx_ptr: *mut Context) {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn render(ctx_ptr: *mut Context, buffer: *mut u8) {
+
     if ctx_ptr.is_null() || buffer.is_null() { return; }
+
+    let ctx = unsafe { &mut *ctx_ptr };
+
+    ctx.render_context.set_paint(css::MAGENTA);
+    ctx.render_context.fill_rect(&Rect::from_points((10., 10.), (110., 110.)));
+    ctx.render_context.flush();
+    ctx.render_context.render(&mut ctx.pixmap, &mut ctx.resources);
+
+    let length = (ctx.width * ctx.height * 4) as usize;
+    let out_pixels = unsafe { slice::from_raw_parts_mut(buffer, length) };
+
+    for (i, pixel) in ctx.pixmap.data().iter().enumerate() {
+        let idx = i * 4;
+        out_pixels[idx]     = pixel.b; // B
+        out_pixels[idx + 1] = pixel.g; // G
+        out_pixels[idx + 2] = pixel.r; // R
+        out_pixels[idx + 3] = pixel.a; // A
+    }
+
 }
