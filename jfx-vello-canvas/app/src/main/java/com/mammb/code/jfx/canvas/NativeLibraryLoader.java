@@ -17,7 +17,7 @@ public final class NativeLibraryLoader {
     /** The logger. */
     private static final System.Logger log = System.getLogger(NativeLibraryLoader.class.getName());
 
-    private static final Arena ARENA = Arena.global();
+    //private static final Arena ARENA = Arena.global();
 
     private NativeLibraryLoader() {
     }
@@ -45,8 +45,8 @@ public final class NativeLibraryLoader {
             URI uri = getUrl(mappedName).toURI();
             Path libraryPath = resolveOrExtract(uri, mappedName);
             log.log(System.Logger.Level.INFO, "libraryPath: {0}", libraryPath.toAbsolutePath().toString());
-            SymbolLookup.libraryLookup(libraryPath, ARENA);
-            //System.load(libraryPath.toAbsolutePath().toString());
+            //SymbolLookup.libraryLookup(libraryPath, ARENA);
+            System.load(libraryPath.toAbsolutePath().toString());
         } catch (Exception e) {
             throw new RuntimeException("failed to load native library: " + name, e);
         }

@@ -17,6 +17,7 @@ val jextractOutDir = layout.buildDirectory.dir("generated/main/java").get().asFi
 
 plugins {
     application
+    id("org.openjfx.javafxplugin") version "0.1.0"
 }
 
 repositories {
@@ -32,6 +33,10 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(25)
     }
+}
+javafx {
+    version = "25"
+    modules("javafx.controls")
 }
 
 sourceSets.main {
