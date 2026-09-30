@@ -41,21 +41,20 @@ pub extern "C" fn render(ctx_ptr: *mut Context, buffer: *mut u8) {
     if ctx_ptr.is_null() || buffer.is_null() { return; }
 
     let ctx = unsafe { &mut *ctx_ptr };
-
+    let length = (ctx.width * ctx.height * 4) as usize;
     ctx.render_context.set_paint(css::MAGENTA);
     ctx.render_context.fill_rect(&Rect::from_points((10., 10.), (110., 110.)));
     ctx.render_context.flush();
     ctx.render_context.render(&mut ctx.pixmap, &mut ctx.resources);
 
-    let length = (ctx.width * ctx.height * 4) as usize;
-    let out_pixels = unsafe { slice::from_raw_parts_mut(buffer, length) };
+    let src_bytes = unsafe { slice::from_raw_parts(ctx.pixmap.data_as_u8_slice().as_ptr(), length) };
+    let dst_bytes = unsafe { slice::from_raw_parts_mut(buffer, length) };
 
-    for (i, pixel) in ctx.pixmap.data().iter().enumerate() {
-        let idx = i * 4;
-        out_pixels[idx]     = pixel.b; // B
-        out_pixels[idx + 1] = pixel.g; // G
-        out_pixels[idx + 2] = pixel.r; // R
-        out_pixels[idx + 3] = pixel.a; // A
+    for (src, dst) in src_bytes.chunks_exact(4).zip(dst_bytes.chunks_exact_mut(4)) {
+        dst[0] = src[2]; // B <- R
+        dst[1] = src[1]; // G <- G
+        dst[2] = src[0]; // R <- B
+        dst[3] = src[3]; // A <- A
     }
 
 }
