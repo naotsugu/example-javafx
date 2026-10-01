@@ -5,11 +5,14 @@ pub extern "C" fn add(a: i32, b: i32) -> i32 {
 }
 
 use std::slice;
-use vello_cpu::{RenderContext, Resources, Pixmap, Glyph};
-use vello_cpu::{color::{palette::css, PremulRgba8}, kurbo::Rect};
 use std::sync::Arc;
+use font_kit::family_name::FamilyName;
+use font_kit::properties::Properties;
+use font_kit::source::SystemSource;
+use vello_cpu::{RenderContext, Resources, Pixmap, Glyph};
+use vello_cpu::{color::{palette::css}, kurbo::Rect};
+use vello_cpu::peniko::{Blob, FontData};
 use skrifa::{FontRef, MetadataProvider};
-use vello_cpu::peniko::{Blob, FontData, Color, Fill};
 
 const FONT_DATA: &[u8] = include_bytes!("/System/Library/Fonts/ヒラギノ角ゴシック W3.ttc");
 
@@ -53,18 +56,29 @@ pub extern "C" fn render(ctx_ptr: *mut Context, buffer: *mut u8) {
     ctx.render_context.set_paint(css::MAGENTA);
     ctx.render_context.fill_rect(&Rect::from_points((10., 10.), (110., 110.)));
 
-    ctx.render_context.set_paint(css::WHITE);
-    let font_ref = FontRef::from_index(FONT_DATA, 0).expect("failed to load font data");
+    let handle = SystemSource::new()
+        .select_best_match(&[FamilyName::SansSerif], &Properties::new())
+        .expect("not found system font");
+    let font = handle.load()
+        .expect("failed to load font data");
+    let font_data: Arc<Vec<u8>> = font.copy_font_data()
+        .expect("failed to copy font data");
+
+
+    let font_ref = FontRef::from_index(&font_data, 0)
+        .expect("failed to load font data");
+
+    let font_size = 24.;
     let charmap = font_ref.charmap();
-    let font_size = 14.0;
     let glyph_metrics = font_ref.glyph_metrics(
         skrifa::instance::Size::new(font_size),
         skrifa::instance::LocationRef::default(),
     );
 
-    let text = "Hello, vello_cpu! 日本語フォントレンダリング品質";
-    let mut cursor_x = 50.0;
-    let baseline_y = 150.0;
+    let text = "Hello, world!";
+    let mut cursor_x = 30.;
+    let baseline_y = 30.;
+
 
     let glyphs: Vec<Glyph> = text
         .chars()
@@ -82,10 +96,12 @@ pub extern "C" fn render(ctx_ptr: *mut Context, buffer: *mut u8) {
         })
         .collect();
 
-    let font_blob = Blob::new(Arc::new(FONT_DATA));
+    let font_blob = Blob::new(font_data);
     let font = FontData::new(font_blob, 0);
+
+    ctx.render_context.set_paint(css::WHITE);
     let builder = ctx.render_context.glyph_run(&mut ctx.resources, &font);
-    builder.font_size(font_size).hint(true).fill_glyphs(glyphs.into_iter());
+    builder.font_size(font_size).fill_glyphs(glyphs.into_iter());
 
     ctx.render_context.flush();
     ctx.render_context.render(&mut ctx.pixmap, &mut ctx.resources);

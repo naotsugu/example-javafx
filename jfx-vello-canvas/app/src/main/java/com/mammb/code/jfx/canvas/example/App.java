@@ -16,8 +16,8 @@ import com.mammb.code.canvas.lib.lib_h;
 
 public class App extends Application {
 
-    private static final int WIDTH = 800;
-    private static final int HEIGHT = 600;
+    private static final int WIDTH = 400;
+    private static final int HEIGHT = 300;
 
     private Arena arena;
     private MemorySegment ctxPtr;
