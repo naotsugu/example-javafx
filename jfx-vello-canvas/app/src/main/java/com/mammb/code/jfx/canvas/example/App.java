@@ -7,6 +7,7 @@ import javafx.scene.image.PixelBuffer;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -41,7 +42,7 @@ public class App extends Application {
 
         ImageView imageView = new ImageView(image);
         StackPane root = new StackPane(imageView);
-        Scene scene = new Scene(root, WIDTH, HEIGHT);
+        Scene scene = new Scene(root, WIDTH, HEIGHT, Color.TRANSPARENT);
 
         stage.setScene(scene);
         stage.show();
