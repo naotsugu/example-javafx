@@ -10,9 +10,11 @@ crate-type = ["cdylib"]
 cbindgen = "0.29.4"
 
 [dependencies]
-font-kit = "0.14.3"
+vello = "0.10.0"
+pollster = "0.4.0"
 skrifa = "0.47.0"
-vello_cpu = "0.2.0"
+#font-kit = "0.14.3"
+#vello_cpu = "0.2.0"
 
 [profile.dev.package."*"]
 debug = 0
