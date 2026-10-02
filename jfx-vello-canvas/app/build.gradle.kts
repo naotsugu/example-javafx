@@ -121,7 +121,7 @@ tasks.register<Exec>("jextract") {
         cbindhFile.absolutePath,
         "--output", jextractOutDir.absolutePath,
         "--target-package", "com.mammb.code.canvas.lib",
-        "--library", "lib",
+        //"--library", "lib",
     )
 }
 
@@ -133,13 +133,13 @@ tasks.named("compileJava") {
     dependsOn("jextract")
 }
 
-tasks.named<JavaExec>("run") {
-    val rustLibDir = rustTgtDir.resolve("release")
-    if (os.isMacOsX) {
-        environment("DYLD_LIBRARY_PATH", rustLibDir)
-    } else if (os.isWindows) {
-        environment("PATH", rustLibDir)
-    } else {
-        environment("LD_LIBRARY_PATH", rustLibDir)
-    }
-}
+//tasks.named<JavaExec>("run") {
+//    val rustLibDir = rustTgtDir.resolve("release")
+//    if (os.isMacOsX) {
+//        environment("DYLD_LIBRARY_PATH", rustLibDir)
+//    } else if (os.isWindows) {
+//        environment("PATH", rustLibDir)
+//    } else {
+//        environment("LD_LIBRARY_PATH", rustLibDir)
+//    }
+//}

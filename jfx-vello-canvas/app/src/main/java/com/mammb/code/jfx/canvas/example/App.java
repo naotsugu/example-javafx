@@ -16,7 +16,7 @@ import com.mammb.code.canvas.lib.lib_h;
 
 public class App extends Application {
 
-    private static final int WIDTH = 400;
+    private static final int WIDTH = 512;
     private static final int HEIGHT = 300;
 
     private Arena arena;
@@ -27,7 +27,7 @@ public class App extends Application {
 
         arena = Arena.ofShared();
 
-        ctxPtr = lib_h.create_ctx(WIDTH, HEIGHT);
+        ctxPtr = lib_h.create_render_context(WIDTH, HEIGHT);
         if (ctxPtr.equals(MemorySegment.NULL)) {
             throw new RuntimeException("Failed to initialize context");
         }
@@ -47,6 +47,7 @@ public class App extends Application {
         stage.setScene(scene);
         stage.show();
 
+        lib_h.fill_rect(ctxPtr, 50, 50, 100, 100, (byte)200, (byte)10, (byte)10, (byte)100);
         lib_h.render(ctxPtr, segment);
         pixelBuffer.updateBuffer(_ -> null);
 
@@ -54,8 +55,9 @@ public class App extends Application {
 
     @Override
     public void stop() {
-        if (ctxPtr != null && !ctxPtr.equals(MemorySegment.NULL)) {
-            lib_h.destroy_ctx(ctxPtr);
+        if (ctxPtr != null &&
+            !ctxPtr.equals(MemorySegment.NULL)) {
+            lib_h.destroy_render_context(ctxPtr);
         }
         if (arena != null) arena.close();
     }
