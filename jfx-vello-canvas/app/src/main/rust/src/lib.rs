@@ -1,10 +1,9 @@
 use std::slice;
 use vello::{
-    kurbo::{Affine, Rect},
+    kurbo::{Affine, BezPath, Cap, Rect, Stroke, Ellipse, RoundedRect, Line},
     peniko::{Color, Fill},
     Scene,
 };
-use vello::kurbo::Circle;
 use vello::wgpu;
 
 pub struct RenderContext {
@@ -15,7 +14,18 @@ pub struct RenderContext {
     readback_buffer: wgpu::Buffer,
     width: u32,
     height: u32,
-    scene: Scene
+    scene: Scene,
+    fill_color: Color,
+    stroke_color: Color,
+    line_width: f64,
+    line_cap: Cap,
+}
+
+impl RenderContext {
+    /// Builds the Stroke from the current line width and cap.
+    fn stroke_style(&self) -> Stroke {
+        Stroke::new(self.line_width).with_caps(self.line_cap)
+    }
 }
 
 #[unsafe(no_mangle)]
@@ -83,7 +93,11 @@ pub extern "C" fn create_render_context(width: u32, height: u32) -> *mut RenderC
         readback_buffer,
         width,
         height,
-        scene
+        scene,
+        fill_color: Color::from_rgba8(0, 0, 0, 255),
+        stroke_color: Color::from_rgba8(0, 0, 0, 255),
+        line_width: 1.,
+        line_cap: Cap::Butt,
     };
 
     // detach from Rust's memory management and pass to Java as a raw pointer
@@ -102,7 +116,7 @@ pub extern "C" fn destroy_render_context(ctx_ptr: *mut RenderContext) {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn render(ctx_ptr: *mut RenderContext, buffer: *mut u8) {
-    
+
     if ctx_ptr.is_null() || buffer.is_null() {
         return;
     }
@@ -180,19 +194,244 @@ pub extern "C" fn render(ctx_ptr: *mut RenderContext, buffer: *mut u8) {
     scene.reset();
 }
 
+// --
 
+/// Sets the current fill paint attribute. The default value is BLACK.
 #[unsafe(no_mangle)]
-pub extern "C" fn fill_rect(ctx_ptr: *mut RenderContext,
-        x: f64, y: f64, width: f64, height: f64,
-        r: u8, g: u8, b: u8, a: u8) {
+pub extern "C" fn set_fill(ctx_ptr: *mut RenderContext, r: u8, g: u8, b: u8, a: u8) {
     if ctx_ptr.is_null() { return; }
     let ctx = unsafe { &mut *ctx_ptr };
-    let scene = &mut ctx.scene;
+    ctx.fill_color = Color::from_rgba8(r, g, b, a);
+}
+
+/// Sets the current stroke paint attribute. The default value is BLACK.
+#[unsafe(no_mangle)]
+pub extern "C" fn set_stroke(ctx_ptr: *mut RenderContext, r: u8, g: u8, b: u8, a: u8) {
+    if ctx_ptr.is_null() { return; }
+    let ctx = unsafe { &mut *ctx_ptr };
+    ctx.stroke_color = Color::from_rgba8(r, g, b, a);
+}
+
+/// Sets the width; it applies to all following stroke operations
+#[unsafe(no_mangle)]
+pub extern "C" fn set_line_width(ctx_ptr: *mut RenderContext, line_width: f64) {
+    if ctx_ptr.is_null() { return; }
+    let ctx = unsafe { &mut *ctx_ptr };
+    ctx.line_width = line_width;
+}
+
+/// Sets the line cap: 0 = butt, 1 = round, 2 = square (same values as Java's BasicStroke).
+/// Unknown values are ignored.
+#[unsafe(no_mangle)]
+pub extern "C" fn set_line_cap(ctx_ptr: *mut RenderContext, cap: u32) {
+    if ctx_ptr.is_null() { return; }
+    let ctx = unsafe { &mut *ctx_ptr };
+    ctx.line_cap = match cap {
+        0 => Cap::Butt,
+        1 => Cap::Round,
+        2 => Cap::Square,
+        _ => return,
+    };
+}
+
+// --------------------------------------------------------------
+
+/// Fills a rectangle using the current fill paint.
+#[unsafe(no_mangle)]
+pub extern "C" fn fill_rect(ctx_ptr: *mut RenderContext,
+        x: f64, y: f64, width: f64, height: f64) {
+    if ctx_ptr.is_null() { return; }
+    let ctx = unsafe { &mut *ctx_ptr };
+    let (scene, fill_color) = (&mut ctx.scene, ctx.fill_color);
     scene.fill(
         Fill::NonZero,
         Affine::IDENTITY,
-        Color::from_rgba8(r, g, b, a),
+        fill_color,
         None,
-        &Rect::new(x, y, width, height),
+        &Rect::new(x, y, x + width, y + height),
+    );
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn stroke_rect(ctx_ptr: *mut RenderContext,
+        x: f64, y: f64, width: f64, height: f64) {
+    if ctx_ptr.is_null() { return; }
+    let ctx = unsafe { &mut *ctx_ptr };
+    let stroke = ctx.stroke_style();
+    let (scene, stroke_color) = (&mut ctx.scene, ctx.stroke_color);
+    scene.stroke(
+        &stroke,
+        Affine::IDENTITY,
+        stroke_color,
+        None,
+        &Rect::new(x, y, x + width, y + height),
+    );
+}
+
+/// Fills an oval inscribed in the given bounding rectangle using the current fill paint.
+#[unsafe(no_mangle)]
+pub extern "C" fn fill_oval(ctx_ptr: *mut RenderContext,
+        x: f64, y: f64, width: f64, height: f64) {
+    if ctx_ptr.is_null() { return; }
+    let ctx = unsafe { &mut *ctx_ptr };
+    let (scene, fill_color) = (&mut ctx.scene, ctx.fill_color);
+    // center is the middle of the bounding box, radii are half of its size
+    let oval = Ellipse::new((x + width / 2.0, y + height / 2.0), (width / 2.0, height / 2.0), 0.0);
+    scene.fill(
+        Fill::NonZero,
+        Affine::IDENTITY,
+        fill_color,
+        None,
+        &oval,
+    );
+}
+
+/// Strokes an oval inscribed in the given bounding rectangle using the current stroke paint and width.
+#[unsafe(no_mangle)]
+pub extern "C" fn stroke_oval(ctx_ptr: *mut RenderContext,
+        x: f64, y: f64, width: f64, height: f64) {
+    if ctx_ptr.is_null() { return; }
+    let ctx = unsafe { &mut *ctx_ptr };
+    let stroke = ctx.stroke_style();
+    let (scene, stroke_color) = (&mut ctx.scene, ctx.stroke_color);
+    // center is the middle of the bounding box, radii are half of its size
+    let oval = Ellipse::new((x + width / 2.0, y + height / 2.0), (width / 2.0, height / 2.0), 0.0);
+    scene.stroke(
+        &stroke,
+        Affine::IDENTITY,
+        stroke_color,
+        None,
+        &oval,
+    );
+}
+
+/// Fills a rounded rectangle using the current fill paint.
+/// radius is the radius of the corner arcs.
+#[unsafe(no_mangle)]
+pub extern "C" fn fill_round_rect(ctx_ptr: *mut RenderContext,
+        x: f64, y: f64, width: f64, height: f64, radius: f64) {
+    if ctx_ptr.is_null() { return; }
+    let ctx = unsafe { &mut *ctx_ptr };
+    let (scene, fill_color) = (&mut ctx.scene, ctx.fill_color);
+    scene.fill(
+        Fill::NonZero,
+        Affine::IDENTITY,
+        fill_color,
+        None,
+        &RoundedRect::new(x, y, x + width, y + height, radius),
+    );
+}
+
+/// Strokes a rounded rectangle using the current stroke paint and width.
+/// radius is the radius of the corner arcs.
+#[unsafe(no_mangle)]
+pub extern "C" fn stroke_round_rect(ctx_ptr: *mut RenderContext,
+        x: f64, y: f64, width: f64, height: f64, radius: f64) {
+    if ctx_ptr.is_null() { return; }
+    let ctx = unsafe { &mut *ctx_ptr };
+    let stroke = ctx.stroke_style();
+    let (scene, stroke_color) = (&mut ctx.scene, ctx.stroke_color);
+    scene.stroke(
+        &stroke,
+        Affine::IDENTITY,
+        stroke_color,
+        None,
+        &RoundedRect::new(x, y, x + width, y + height, radius),
+    );
+}
+
+/// Strokes a line from (x1, y1) to (x2, y2) using the current stroke paint and width.
+#[unsafe(no_mangle)]
+pub extern "C" fn stroke_line(ctx_ptr: *mut RenderContext,
+        x1: f64, y1: f64, x2: f64, y2: f64) {
+    if ctx_ptr.is_null() { return; }
+    let ctx = unsafe { &mut *ctx_ptr };
+    let stroke = ctx.stroke_style();
+    let (scene, stroke_color) = (&mut ctx.scene, ctx.stroke_color);
+    scene.stroke(
+        &stroke,
+        Affine::IDENTITY,
+        stroke_color,
+        None,
+        &Line::new((x1, y1), (x2, y2)),
+    );
+}
+
+/// Builds a path from separate x / y coordinate arrays.
+/// Returns None if a pointer is null or there are fewer than 2 points.
+/// The caller must guarantee that both pointers are valid for n_points elements.
+unsafe fn points_to_path(
+    x_points: *const f64, y_points: *const f64, n_points: u32, close: bool) -> Option<BezPath> {
+    if x_points.is_null() || y_points.is_null() || n_points < 2 {
+        return None;
+    }
+    let n = n_points as usize;
+    let xs = unsafe { slice::from_raw_parts(x_points, n) };
+    let ys = unsafe { slice::from_raw_parts(y_points, n) };
+
+    let mut path = BezPath::new();
+    path.move_to((xs[0], ys[0]));
+    for i in 1..n {
+        path.line_to((xs[i], ys[i]));
+    }
+    if close {
+        // connect the last point back to the first one
+        path.close_path();
+    }
+    Some(path)
+}
+
+/// Fills a closed polygon using the current fill paint.
+/// The even-odd rule is used, same as Java's fillPolygon.
+#[unsafe(no_mangle)]
+pub extern "C" fn fill_polygon(ctx_ptr: *mut RenderContext,
+        x_points: *const f64, y_points: *const f64, n_points: u32) {
+    if ctx_ptr.is_null() { return; }
+    let ctx = unsafe { &mut *ctx_ptr };
+    let Some(path) = (unsafe { points_to_path(x_points, y_points, n_points, true) }) else { return; };
+    let (scene, fill_color) = (&mut ctx.scene, ctx.fill_color);
+    scene.fill(
+        Fill::EvenOdd,
+        Affine::IDENTITY,
+        fill_color,
+        None,
+        &path,
+    );
+}
+
+/// Strokes a closed polygon using the current stroke paint, width and cap.
+#[unsafe(no_mangle)]
+pub extern "C" fn stroke_polygon(ctx_ptr: *mut RenderContext,
+        x_points: *const f64, y_points: *const f64, n_points: u32) {
+    if ctx_ptr.is_null() { return; }
+    let ctx = unsafe { &mut *ctx_ptr };
+    let Some(path) = (unsafe { points_to_path(x_points, y_points, n_points, true) }) else { return; };
+    let stroke = ctx.stroke_style(); // build before borrowing scene mutably
+    let (scene, stroke_color) = (&mut ctx.scene, ctx.stroke_color);
+    scene.stroke(
+        &stroke,
+        Affine::IDENTITY,
+        stroke_color,
+        None,
+        &path,
+    );
+}
+
+/// Strokes an open polyline (the last point is not connected to the first one)
+/// using the current stroke paint, width and cap.
+#[unsafe(no_mangle)]
+pub extern "C" fn stroke_polyline(ctx_ptr: *mut RenderContext,
+        x_points: *const f64, y_points: *const f64, n_points: u32) {
+    if ctx_ptr.is_null() { return; }
+    let ctx = unsafe { &mut *ctx_ptr };
+    let Some(path) = (unsafe { points_to_path(x_points, y_points, n_points, false) }) else { return; };
+    let stroke = ctx.stroke_style(); // build before borrowing scene mutably
+    let (scene, stroke_color) = (&mut ctx.scene, ctx.stroke_color);
+    scene.stroke(
+        &stroke,
+        Affine::IDENTITY,
+        stroke_color,
+        None,
+        &path,
     );
 }
