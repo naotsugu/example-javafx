@@ -53,30 +53,8 @@ pub extern "C" fn create_render_context(width: u32, height: u32) -> *mut RenderC
     }))
     .expect("failed to create device");
 
-    // create a render target texture
-    let texture = device.create_texture(&wgpu::TextureDescriptor {
-        label: Some("Render Target Texture"),
-        size: wgpu::Extent3d {
-            width: width.into(),
-            height: height.into(),
-            depth_or_array_layers: 1,
-        },
-        mip_level_count: 1,
-        sample_count: 1,
-        dimension: wgpu::TextureDimension::D2,
-        format: wgpu::TextureFormat::Rgba8Unorm,
-        usage: wgpu::TextureUsages::RENDER_ATTACHMENT
-             | wgpu::TextureUsages::COPY_SRC
-             | wgpu::TextureUsages::STORAGE_BINDING,
-        view_formats: &[],
-    });
-
-    let readback_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("Readback Buffer"),
-        size: (width * height * 4) as wgpu::BufferAddress,
-        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
+    // create a render target texture and a readback buffer
+    let (texture, readback_buffer) = create_render_target(&device, width, height);
 
     // create renderer and render the scene to the texture
     let renderer = vello::Renderer::new(
@@ -157,6 +135,7 @@ pub extern "C" fn render(ctx_ptr: *mut RenderContext, buffer: *mut u8) {
         },
     ).expect("failed to render texture");
 
+    let padded_row = padded_bytes_per_row(width);
     let mut encoder = device.create_command_encoder(
         &wgpu::CommandEncoderDescriptor::default());
     encoder.copy_texture_to_buffer(
@@ -170,7 +149,7 @@ pub extern "C" fn render(ctx_ptr: *mut RenderContext, buffer: *mut u8) {
             buffer: readback_buffer,
             layout: wgpu::TexelCopyBufferLayout {
                 offset: 0,
-                bytes_per_row: Some(width * 4),
+                bytes_per_row: Some(padded_row), // was width * 4
                 rows_per_image: Some(height),
             },
         },
@@ -188,20 +167,57 @@ pub extern "C" fn render(ctx_ptr: *mut RenderContext, buffer: *mut u8) {
     rx.recv().unwrap().unwrap();
     let mapped_data = buffer_slice.get_mapped_range();
 
-    // SIMD copy
-    let length = (width * height * 4) as usize;
-    let src_bytes = unsafe { slice::from_raw_parts(mapped_data.as_ptr(), length) };
-    let dst_bytes = unsafe { slice::from_raw_parts_mut(buffer, length) };
-    for (src, dst) in src_bytes.chunks_exact(4).zip(dst_bytes.chunks_exact_mut(4)) {
-        dst[0] = src[2]; // B <- R
-        dst[1] = src[1]; // G <- G
-        dst[2] = src[0]; // R <- B
-        dst[3] = src[3]; // A <- A
+    // // SIMD copy
+    // let length = (width * height * 4) as usize;
+    // let src_bytes = unsafe { slice::from_raw_parts(mapped_data.as_ptr(), length) };
+    // let dst_bytes = unsafe { slice::from_raw_parts_mut(buffer, length) };
+    // for (src, dst) in src_bytes.chunks_exact(4).zip(dst_bytes.chunks_exact_mut(4)) {
+    //     dst[0] = src[2]; // B <- R
+    //     dst[1] = src[1]; // G <- G
+    //     dst[2] = src[0]; // R <- B
+    //     dst[3] = src[3]; // A <- A
+    // }
+
+    // copy row by row: drop the row padding and convert RGBA to BGRA
+    let row_bytes = (width * 4) as usize;
+    let dst_bytes = unsafe { slice::from_raw_parts_mut(buffer, row_bytes * height as usize) };
+    for (src_row, dst_row) in mapped_data
+        .chunks_exact(padded_row as usize)
+        .zip(dst_bytes.chunks_exact_mut(row_bytes))
+    {
+        for (src, dst) in src_row[..row_bytes].chunks_exact(4).zip(dst_row.chunks_exact_mut(4)) {
+            dst[0] = src[2]; // B <- R
+            dst[1] = src[1]; // G <- G
+            dst[2] = src[0]; // R <- B
+            dst[3] = src[3]; // A <- A
+        }
     }
 
     drop(mapped_data);
     readback_buffer.unmap();
     scene.reset();
+}
+
+/// Resizes the canvas. The size must be non-zero and within the device limits.
+/// Returns false if the size is invalid; the old size is kept in that case.
+/// Call this before drawing a frame: commands already added to the scene are kept as they are.
+/// After resizing, the buffer passed to render() must hold width * height * 4 bytes.
+#[unsafe(no_mangle)]
+pub extern "C" fn resize(ctx_ptr: *mut RenderContext, width: u32, height: u32) -> bool {
+    if ctx_ptr.is_null() || width == 0 || height == 0 { return false; }
+    let ctx = unsafe { &mut *ctx_ptr };
+    if width == ctx.width && height == ctx.height { return true; }
+
+    let max = ctx.device.limits().max_texture_dimension_2d;
+    if width > max || height > max { return false; }
+
+    // the old texture and buffer are dropped when replaced
+    let (texture, readback_buffer) = create_render_target(&ctx.device, width, height);
+    ctx.texture = texture;
+    ctx.readback_buffer = readback_buffer;
+    ctx.width = width;
+    ctx.height = height;
+    true
 }
 
 // -- attribute ---------------------------------------------------------------
@@ -548,5 +564,40 @@ fn fill_text_internal(ctx_ptr: *mut RenderContext, text: &str, x: f64, y: f64) {
                 }));
         }
     }
+}
 
+/// wgpu requires bytes_per_row of a texture-to-buffer copy to be a multiple of 256.
+fn padded_bytes_per_row(width: u32) -> u32 {
+    (width * 4).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT)
+}
+
+/// Creates the render target texture and the readback buffer for the given size.
+fn create_render_target(device: &wgpu::Device, width: u32, height: u32)
+        -> (wgpu::Texture, wgpu::Buffer) {
+    let texture = device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("Render Target Texture"),
+        size: wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format: wgpu::TextureFormat::Rgba8Unorm,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+            | wgpu::TextureUsages::COPY_SRC
+            | wgpu::TextureUsages::STORAGE_BINDING,
+        view_formats: &[],
+    });
+
+    let readback_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("Readback Buffer"),
+        // each row is padded, so the buffer is larger than width * height * 4
+        size: (padded_bytes_per_row(width) * height) as wgpu::BufferAddress,
+        usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+        mapped_at_creation: false,
+    });
+
+    (texture, readback_buffer)
 }

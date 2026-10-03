@@ -121,8 +121,30 @@ tasks.register<Exec>("jextract") {
         cbindhFile.absolutePath,
         "--output", jextractOutDir.absolutePath,
         "--target-package", "com.mammb.code.canvas.lib",
-        //"--library", "lib",
+        "--library", "lib",
     )
+
+
+    val outDir = jextractOutDir // capture the output dir at configuration time (configuration cache friendly)
+    doLast {
+        val original = "static final SymbolLookup SYMBOL_LOOKUP = " +
+                "SymbolLookup.libraryLookup(System.mapLibraryName(\"lib\"), LIBRARY_ARENA)"
+
+        val replacement = "static final SymbolLookup SYMBOL_LOOKUP = " +
+                "SymbolLookup.libraryLookup(" +
+                "java.nio.file.Path.of(System.getProperty(\"nativeLibraryPath\"))" +
+                ".resolve(System.mapLibraryName(\"lib\")), LIBRARY_ARENA)"
+
+        val target = outDir.walkTopDown().firstOrNull { it.name == "lib_h_1.java" }
+            ?: throw GradleException("lib_h_1.java not found under $outDir")
+
+        val text = target.readText()
+        if (!text.contains(original)) {
+            throw GradleException("SYMBOL_LOOKUP line not found in ${target.name}; jextract output may have changed")
+        }
+        target.writeText(text.replace(original, replacement))
+    }
+
 }
 
 tasks.named("processResources") {
