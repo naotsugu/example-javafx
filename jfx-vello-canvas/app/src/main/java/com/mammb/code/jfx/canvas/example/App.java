@@ -47,7 +47,10 @@ public class App extends Application {
         stage.setScene(scene);
         stage.show();
 
+        lib_h.set_fill(ctxPtr, (byte)255, (byte)100, (byte)100, (byte)200);
         lib_h.fill_rect(ctxPtr, 50, 50, 100, 100);
+        lib_h.set_fill(ctxPtr, (byte)255, (byte)255, (byte)255, (byte)255);
+
         lib_h.render(ctxPtr, segment);
         pixelBuffer.updateBuffer(_ -> null);
 

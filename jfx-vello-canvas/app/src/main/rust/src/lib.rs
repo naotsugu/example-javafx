@@ -1,12 +1,10 @@
+use std::borrow::Cow;
 use std::slice;
-use std::sync::Arc;
 use vello::{
     kurbo::{Affine, BezPath, Cap, Rect, Stroke, Ellipse, RoundedRect, Line},
     peniko::{Color, Fill}, Scene, Glyph};
-use vello::peniko::{Blob, FontData};
 use vello::wgpu;
-use skrifa::{FontRef, MetadataProvider};
-use skrifa::instance::{LocationRef, Size};
+use parley::{Alignment, AlignmentOptions, FontContext, FontFamily, Layout, LayoutContext, PositionedLayoutItem, StyleProperty};
 
 pub struct RenderContext {
     device: wgpu::Device,
@@ -21,7 +19,9 @@ pub struct RenderContext {
     stroke_color: Color,
     line_width: f64,
     line_cap: Cap,
-    font: Option<FontData>,
+    font_cx: FontContext,
+    layout_cx: LayoutContext<()>,
+    font_family: String,
     font_size: f32,
 }
 
@@ -102,7 +102,9 @@ pub extern "C" fn create_render_context(width: u32, height: u32) -> *mut RenderC
         stroke_color: Color::from_rgba8(0, 0, 0, 255),
         line_width: 1.,
         line_cap: Cap::Butt,
-        font: None,
+        font_cx: FontContext::new(),
+        layout_cx: LayoutContext::new(),
+        font_family: "sans-serif".to_string(),
         font_size: 12.0,
     };
 
@@ -240,19 +242,28 @@ pub extern "C" fn set_line_cap(ctx_ptr: *mut RenderContext, cap: u32) {
     };
 }
 
-/// Sets the current font from raw font file data (TTF / OTF). The data is copied.
-/// index selects a font inside a collection (use 0 for a single font file).
-/// Returns false if the data cannot be parsed; the previous font is kept in that case.
+/// Sets the font families as a comma-separated list, e.g. "Segoe UI, Meiryo, sans-serif".
+/// Characters missing in a family fall back to the next one, then to other system fonts.
+/// Returns false if none of the listed (non-generic) families is installed;
+/// the list is stored anyway.
 #[unsafe(no_mangle)]
-pub extern "C" fn set_font(ctx_ptr: *mut RenderContext,
-                           data: *const u8, len: u32, index: u32) -> bool {
-    if ctx_ptr.is_null() || data.is_null() { return false; }
+pub extern "C" fn set_font_family(ctx_ptr: *mut RenderContext, names: *const u8, len: u32) -> bool {
+    if ctx_ptr.is_null() || names.is_null() { return false; }
     let ctx = unsafe { &mut *ctx_ptr };
-    let bytes = unsafe { slice::from_raw_parts(data, len as usize) }.to_vec();
-    // validate before storing so that fill_text never sees a broken font
-    if FontRef::from_index(&bytes, index).is_err() { return false; }
-    ctx.font = Some(FontData::new(Blob::new(Arc::new(bytes)), index));
-    true
+    let bytes = unsafe { slice::from_raw_parts(names, len as usize) };
+    let Ok(names) = std::str::from_utf8(bytes) else { return false; };
+    ctx.font_family = names.trim().to_string();
+
+    // generic names (serif, sans-serif, ...) are resolved by the system and always count as found
+    names.split(',')
+        .map(|n| n.trim().trim_matches(|c| c == '"' || c == '\''))
+        .filter(|n| !n.is_empty())
+        .any(|n| {
+            matches!(
+                n.to_ascii_lowercase().as_str(),
+                "serif" | "sans-serif" | "monospace" | "cursive" | "fantasy" | "system-ui"
+            ) || ctx.font_cx.collection.family_id(n).is_some()
+        })
 }
 
 /// Sets the font size in pixels. Non-positive or non-finite values are ignored.
@@ -465,36 +476,51 @@ pub extern "C" fn stroke_polyline(ctx_ptr: *mut RenderContext,
     );
 }
 
-/// Draws UTF-8 text using the current fill paint, font and font size.
-/// (x, y) is the left end of the baseline, same as Java's drawString.
-/// Nothing is drawn if no font has been set.
+/// Draws UTF-8 text.
+/// (x, y) is the left end of the baseline of the first line.
 #[unsafe(no_mangle)]
 pub extern "C" fn fill_text(ctx_ptr: *mut RenderContext,
         text: *const u8, len: u32, x: f64, y: f64) {
     if ctx_ptr.is_null() || text.is_null() { return; }
+
     let ctx = unsafe { &mut *ctx_ptr };
-    let Some(font) = ctx.font.clone() else { return; };
     let bytes = unsafe { slice::from_raw_parts(text, len as usize) };
     let Ok(text) = std::str::from_utf8(bytes) else { return; };
-    let Ok(font_ref) = FontRef::from_index(font.data.data(), font.index) else { return; };
 
-    // simple layout: map each char to a glyph and advance by its width
-    // (no kerning, ligatures or complex script shaping)
     let size = ctx.font_size;
-    let charmap = font_ref.charmap();
-    let metrics = font_ref.glyph_metrics(Size::new(size), LocationRef::default());
-    let mut pen_x = x as f32;
-    let glyphs: Vec<Glyph> = text.chars().map(|c| {
-        let gid = charmap.map(c).unwrap_or_default();
-        let glyph = Glyph { id: gid.to_u32(), x: pen_x, y: y as f32 };
-        pen_x += metrics.advance_width(gid).unwrap_or_default();
-        glyph
-    }).collect();
+    let fill_color = ctx.fill_color;
 
-    let (scene, fill_color) = (&mut ctx.scene, ctx.fill_color);
-    scene
-        .draw_glyphs(&font)
-        .font_size(size)
-        .brush(fill_color)
-        .draw(Fill::NonZero, glyphs.into_iter());
+    let mut builder = ctx.layout_cx.ranged_builder(&mut ctx.font_cx, text, 1.0, true);
+    builder.push_default(StyleProperty::FontSize(size));
+    builder.push_default(StyleProperty::FontFamily(FontFamily::Source(
+        Cow::Borrowed(ctx.font_family.as_str()),
+    )));
+    let mut layout: Layout<()> = builder.build(text);
+    layout.break_all_lines(None); // no wrapping
+    layout.align(Alignment::Start, AlignmentOptions::default());
+
+    // place the baseline of the first line at y
+    let Some(first_line) = layout.lines().next() else { return; };
+    let origin_y = y as f32 - first_line.metrics().baseline;
+
+    let scene = &mut ctx.scene;
+    for line in layout.lines() {
+        for item in line.items() {
+            let PositionedLayoutItem::GlyphRun(glyph_run) = item else { continue; };
+            let run = glyph_run.run();
+            let baseline = origin_y + glyph_run.baseline();
+            let mut cursor = x as f32 + glyph_run.offset();
+            scene
+                .draw_glyphs(run.font())
+                .font_size(run.font_size())
+                .normalized_coords(run.normalized_coords())
+                .brush(fill_color)
+                .draw(Fill::NonZero, glyph_run.glyphs().map(|g| {
+                    // g.x / g.y are offsets inside the run; y points up in parley
+                    let glyph = Glyph { id: g.id as u32, x: cursor + g.x, y: baseline - g.y };
+                    cursor += g.advance;
+                    glyph
+                }));
+        }
+    }
 }
