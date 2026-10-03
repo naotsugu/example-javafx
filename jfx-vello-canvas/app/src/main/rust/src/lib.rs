@@ -1,10 +1,12 @@
 use std::borrow::Cow;
 use std::slice;
+use std::ffi::{c_char, CStr};
 use vello::{
     kurbo::{Affine, BezPath, Cap, Rect, Stroke, Ellipse, RoundedRect, Line},
     peniko::{Color, Fill}, Scene, Glyph};
 use vello::wgpu;
-use parley::{Alignment, AlignmentOptions, FontContext, FontFamily, Layout, LayoutContext, PositionedLayoutItem, StyleProperty};
+use parley::{Alignment, AlignmentOptions, FontContext, FontFamily, Layout,
+             LayoutContext, PositionedLayoutItem, StyleProperty};
 
 pub struct RenderContext {
     device: wgpu::Device,
@@ -105,7 +107,7 @@ pub extern "C" fn create_render_context(width: u32, height: u32) -> *mut RenderC
         font_cx: FontContext::new(),
         layout_cx: LayoutContext::new(),
         font_family: "sans-serif".to_string(),
-        font_size: 12.0,
+        font_size: 14.0,
     };
 
     // detach from Rust's memory management and pass to Java as a raw pointer
@@ -202,7 +204,7 @@ pub extern "C" fn render(ctx_ptr: *mut RenderContext, buffer: *mut u8) {
     scene.reset();
 }
 
-// --
+// -- attribute ---------------------------------------------------------------
 
 /// Sets the current fill paint attribute. The default value is BLACK.
 #[unsafe(no_mangle)]
@@ -274,7 +276,7 @@ pub extern "C" fn set_font_size(ctx_ptr: *mut RenderContext, size: f64) {
     ctx.font_size = size as f32;
 }
 
-// --------------------------------------------------------------
+// -- draw --------------------------------------------------------------------
 
 /// Fills a rectangle using the current fill paint.
 #[unsafe(no_mangle)]
@@ -397,29 +399,6 @@ pub extern "C" fn stroke_line(ctx_ptr: *mut RenderContext,
     );
 }
 
-/// Builds a path from separate x / y coordinate arrays.
-/// Returns None if a pointer is null or there are fewer than 2 points.
-/// The caller must guarantee that both pointers are valid for n_points elements.
-unsafe fn points_to_path(
-    x_points: *const f64, y_points: *const f64, n_points: u32, close: bool) -> Option<BezPath> {
-    if x_points.is_null() || y_points.is_null() || n_points < 2 {
-        return None;
-    }
-    let n = n_points as usize;
-    let xs = unsafe { slice::from_raw_parts(x_points, n) };
-    let ys = unsafe { slice::from_raw_parts(y_points, n) };
-
-    let mut path = BezPath::new();
-    path.move_to((xs[0], ys[0]));
-    for i in 1..n {
-        path.line_to((xs[i], ys[i]));
-    }
-    if close {
-        // connect the last point back to the first one
-        path.close_path();
-    }
-    Some(path)
-}
 
 /// Fills a closed polygon using the current fill paint.
 /// The even-odd rule is used, same as Java's fillPolygon.
@@ -480,12 +459,57 @@ pub extern "C" fn stroke_polyline(ctx_ptr: *mut RenderContext,
 /// (x, y) is the left end of the baseline of the first line.
 #[unsafe(no_mangle)]
 pub extern "C" fn fill_text(ctx_ptr: *mut RenderContext,
+        text_ptr: *const c_char, x: f64, y: f64) {
+    if ctx_ptr.is_null() || text_ptr.is_null()  { return; }
+    let c_str = unsafe { CStr::from_ptr(text_ptr) };
+    let text = match c_str.to_str() {
+        Ok(s) => s,
+        Err(_) => return, // illegal UTF-8
+    };
+    fill_text_internal(ctx_ptr, text, x, y);
+}
+
+/// Draws UTF-8 text.
+/// (x, y) is the left end of the baseline of the first line.
+#[unsafe(no_mangle)]
+pub extern "C" fn fill_seg_text(ctx_ptr: *mut RenderContext,
         text: *const u8, len: u32, x: f64, y: f64) {
     if ctx_ptr.is_null() || text.is_null() { return; }
-
-    let ctx = unsafe { &mut *ctx_ptr };
     let bytes = unsafe { slice::from_raw_parts(text, len as usize) };
     let Ok(text) = std::str::from_utf8(bytes) else { return; };
+    fill_text_internal(ctx_ptr, text, x, y);
+}
+
+// -- private -----------------------------------------------------------------
+
+/// Builds a path from separate x / y coordinate arrays.
+/// Returns None if a pointer is null or there are fewer than 2 points.
+/// The caller must guarantee that both pointers are valid for n_points elements.
+unsafe fn points_to_path(
+    x_points: *const f64, y_points: *const f64, n_points: u32, close: bool) -> Option<BezPath> {
+    if x_points.is_null() || y_points.is_null() || n_points < 2 {
+        return None;
+    }
+    let n = n_points as usize;
+    let xs = unsafe { slice::from_raw_parts(x_points, n) };
+    let ys = unsafe { slice::from_raw_parts(y_points, n) };
+
+    let mut path = BezPath::new();
+    path.move_to((xs[0], ys[0]));
+    for i in 1..n {
+        path.line_to((xs[i], ys[i]));
+    }
+    if close {
+        // connect the last point back to the first one
+        path.close_path();
+    }
+    Some(path)
+}
+
+fn fill_text_internal(ctx_ptr: *mut RenderContext, text: &str, x: f64, y: f64) {
+
+    if ctx_ptr.is_null() { return; }
+    let ctx = unsafe { &mut *ctx_ptr };
 
     let size = ctx.font_size;
     let fill_color = ctx.fill_color;
@@ -495,6 +519,7 @@ pub extern "C" fn fill_text(ctx_ptr: *mut RenderContext,
     builder.push_default(StyleProperty::FontFamily(FontFamily::Source(
         Cow::Borrowed(ctx.font_family.as_str()),
     )));
+
     let mut layout: Layout<()> = builder.build(text);
     layout.break_all_lines(None); // no wrapping
     layout.align(Alignment::Start, AlignmentOptions::default());
@@ -517,10 +542,11 @@ pub extern "C" fn fill_text(ctx_ptr: *mut RenderContext,
                 .brush(fill_color)
                 .draw(Fill::NonZero, glyph_run.glyphs().map(|g| {
                     // g.x / g.y are offsets inside the run; y points up in parley
-                    let glyph = Glyph { id: g.id as u32, x: cursor + g.x, y: baseline - g.y };
+                    let glyph = Glyph { id: g.id, x: cursor + g.x, y: baseline - g.y };
                     cursor += g.advance;
                     glyph
                 }));
         }
     }
+
 }
