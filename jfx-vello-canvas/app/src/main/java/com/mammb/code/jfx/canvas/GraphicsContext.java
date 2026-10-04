@@ -2,6 +2,7 @@ package com.mammb.code.jfx.canvas;
 
 import com.mammb.code.canvas.lib.lib_h;
 import com.sun.javafx.geom.transform.Affine2D;
+import com.sun.javafx.sg.prism.NGCanvas;
 import javafx.geometry.VPos;
 import javafx.scene.effect.BlendMode;
 import javafx.scene.effect.Effect;
@@ -22,7 +23,7 @@ import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
 
-public class GraphicsContext {
+public class GraphicsContext implements AutoCloseable {
 
     private final Arena arena = Arena.ofShared();
     private final MemorySegment ctxSegment;
@@ -45,7 +46,7 @@ public class GraphicsContext {
         sceneHeight = height;
 
         ctxSegment = lib_h.create_render_context(sceneWidth, sceneHeight);
-        sceneSegment = arena.allocate(sceneWidth * sceneHeight * 4); // 4bytes[BGRA]
+        sceneSegment = arena.allocate((long) sceneWidth * sceneHeight * 4); // 4bytes[BGRA]
         pixelBuffer = new PixelBuffer<>(
                 sceneWidth, sceneHeight,
                 sceneSegment.asByteBuffer(),
@@ -63,7 +64,8 @@ public class GraphicsContext {
         pixelBuffer.updateBuffer(_ -> null);
     }
 
-    public void dispose() {
+    @Override
+    public void close() {
         if (ctxSegment != null && !ctxSegment.equals(MemorySegment.NULL)) {
             lib_h.destroy_render_context(ctxSegment);
         }
@@ -73,25 +75,36 @@ public class GraphicsContext {
     public void setFill(Paint p) {
         if (p != null && curState.fill != p) {
             curState.fill = p;
-            if (p instanceof Color color) {
+            if (p instanceof Color c) {
                 lib_h.set_fill(ctxSegment,
-                        b(color.getRed()),
-                        b(color.getGreen()),
-                        b(color.getBlue()),
-                        b(color.getOpacity()));
+                        b(c.getRed()), b(c.getGreen()), b(c.getBlue()), b(c.getOpacity()));
             }
         }
     }
 
-
-    public void fillText(String text, double x, double y) {
-        lib_h.fill_text(ctxSegment, arena.allocateFrom(text), x, y);
+    public void setStroke(Paint p) {
+        if (p != null && curState.stroke != p) {
+            curState.stroke = p;
+            if (p instanceof Color c) {
+                lib_h.set_stroke(ctxSegment,
+                        b(c.getRed()), b(c.getGreen()), b(c.getBlue()), b(c.getOpacity()));
+            }
+        }
     }
 
     public void fillRect(double x, double y, double w, double h) {
         if (w != 0 && h != 0) {
             lib_h.fill_rect(ctxSegment, x, y, w, h);
         }
+    }
+    public void strokeRect(double x, double y, double w, double h) {
+        if (w != 0 || h != 0) {
+            lib_h.stroke_rect(ctxSegment, x, y, w, h);
+        }
+    }
+
+    public void fillText(String text, double x, double y) {
+        lib_h.fill_text(ctxSegment, arena.allocateFrom(text), x, y);
     }
 
     // ------------------------------------------------------------------------
