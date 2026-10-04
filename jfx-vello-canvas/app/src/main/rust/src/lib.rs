@@ -165,7 +165,7 @@ pub extern "C" fn render(ctx_ptr: *mut RenderContext, buffer: *mut u8) {
 
     device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
     rx.recv().unwrap().unwrap();
-    let mapped_data = buffer_slice.get_mapped_range();
+    let mapped_data = buffer_slice.get_mapped_range().unwrap();
 
     // // SIMD copy
     // let length = (width * height * 4) as usize;

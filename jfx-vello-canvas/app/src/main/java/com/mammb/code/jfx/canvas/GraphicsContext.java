@@ -2,7 +2,6 @@ package com.mammb.code.jfx.canvas;
 
 import com.mammb.code.canvas.lib.lib_h;
 import com.sun.javafx.geom.transform.Affine2D;
-import com.sun.javafx.sg.prism.NGCanvas;
 import javafx.geometry.VPos;
 import javafx.scene.effect.BlendMode;
 import javafx.scene.effect.Effect;
