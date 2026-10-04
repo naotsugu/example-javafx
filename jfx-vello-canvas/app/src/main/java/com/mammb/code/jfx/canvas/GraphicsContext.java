@@ -102,7 +102,16 @@ public class GraphicsContext implements AutoCloseable {
             lib_h.stroke_rect(ctxSegment, x, y, w, h);
         }
     }
-
+    public void fillRoundRect(double x, double y, double w, double h, double radius) {
+        if (w != 0 && h != 0) {
+            lib_h.fill_round_rect(ctxSegment, x, y, w, h, radius);
+        }
+    }
+    public void strokeRoundRect(double x, double y, double w, double h, double radius) {
+        if (w != 0 && h != 0) {
+            lib_h.stroke_round_rect(ctxSegment, x, y, w, h, radius);
+        }
+    }
     public void fillText(String text, double x, double y) {
         lib_h.fill_text(ctxSegment, arena.allocateFrom(text), x, y);
     }
