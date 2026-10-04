@@ -19,6 +19,7 @@ import javafx.scene.text.FontSmoothingType;
 import javafx.scene.text.TextAlignment;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.nio.ByteBuffer;
 import java.util.LinkedList;
 
 public class GraphicsContext {
@@ -29,6 +30,7 @@ public class GraphicsContext {
 
     private int sceneWidth;
     private int sceneHeight;
+    private PixelBuffer<ByteBuffer> pixelBuffer;
     private ImageView imageView;
     private State curState;
     private LinkedList<State> stateStack;
@@ -44,14 +46,28 @@ public class GraphicsContext {
 
         ctxSegment = lib_h.create_render_context(sceneWidth, sceneHeight);
         sceneSegment = arena.allocate(sceneWidth * sceneHeight * 4); // 4bytes[BGRA]
-        imageView = new ImageView(new WritableImage(new PixelBuffer<>(
+        pixelBuffer = new PixelBuffer<>(
                 sceneWidth, sceneHeight,
                 sceneSegment.asByteBuffer(),
-                PixelFormat.getByteBgraPreInstance())));
+                PixelFormat.getByteBgraPreInstance());
+        imageView = new ImageView(new WritableImage(pixelBuffer));
+        this.curState = new State();
     }
 
     ImageView getImageView() {
         return imageView;
+    }
+
+    public void render() {
+        lib_h.render(ctxSegment, sceneSegment);
+        pixelBuffer.updateBuffer(_ -> null);
+    }
+
+    public void dispose() {
+        if (ctxSegment != null && !ctxSegment.equals(MemorySegment.NULL)) {
+            lib_h.destroy_render_context(ctxSegment);
+        }
+        if (arena != null) arena.close();
     }
 
     public void setFill(Paint p) {
@@ -112,7 +128,7 @@ public class GraphicsContext {
 
         final void init() {
             set(1.0, BlendMode.SRC_OVER,
-                    new Affine2D(),
+                    null, //new Affine2D(),
                     Color.BLACK, Color.BLACK,
                     1.0, StrokeLineCap.SQUARE, StrokeLineJoin.MITER, 10.0,
                     null, 0.0,
