@@ -46,7 +46,9 @@ sourceSets.main {
 
 application {
     mainClass = "com.mammb.code.jfx.canvas.example.Main"
-    applicationDefaultJvmArgs = listOf("--enable-native-access=ALL-UNNAMED")
+    applicationDefaultJvmArgs = listOf(
+        "--enable-native-access=ALL-UNNAMED",
+        "--enable-native-access=javafx.graphics")
 }
 
 tasks.named<Test>("test") {
@@ -132,10 +134,10 @@ tasks.register<Exec>("jextract") {
 
         val replacement = "static final SymbolLookup SYMBOL_LOOKUP = " +
                 "SymbolLookup.libraryLookup(" +
-                "java.nio.file.Path.of(System.getProperty(\"nativeLibraryPath\"))" +
+                "java.nio.file.Path.of(System.getProperty(\"com.mammb.nativeLibraryPath\"))" +
                 ".resolve(System.mapLibraryName(\"lib\")), LIBRARY_ARENA)"
 
-        val target = outDir.walkTopDown().firstOrNull { it.name == "lib_h_1.java" }
+        val target = outDir.walkTopDown().firstOrNull { it.name == "lib_h_1.java" || it.name == "lib_h.java" }
             ?: throw GradleException("lib_h_1.java not found under $outDir")
 
         val text = target.readText()

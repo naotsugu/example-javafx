@@ -19,10 +19,14 @@ import javafx.scene.text.FontSmoothingType;
 import javafx.scene.text.TextAlignment;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.lang.ref.Cleaner;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
 
 public class GraphicsContext implements AutoCloseable {
+
+    private final NativeGlobal nativeGlobal = NativeGlobal.instance();
+    private final Cleaner.Cleanable cleanable;
 
     private final Arena arena = Arena.ofShared();
     private final MemorySegment ctxSegment;
@@ -38,13 +42,11 @@ public class GraphicsContext implements AutoCloseable {
 
     GraphicsContext(int width, int height) {
 
-        // init native library
-        NativeLibraryLoader.loadByName("lib");
-
         sceneWidth = width;
         sceneHeight = height;
 
         ctxSegment = lib_h.create_render_context(sceneWidth, sceneHeight);
+        cleanable = nativeGlobal.cleaner(this, ctxSegment, arena);
         sceneSegment = arena.allocate((long) sceneWidth * sceneHeight * 4); // 4bytes[BGRA]
         pixelBuffer = new PixelBuffer<>(
                 sceneWidth, sceneHeight,
@@ -65,10 +67,7 @@ public class GraphicsContext implements AutoCloseable {
 
     @Override
     public void close() {
-        if (ctxSegment != null && !ctxSegment.equals(MemorySegment.NULL)) {
-            lib_h.destroy_render_context(ctxSegment);
-        }
-        if (arena != null) arena.close();
+        cleanable.clean();
     }
 
     public void setFill(Paint p) {

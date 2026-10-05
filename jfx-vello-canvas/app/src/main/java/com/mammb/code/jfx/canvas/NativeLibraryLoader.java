@@ -1,5 +1,6 @@
 package com.mammb.code.jfx.canvas;
 
+import com.mammb.code.canvas.lib.lib_h;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -9,6 +10,8 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
 public final class NativeLibraryLoader {
+
+    private static final String LIB_PATH_KEY = "com.mammb.nativeLibraryPath";
 
     /** The logger. */
     private static final System.Logger log = System.getLogger(NativeLibraryLoader.class.getName());
@@ -23,8 +26,10 @@ public final class NativeLibraryLoader {
             String mappedName = System.mapLibraryName(name);
             URI uri = getUrl(mappedName).toURI();
             Path libraryPath = resolveOrExtract(uri, mappedName);
+
             log.log(System.Logger.Level.INFO, "libraryPath: {0}", libraryPath.toAbsolutePath().toString());
-            System.setProperty("nativeLibraryPath", libraryPath.getParent().toAbsolutePath().toString());
+            System.setProperty(LIB_PATH_KEY, libraryPath.getParent().toAbsolutePath().toString());
+
         } catch (Exception e) {
             throw new RuntimeException("failed to load native library: " + name, e);
         }
@@ -50,13 +55,24 @@ public final class NativeLibraryLoader {
 
     private static Path extractToTempFile(URL url, String mappedName) throws IOException {
         try (InputStream in = url.openStream()) {
-            Path tempDir = Files.createTempDirectory("native-lib-");
-            tempDir.toFile().deleteOnExit();
-            Path tempFile = tempDir.resolve(mappedName);
+            Path tempFile = libraryDir().resolve(mappedName);
             Files.copy(in, tempFile, StandardCopyOption.REPLACE_EXISTING);
             tempFile.toFile().deleteOnExit();
             return tempFile;
         }
+    }
+
+    private static Path libraryDir() throws IOException {
+        String libDirStr = System.getProperty(LIB_PATH_KEY, "");
+        if (!libDirStr.isBlank()) {
+            Path path = Path.of(libDirStr);
+            if (Files.isDirectory(path) && Files.isWritable(path)) {
+                return path;
+            }
+        }
+        Path tempDir = Files.createTempDirectory("native-lib-");
+        tempDir.toFile().deleteOnExit();
+        return tempDir;
     }
 
 }
