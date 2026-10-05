@@ -1,27 +1,16 @@
 package com.mammb.code.jfx.canvas;
 
 import com.mammb.code.canvas.lib.lib_h;
-import com.sun.javafx.geom.transform.Affine2D;
-import javafx.geometry.VPos;
-import javafx.scene.effect.BlendMode;
-import javafx.scene.effect.Effect;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelBuffer;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
-import javafx.scene.shape.FillRule;
-import javafx.scene.shape.StrokeLineCap;
-import javafx.scene.shape.StrokeLineJoin;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontSmoothingType;
-import javafx.scene.text.TextAlignment;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.ref.Cleaner;
 import java.nio.ByteBuffer;
-import java.util.LinkedList;
 
 public class GraphicsContext implements AutoCloseable {
 
@@ -61,8 +50,12 @@ public class GraphicsContext implements AutoCloseable {
 
     public void render() {
         if (!closed) {
-            lib_h.render(ctxSegment, sceneSegment);
-            pixelBuffer.updateBuffer(_ -> null);
+            try {
+                lib_h.render(ctxSegment, sceneSegment);
+                pixelBuffer.updateBuffer(_ -> null);
+            } finally {
+                java.lang.ref.Reference.reachabilityFence(this);
+            }
         }
     }
 
