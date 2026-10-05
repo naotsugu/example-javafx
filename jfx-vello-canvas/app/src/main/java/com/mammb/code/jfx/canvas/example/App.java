@@ -34,10 +34,5 @@ public class App extends Application {
 
     @Override
     public void stop() {
-        var c = canvas;
-        if (c != null) {
-            c.getGraphicsContext().close();
-        }
-        lib_h.release_shared_resources();
     }
 }
