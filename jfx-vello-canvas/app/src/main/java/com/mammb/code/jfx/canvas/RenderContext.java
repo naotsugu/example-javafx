@@ -10,6 +10,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
@@ -116,6 +117,42 @@ public class RenderContext implements AutoCloseable {
             lib_h.stroke_oval(ctxSegment, x, y, w, h);
         }
     }
+    public void strokeLine(double x1, double y1, double x2, double y2) {
+        if (!closed) {
+            lib_h.stroke_oval(ctxSegment, x1, y1, x2, y2);
+        }
+    }
+    public void fillPolygon(double[] xPoints, double[] yPoints, int nPoints) {
+        if (nPoints >= 3 && !closed) {
+            try (var localArena = Arena.ofConfined()) {
+                lib_h.fill_polygon(ctxSegment,
+                        localArena.allocateFrom(ValueLayout.JAVA_DOUBLE, xPoints),
+                        localArena.allocateFrom(ValueLayout.JAVA_DOUBLE, yPoints),
+                        nPoints);
+            }
+        }
+    }
+    public void strokePolygon(double[] xPoints, double[] yPoints, int nPoints) {
+        if (nPoints >= 2 && !closed) {
+            try (var localArena = Arena.ofConfined()) {
+                lib_h.stroke_polygon(ctxSegment,
+                        localArena.allocateFrom(ValueLayout.JAVA_DOUBLE, xPoints),
+                        localArena.allocateFrom(ValueLayout.JAVA_DOUBLE, yPoints),
+                        nPoints);
+            }
+        }
+    }
+    public void strokePolyline(double[] xPoints, double[] yPoints, int nPoints) {
+        if (nPoints >= 2 && !closed) {
+            try (var localArena = Arena.ofConfined()) {
+                lib_h.stroke_polyline(ctxSegment,
+                        localArena.allocateFrom(ValueLayout.JAVA_DOUBLE, xPoints),
+                        localArena.allocateFrom(ValueLayout.JAVA_DOUBLE, yPoints),
+                        nPoints);
+            }
+        }
+    }
+
     public void fillText(String text, double x, double y) {
         if (text == null || text.isEmpty() || closed) return;
         try (var localArena = Arena.ofConfined()) {
