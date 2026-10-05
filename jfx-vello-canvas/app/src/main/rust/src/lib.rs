@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 use std::slice;
 use std::ffi::{c_char, CStr};
+use std::sync::{Arc, Mutex, MutexGuard};
 use vello::{
     kurbo::{Affine, BezPath, Cap, Rect, Stroke, Ellipse, RoundedRect, Line},
     peniko::{Color, Fill}, Scene, Glyph};
@@ -8,10 +9,107 @@ use vello::wgpu;
 use parley::{Alignment, AlignmentOptions, FontContext, FontFamily, Layout,
              LayoutContext, PositionedLayoutItem, StyleProperty};
 
+// -- shared resources --------------------------------------------------------
+
+/// Text resources shared by all RenderContexts.
+/// ranged_builder() needs both contexts as &mut, so they live under one lock.
+struct TextResource {
+    font_cx: FontContext,
+    layout_cx: LayoutContext<()>,
+}
+
+/// Heavy resources shared by all RenderContexts.
+/// Device and Queue are cheap to clone and thread-safe, so each RenderContext keeps
+/// its own clone. Renderer and TextEngine need &mut access, so they are behind Mutexes.
+struct SharedResource {
+    device: wgpu::Device,
+    queue: wgpu::Queue,
+    renderer: Mutex<vello::Renderer>,
+    text: Mutex<TextResource>,
+}
+impl SharedResource {
+    fn new() -> SharedResource {
+
+        // initialize wgpu device and queue for GPU rendering
+        let instance = wgpu::Instance::default();
+        let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
+            power_preference: wgpu::PowerPreference::default(),
+            force_fallback_adapter: false,
+            compatible_surface: None,
+            ..Default::default()
+        }))
+        .expect("failed to find an appropriate adapter");
+        let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
+            label: Some("Device"),
+            required_features: wgpu::Features::empty(),
+            ..Default::default()
+        }))
+        .expect("failed to create device");
+
+        // initialize renderer
+        let renderer = vello::Renderer::new(
+            &device,
+            vello::RendererOptions {
+                use_cpu: false,
+                antialiasing_support: vello::AaSupport::all(),
+                num_init_threads: None,
+                pipeline_cache: None,
+            },
+        ).expect("failed to create renderer");
+
+        SharedResource {
+            device,
+            queue,
+            renderer: Mutex::new(renderer),
+            text: Mutex::new(TextResource {
+                font_cx: FontContext::new(),
+                layout_cx: LayoutContext::new(),
+            }),
+        }
+
+    }
+}
+
+/// Global slot for the shared resources. It is filled lazily by the first
+/// create_render_context() and emptied by release_shared_resources().
+static SHARED: Mutex<Option<Arc<SharedResource>>> = Mutex::new(None);
+
+/// Locks a mutex and ignores poisoning, so a panic in one call
+/// does not break every later call across the FFI boundary.
+fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
+    m.lock().unwrap_or_else(|e| e.into_inner())
+}
+
+/// Returns the shared resources, creating them on first use.
+fn acquire_shared() -> Arc<SharedResource> {
+    let mut slot = lock(&SHARED);
+    if let Some(shared) = slot.as_ref() {
+        return Arc::clone(shared);
+    }
+    let shared = Arc::new(SharedResource::new());
+    *slot = Some(Arc::clone(&shared));
+    shared
+}
+
+/// Drops the global reference to the shared resources (GPU device, renderer, font caches).
+/// Existing RenderContexts keep working: they hold their own reference, and the resources
+/// are actually freed when the last of them is destroyed.
+/// A RenderContext created after this call gets a fresh set of shared resources.
+/// Call this once at shutdown, after destroying all RenderContexts, to free everything.
+#[unsafe(no_mangle)]
+pub extern "C" fn release_shared_resources() {
+    let released = lock(&SHARED).take();
+    if released.is_some() {
+        println!("Shared resources released.");
+    }
+}
+
+// -- context -----------------------------------------------------------------
+
+/// RenderContext
 pub struct RenderContext {
     device: wgpu::Device,
     queue: wgpu::Queue,
-    renderer: vello::Renderer,
     texture: wgpu::Texture,
     readback_buffer: wgpu::Buffer,
     width: u32,
@@ -21,12 +119,11 @@ pub struct RenderContext {
     stroke_color: Color,
     line_width: f64,
     line_cap: Cap,
-    font_cx: FontContext,
-    layout_cx: LayoutContext<()>,
     font_family: String,
     font_size: f32,
+    // declared last so it is dropped after the GPU resources above
+    shared: Arc<SharedResource>,
 }
-
 impl RenderContext {
     /// Builds the Stroke from the current line width and cap.
     fn stroke_style(&self) -> Stroke {
@@ -37,55 +134,28 @@ impl RenderContext {
 #[unsafe(no_mangle)]
 pub extern "C" fn create_render_context(width: u32, height: u32) -> *mut RenderContext {
 
-    // initialize wgpu device and queue for GPU rendering
-    let instance = wgpu::Instance::default();
-    let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
-        power_preference: wgpu::PowerPreference::default(),
-        force_fallback_adapter: false,
-        compatible_surface: None,
-        ..Default::default()
-    }))
-    .expect("failed to find an appropriate adapter");
-    let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
-        label: Some("Device"),
-        required_features: wgpu::Features::empty(),
-        ..Default::default()
-    }))
-    .expect("failed to create device");
+    let shared = acquire_shared();
+    let device = shared.device.clone();
+    let queue = shared.queue.clone();
 
     // create a render target texture and a readback buffer
     let (texture, readback_buffer) = create_render_target(&device, width, height);
 
-    // create renderer and render the scene to the texture
-    let renderer = vello::Renderer::new(
-        &device,
-        vello::RendererOptions {
-            use_cpu: false,
-            antialiasing_support: vello::AaSupport::all(),
-            num_init_threads: None,
-            pipeline_cache: None,
-        },
-    ).expect("failed to create renderer");
-
-    let scene = Scene::new();
-
     let ctx = RenderContext {
         device,
         queue,
-        renderer,
         texture,
         readback_buffer,
         width,
         height,
-        scene,
+        scene: Scene::new(),
         fill_color: Color::from_rgba8(0, 0, 0, 255),
         stroke_color: Color::from_rgba8(0, 0, 0, 255),
         line_width: 1.,
         line_cap: Cap::Butt,
-        font_cx: FontContext::new(),
-        layout_cx: LayoutContext::new(),
         font_family: "sans-serif".to_string(),
         font_size: 14.0,
+        shared,
     };
 
     // detach from Rust's memory management and pass to Java as a raw pointer
@@ -111,29 +181,30 @@ pub extern "C" fn render(ctx_ptr: *mut RenderContext, buffer: *mut u8) {
 
     // restore the reference from the raw pointer (without taking ownership)
     let ctx = unsafe { &mut *ctx_ptr };
-    let (device, queue, renderer, texture, readback_buffer, width, height, scene) = (
+    let (device, queue, texture, readback_buffer, width, height) = (
         &ctx.device,
         &ctx.queue,
-        &mut ctx.renderer,
         &ctx.texture,
-        &mut ctx.readback_buffer,
+        &ctx.readback_buffer,
         ctx.width,
         ctx.height,
-        &mut ctx.scene
     );
 
-    // drow to the GPU
-    renderer.render_to_texture(
-        &device,
-        queue,
-        &scene,
-        &texture.create_view(&wgpu::TextureViewDescriptor::default()),
-        &vello::RenderParams {
-            base_color: Color::TRANSPARENT,
-            width, height,
-            antialiasing_method: vello::AaConfig::Msaa16,
-        },
-    ).expect("failed to render texture");
+    // draw on the GPU; the shared renderer is locked only while the scene is encoded
+    {
+        let mut renderer = lock(&ctx.shared.renderer);
+        renderer.render_to_texture(
+            device,
+            queue,
+            &ctx.scene,
+            &texture.create_view(&wgpu::TextureViewDescriptor::default()),
+            &vello::RenderParams {
+                base_color: Color::TRANSPARENT,
+                width, height,
+                antialiasing_method: vello::AaConfig::Msaa16,
+            },
+        ).expect("failed to render texture");
+    }
 
     let padded_row = padded_bytes_per_row(width);
     let mut encoder = device.create_command_encoder(
@@ -167,17 +238,6 @@ pub extern "C" fn render(ctx_ptr: *mut RenderContext, buffer: *mut u8) {
     rx.recv().unwrap().unwrap();
     let mapped_data = buffer_slice.get_mapped_range().unwrap();
 
-    // // SIMD copy
-    // let length = (width * height * 4) as usize;
-    // let src_bytes = unsafe { slice::from_raw_parts(mapped_data.as_ptr(), length) };
-    // let dst_bytes = unsafe { slice::from_raw_parts_mut(buffer, length) };
-    // for (src, dst) in src_bytes.chunks_exact(4).zip(dst_bytes.chunks_exact_mut(4)) {
-    //     dst[0] = src[2]; // B <- R
-    //     dst[1] = src[1]; // G <- G
-    //     dst[2] = src[0]; // R <- B
-    //     dst[3] = src[3]; // A <- A
-    // }
-
     // copy row by row: drop the row padding and convert RGBA to BGRA
     let row_bytes = (width * 4) as usize;
     let dst_bytes = unsafe { slice::from_raw_parts_mut(buffer, row_bytes * height as usize) };
@@ -195,7 +255,7 @@ pub extern "C" fn render(ctx_ptr: *mut RenderContext, buffer: *mut u8) {
 
     drop(mapped_data);
     readback_buffer.unmap();
-    scene.reset();
+    ctx.scene.reset();
 }
 
 /// Resizes the canvas. The size must be non-zero and within the device limits.
@@ -272,6 +332,9 @@ pub extern "C" fn set_font_family(ctx_ptr: *mut RenderContext, names: *const u8,
     let Ok(names) = std::str::from_utf8(bytes) else { return false; };
     ctx.font_family = names.trim().to_string();
 
+    // the font collection is shared, so it must be locked while it is queried
+    let mut text = lock(&ctx.shared.text);
+
     // generic names (serif, sans-serif, ...) are resolved by the system and always count as found
     names.split(',')
         .map(|n| n.trim().trim_matches(|c| c == '"' || c == '\''))
@@ -280,7 +343,7 @@ pub extern "C" fn set_font_family(ctx_ptr: *mut RenderContext, names: *const u8,
             matches!(
                 n.to_ascii_lowercase().as_str(),
                 "serif" | "sans-serif" | "monospace" | "cursive" | "fantasy" | "system-ui"
-            ) || ctx.font_cx.collection.family_id(n).is_some()
+            ) || text.font_cx.collection.family_id(n).is_some()
         })
 }
 
@@ -415,7 +478,6 @@ pub extern "C" fn stroke_line(ctx_ptr: *mut RenderContext,
     );
 }
 
-
 /// Fills a closed polygon using the current fill paint.
 /// The even-odd rule is used, same as Java's fillPolygon.
 #[unsafe(no_mangle)]
@@ -471,8 +533,7 @@ pub extern "C" fn stroke_polyline(ctx_ptr: *mut RenderContext,
     );
 }
 
-/// Draws UTF-8 text.
-/// (x, y) is the left end of the baseline of the first line.
+/// Draws UTF-8 text. (x, y) is the left end of the baseline of the first line.
 #[unsafe(no_mangle)]
 pub extern "C" fn fill_text(ctx_ptr: *mut RenderContext,
         text_ptr: *const c_char, x: f64, y: f64) {
@@ -485,8 +546,7 @@ pub extern "C" fn fill_text(ctx_ptr: *mut RenderContext,
     fill_text_internal(ctx_ptr, text, x, y);
 }
 
-/// Draws UTF-8 text.
-/// (x, y) is the left end of the baseline of the first line.
+/// Draws UTF-8 text. (x, y) is the left end of the baseline of the first line.
 #[unsafe(no_mangle)]
 pub extern "C" fn fill_seg_text(ctx_ptr: *mut RenderContext,
         text: *const u8, len: u32, x: f64, y: f64) {
@@ -530,13 +590,19 @@ fn fill_text_internal(ctx_ptr: *mut RenderContext, text: &str, x: f64, y: f64) {
     let size = ctx.font_size;
     let fill_color = ctx.fill_color;
 
-    let mut builder = ctx.layout_cx.ranged_builder(&mut ctx.font_cx, text, 1.0, true);
-    builder.push_default(StyleProperty::FontSize(size));
-    builder.push_default(StyleProperty::FontFamily(FontFamily::Source(
-        Cow::Borrowed(ctx.font_family.as_str()),
-    )));
-
-    let mut layout: Layout<()> = builder.build(text);
+    // the shared text engine is locked only while the layout is built;
+    // the finished layout owns its data and no longer borrows the contexts
+    let mut layout: Layout<()> = {
+        let mut guard = lock(&ctx.shared.text);
+        let TextResource { font_cx, layout_cx } = &mut *guard;
+        let mut builder = layout_cx.ranged_builder(font_cx, text, 1.0, true);
+        builder.push_default(StyleProperty::FontSize(size));
+        builder.push_default(StyleProperty::FontFamily(FontFamily::Source(
+            Cow::Borrowed(ctx.font_family.as_str()),
+        )));
+        let layout = builder.build(text);
+        layout
+    };
     layout.break_all_lines(None); // no wrapping
     layout.align(Alignment::Start, AlignmentOptions::default());
 
@@ -586,8 +652,8 @@ fn create_render_target(device: &wgpu::Device, width: u32, height: u32)
         dimension: wgpu::TextureDimension::D2,
         format: wgpu::TextureFormat::Rgba8Unorm,
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT
-            | wgpu::TextureUsages::COPY_SRC
-            | wgpu::TextureUsages::STORAGE_BINDING,
+             | wgpu::TextureUsages::COPY_SRC
+             | wgpu::TextureUsages::STORAGE_BINDING,
         view_formats: &[],
     });
 

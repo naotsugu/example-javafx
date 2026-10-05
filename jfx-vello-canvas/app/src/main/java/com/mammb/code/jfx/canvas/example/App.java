@@ -1,5 +1,6 @@
 package com.mammb.code.jfx.canvas.example;
 
+import com.mammb.code.canvas.lib.lib_h;
 import com.mammb.code.jfx.canvas.Canvas;
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -37,5 +38,6 @@ public class App extends Application {
         if (c != null) {
             c.getGraphicsContext().close();
         }
+        lib_h.release_shared_resources();
     }
 }
