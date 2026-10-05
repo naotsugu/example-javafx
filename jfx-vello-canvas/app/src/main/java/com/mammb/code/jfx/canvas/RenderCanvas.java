@@ -3,18 +3,18 @@ package com.mammb.code.jfx.canvas;
 import javafx.geometry.Pos;
 import javafx.scene.layout.StackPane;
 
-public class Canvas extends StackPane {
+public class RenderCanvas extends StackPane {
 
-    private final GraphicsContext ctx;
+    private final RenderContext ctx;
 
-    public Canvas(int width, int height) {
-        ctx = new GraphicsContext(width, height);
+    public RenderCanvas(int width, int height) {
+        ctx = new RenderContext(width, height);
         var imageView = ctx.getImageView();
         StackPane.setAlignment(imageView, Pos.TOP_LEFT);
         getChildren().add(imageView);
     }
 
-    public GraphicsContext getGraphicsContext() {
+    public RenderContext getGraphicsContext() {
         return ctx;
     }
 

@@ -1,34 +1,59 @@
 package com.mammb.code.jfx.canvas.example;
 
-import com.mammb.code.canvas.lib.lib_h;
-import com.mammb.code.jfx.canvas.Canvas;
+import com.mammb.code.jfx.canvas.RenderCanvas;
 import javafx.application.Application;
 import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.control.SplitPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 import javafx.stage.Stage;
+
 
 public class App extends Application {
 
-    private static final int WIDTH = 512;
+    private static final int WIDTH = 400;
     private static final int HEIGHT = 300;
-
-    private Canvas canvas;
 
     @Override
     public void start(Stage stage) {
 
-        canvas = new Canvas(WIDTH, HEIGHT);
-        Scene scene = new Scene(canvas, WIDTH, HEIGHT, Color.TRANSPARENT);
+        var renderCanvas = new RenderCanvas(WIDTH, HEIGHT);
+        var canvas = new Canvas(WIDTH, HEIGHT);
+
+        HBox hbox = new HBox();
+        hbox.getChildren().addAll(canvas, renderCanvas);
+        Scene scene = new Scene(hbox, WIDTH * 2, HEIGHT, Color.TRANSPARENT);
         stage.setScene(scene);
         stage.show();
 
-        var gc = canvas.getGraphicsContext();
-        gc.setFill(Color.AQUA);
-        gc.fillRect(50, 50, 100, 100);
+        {
+            var gc = canvas.getGraphicsContext2D();
+            gc.setFill(Color.BLACK);
+            gc.fillRect(0, 0, WIDTH, HEIGHT);
 
-        gc.setFill(Color.BLACK);
-        gc.fillText("Hello", 100, 100);
-        gc.render();
+            gc.setFill(Color.DARKBLUE);
+            gc.fillRect(50, 50, 100, 100);
+
+            gc.setFont(Font.font(14));
+            gc.setFill(Color.WHITE);
+            gc.fillText("Hello JavaFX Canvas フォント描画品質", 100, 100);
+        }
+
+        {
+            var gc = renderCanvas.getGraphicsContext();
+            gc.setFill(Color.BLACK);
+            gc.fillRect(0, 0, WIDTH, HEIGHT);
+
+            gc.setFill(Color.DARKBLUE);
+            gc.fillRect(50, 50, 100, 100);
+
+            gc.setFill(Color.WHITE);
+            gc.fillText("Hello Vello Canvas フォント描画品質", 100, 100);
+            gc.render();
+        }
 
     }
 

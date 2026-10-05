@@ -10,9 +10,10 @@ import javafx.scene.paint.Paint;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.ref.Cleaner;
+import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
 
-public class GraphicsContext implements AutoCloseable {
+public class RenderContext implements AutoCloseable {
 
     private final NativeGlobal nativeGlobal = NativeGlobal.instance();
     private final Cleaner.Cleanable cleanable;
@@ -22,14 +23,13 @@ public class GraphicsContext implements AutoCloseable {
     private final MemorySegment sceneSegment;
 
     private volatile boolean closed = false;
-
     private int sceneWidth;
     private int sceneHeight;
     private PixelBuffer<ByteBuffer> pixelBuffer;
     private ImageView imageView;
 
 
-    GraphicsContext(int width, int height) {
+    RenderContext(int width, int height) {
 
         sceneWidth = width;
         sceneHeight = height;
@@ -54,7 +54,7 @@ public class GraphicsContext implements AutoCloseable {
                 lib_h.render(ctxSegment, sceneSegment);
                 pixelBuffer.updateBuffer(_ -> null);
             } finally {
-                java.lang.ref.Reference.reachabilityFence(this);
+                Reference.reachabilityFence(this);
             }
         }
     }
