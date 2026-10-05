@@ -1,6 +1,7 @@
 package com.mammb.code.jfx.canvas;
 
 import com.mammb.code.canvas.lib.lib_h;
+import com.sun.javafx.sg.prism.NGCanvas;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelBuffer;
 import javafx.scene.image.PixelFormat;
@@ -103,6 +104,16 @@ public class RenderContext implements AutoCloseable {
     public void strokeRoundRect(double x, double y, double w, double h, double radius) {
         if (w != 0 && h != 0 && !closed) {
             lib_h.stroke_round_rect(ctxSegment, x, y, w, h, radius);
+        }
+    }
+    public void fillOval(double x, double y, double w, double h) {
+        if (w != 0 || h != 0 && !closed) {
+            lib_h.fill_oval(ctxSegment, x, y, w, h);
+        }
+    }
+    public void strokeOval(double x, double y, double w, double h) {
+        if (w != 0 || h != 0 && !closed) {
+            lib_h.stroke_oval(ctxSegment, x, y, w, h);
         }
     }
     public void fillText(String text, double x, double y) {
