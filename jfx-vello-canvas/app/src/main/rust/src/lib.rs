@@ -11,6 +11,13 @@ use parley::{Alignment, AlignmentOptions, FontContext, FontFamily, Layout,
 
 // -- shared resources --------------------------------------------------------
 
+/// A point returned by value to the caller (two f64, same layout as a C struct).
+#[repr(C)]
+pub struct Point {
+    x: f64,
+    y: f64,
+}
+
 /// Text resources shared by all RenderContexts.
 /// ranged_builder() needs both contexts as &mut, so they live under one lock.
 struct TextResource {
@@ -537,26 +544,31 @@ pub extern "C" fn stroke_polyline(ctx_ptr: *mut RenderContext,
 }
 
 /// Draws UTF-8 text. (x, y) is the left end of the baseline of the first line.
+/// Returns the bottom-right corner of the drawn text.
+/// If nothing is drawn (null pointer, illegal UTF-8, empty text), (x, y) is returned.
 #[unsafe(no_mangle)]
 pub extern "C" fn fill_text(ctx_ptr: *mut RenderContext,
-        text_ptr: *const c_char, x: f64, y: f64) {
-    if ctx_ptr.is_null() || text_ptr.is_null()  { return; }
+        text_ptr: *const c_char, x: f64, y: f64) -> Point {
+    if ctx_ptr.is_null() || text_ptr.is_null() { return Point { x, y }; }
     let c_str = unsafe { CStr::from_ptr(text_ptr) };
     let text = match c_str.to_str() {
         Ok(s) => s,
-        Err(_) => return, // illegal UTF-8
+        Err(_) => return Point { x, y }, // illegal UTF-8
     };
-    fill_text_internal(ctx_ptr, text, x, y);
+    fill_text_internal(ctx_ptr, text, x, y)
 }
 
-/// Draws UTF-8 text. (x, y) is the left end of the baseline of the first line.
+/// Draws UTF-8 text given as a pointer and a byte length. (x, y) is the left end of
+/// the baseline of the first line.
+/// Returns the bottom-right corner of the drawn text.
+/// If nothing is drawn (null pointer, illegal UTF-8, empty text), (x, y) is returned.
 #[unsafe(no_mangle)]
 pub extern "C" fn fill_seg_text(ctx_ptr: *mut RenderContext,
-        text: *const u8, len: u32, x: f64, y: f64) {
-    if ctx_ptr.is_null() || text.is_null() { return; }
+        text: *const u8, len: u32, x: f64, y: f64) -> Point {
+    if ctx_ptr.is_null() || text.is_null() { return Point { x, y }; }
     let bytes = unsafe { slice::from_raw_parts(text, len as usize) };
-    let Ok(text) = std::str::from_utf8(bytes) else { return; };
-    fill_text_internal(ctx_ptr, text, x, y);
+    let Ok(text) = std::str::from_utf8(bytes) else { return Point { x, y }; };
+    fill_text_internal(ctx_ptr, text, x, y)
 }
 
 // -- private -----------------------------------------------------------------
@@ -585,9 +597,9 @@ unsafe fn points_to_path(
     Some(path)
 }
 
-fn fill_text_internal(ctx_ptr: *mut RenderContext, text: &str, x: f64, y: f64) {
+fn fill_text_internal(ctx_ptr: *mut RenderContext, text: &str, x: f64, y: f64) -> Point {
 
-    if ctx_ptr.is_null() { return; }
+    if ctx_ptr.is_null() { return Point { x, y }; }
     let ctx = unsafe { &mut *ctx_ptr };
 
     let size = ctx.font_size;
@@ -610,7 +622,7 @@ fn fill_text_internal(ctx_ptr: *mut RenderContext, text: &str, x: f64, y: f64) {
     layout.align(Alignment::Start, AlignmentOptions::default());
 
     // place the baseline of the first line at y
-    let Some(first_line) = layout.lines().next() else { return; };
+    let Some(first_line) = layout.lines().next() else { return Point { x, y }; };
     let origin_y = y as f32 - first_line.metrics().baseline;
 
     let scene = &mut ctx.scene;
@@ -633,6 +645,13 @@ fn fill_text_internal(ctx_ptr: *mut RenderContext, text: &str, x: f64, y: f64) {
                     glyph
                 }));
         }
+    }
+
+    // bottom-right corner: full_width() includes trailing whitespace, so the caller
+    // can continue drawing right after the text; the bottom is the layout top + height
+    Point {
+        x: x + layout.full_width() as f64,
+        y: (origin_y + layout.height()) as f64,
     }
 }
 

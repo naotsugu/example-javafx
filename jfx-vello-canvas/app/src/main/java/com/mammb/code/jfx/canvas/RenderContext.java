@@ -1,7 +1,8 @@
 package com.mammb.code.jfx.canvas;
 
+import com.mammb.code.canvas.lib.Point;
 import com.mammb.code.canvas.lib.lib_h;
-import com.sun.javafx.sg.prism.NGCanvas;
+import javafx.geometry.Point2D;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelBuffer;
 import javafx.scene.image.PixelFormat;
@@ -196,10 +197,11 @@ public class RenderContext implements AutoCloseable {
         }
     }
 
-    public void fillText(String text, double x, double y) {
-        if (text == null || text.isEmpty() || closed) return;
+    public Point2D fillText(String text, double x, double y) {
+        if (text == null || text.isEmpty() || closed) return new Point2D(x, y);
         try (var localArena = Arena.ofConfined()) {
-            lib_h.fill_text(ctxSegment, localArena.allocateFrom(text), x, y);
+            MemorySegment end = lib_h.fill_text(localArena, ctxSegment, localArena.allocateFrom(text), x, y);
+            return new Point2D(Point.x(end), Point.y(end));
         }
     }
 

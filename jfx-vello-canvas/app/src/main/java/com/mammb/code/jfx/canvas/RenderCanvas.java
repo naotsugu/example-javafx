@@ -8,7 +8,7 @@ public class RenderCanvas extends StackPane {
     private final RenderContext ctx;
 
     public RenderCanvas(int width, int height) {
-        ctx = new RenderContext(width, height);
+        ctx = new RenderContext(this, width, height);
         var imageView = ctx.getImageView();
         StackPane.setAlignment(imageView, Pos.TOP_LEFT);
         getChildren().add(imageView);
