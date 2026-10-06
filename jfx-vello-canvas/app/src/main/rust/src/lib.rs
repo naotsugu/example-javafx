@@ -325,11 +325,14 @@ pub extern "C" fn set_line_cap(ctx_ptr: *mut RenderContext, cap: u32) {
 /// Returns false if none of the listed (non-generic) families is installed;
 /// the list is stored anyway.
 #[unsafe(no_mangle)]
-pub extern "C" fn set_font_family(ctx_ptr: *mut RenderContext, names: *const u8, len: u32) -> bool {
-    if ctx_ptr.is_null() || names.is_null() { return false; }
+pub extern "C" fn set_font_family(ctx_ptr: *mut RenderContext, names_ptr: *const c_char) -> bool {
+    if ctx_ptr.is_null() || names_ptr.is_null() { return false; }
     let ctx = unsafe { &mut *ctx_ptr };
-    let bytes = unsafe { slice::from_raw_parts(names, len as usize) };
-    let Ok(names) = std::str::from_utf8(bytes) else { return false; };
+    let c_str = unsafe { CStr::from_ptr(names_ptr) };
+    let names = match c_str.to_str() {
+        Ok(s) => s,
+        Err(_) => return false, // illegal UTF-8
+    };
     ctx.font_family = names.trim().to_string();
 
     // the font collection is shared, so it must be locked while it is queried
@@ -620,6 +623,7 @@ fn fill_text_internal(ctx_ptr: *mut RenderContext, text: &str, x: f64, y: f64) {
             scene
                 .draw_glyphs(run.font())
                 .font_size(run.font_size())
+                .hint(true)
                 .normalized_coords(run.normalized_coords())
                 .brush(fill_color)
                 .draw(Fill::NonZero, glyph_run.glyphs().map(|g| {

@@ -1,13 +1,14 @@
 package com.mammb.code.jfx.canvas;
 
 import com.mammb.code.canvas.lib.lib_h;
-import com.sun.javafx.sg.prism.NGCanvas;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelBuffer;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
+import javafx.scene.shape.StrokeLineCap;
+import javafx.scene.text.Font;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
@@ -23,7 +24,7 @@ public class RenderContext implements AutoCloseable {
     private final Arena arena = Arena.ofShared();
     private final MemorySegment ctxSegment;
     private final MemorySegment sceneSegment;
-
+    private final RenderCanvas theCanvas;
     private volatile boolean closed = false;
     private int sceneWidth;
     private int sceneHeight;
@@ -31,8 +32,9 @@ public class RenderContext implements AutoCloseable {
     private ImageView imageView;
 
 
-    RenderContext(int width, int height) {
+    RenderContext(RenderCanvas canvas, int width, int height) {
 
+        theCanvas = canvas;
         sceneWidth = width;
         sceneHeight = height;
 
@@ -48,6 +50,10 @@ public class RenderContext implements AutoCloseable {
 
     ImageView getImageView() {
         return imageView;
+    }
+
+    public RenderCanvas getCanvas() {
+        return theCanvas;
     }
 
     public void render() {
@@ -86,6 +92,25 @@ public class RenderContext implements AutoCloseable {
             }
         }
     }
+    public void setLineWidth(double lw) {
+        if (lw > 0 && lw < Double.POSITIVE_INFINITY && !closed) {
+            lib_h.set_line_width(ctxSegment, lw);
+        }
+    }
+    public void setLineCap(StrokeLineCap cap) {
+        // TODO
+    }
+
+    public void setFont(Font f) {
+        if (f != null  && !closed) {
+            try (var localArena = Arena.ofConfined()) {
+                lib_h.set_font_family(ctxSegment, localArena.allocateFrom(f.getFamily()));
+            }
+            lib_h.set_font_size(ctxSegment, f.getSize());
+        }
+    }
+
+    // -- draw ----------------------------------------------------------------
 
     public void fillRect(double x, double y, double w, double h) {
         if (w != 0 && h != 0 && !closed) {
@@ -160,7 +185,7 @@ public class RenderContext implements AutoCloseable {
         }
     }
 
-    // ------------------------------------------------------------------------
+    // -- helper --------------------------------------------------------------
 
     private byte b(double v) {
         int val = (int) Math.round(v * 255.0);
