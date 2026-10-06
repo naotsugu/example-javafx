@@ -1,6 +1,7 @@
 package com.mammb.code.jfx.canvas;
 
 import com.mammb.code.canvas.lib.lib_h;
+import com.sun.javafx.sg.prism.NGCanvas;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelBuffer;
 import javafx.scene.image.PixelFormat;
@@ -9,6 +10,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontSmoothingType;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
@@ -56,6 +58,13 @@ public class RenderContext implements AutoCloseable {
         return theCanvas;
     }
 
+    public Font getFont() {
+        return null; //this.curState.font;
+    }
+    public void setFontSmoothingType(FontSmoothingType var1) {
+        // TODO
+    }
+
     public void render() {
         if (!closed) {
             try {
@@ -75,6 +84,11 @@ public class RenderContext implements AutoCloseable {
         }
     }
 
+    public void clearRect(double x, double y, double w, double h) {
+        if (w != 0 && h != 0) {
+            // TODO
+        }
+    }
     public void setFill(Paint p) {
         if (p != null && !closed) {
             if (p instanceof Color c) {
