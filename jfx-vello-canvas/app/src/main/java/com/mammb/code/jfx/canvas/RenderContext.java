@@ -98,7 +98,11 @@ public class RenderContext implements AutoCloseable {
         }
     }
     public void setLineCap(StrokeLineCap cap) {
-        // TODO
+        if (cap != null && !closed) {
+            lib_h.set_line_cap(ctxSegment, switch (cap) {
+                case SQUARE -> 2; case ROUND -> 1; case BUTT -> 0;
+            });
+        }
     }
 
     public void setFont(Font f) {
