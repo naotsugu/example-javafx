@@ -6,8 +6,7 @@ use vello::{
     kurbo::{Affine, BezPath, Cap, Rect, Stroke, Ellipse, RoundedRect, Line},
     peniko::{Color, Fill}, Scene, Glyph};
 use vello::wgpu;
-use parley::{Alignment, AlignmentOptions, FontContext, FontFamily, Layout,
-             LayoutContext, PositionedLayoutItem, StyleProperty};
+use parley::{Alignment, AlignmentOptions, FontContext, FontFamily, Layout, LayoutContext, PositionedLayoutItem, StyleProperty};
 
 // -- shared resources --------------------------------------------------------
 
@@ -365,6 +364,44 @@ pub extern "C" fn set_font_size(ctx_ptr: *mut RenderContext, size: f64) {
     ctx.font_size = size as f32;
 }
 
+// -- measure -----------------------------------------------------------------
+
+/// Returns the advance width of a single Unicode code point in the current font.
+/// Returns 0.0 for an invalid code point (surrogates, > 0x10FFFF) or a null context.
+#[unsafe(no_mangle)]
+pub extern "C" fn get_advance(ctx_ptr: *mut RenderContext, code_point: u32) -> f64 {
+    if ctx_ptr.is_null() { return 0.0; }
+    let ctx = unsafe { &*ctx_ptr };
+    let Some(ch) = char::from_u32(code_point) else { return 0.0; };
+    let mut buf = [0u8; 4];
+    measure_width(ctx, ch.encode_utf8(&mut buf))
+}
+
+/// Returns the advance width of a NUL-terminated UTF-8 string in the current font.
+/// The string is measured as a single line, so it is the same width fill_text() draws.
+/// Returns 0.0 for illegal UTF-8, an empty string or a null pointer.
+#[unsafe(no_mangle)]
+pub extern "C" fn get_text_advance(ctx_ptr: *mut RenderContext, text_ptr: *const c_char) -> f64 {
+    if ctx_ptr.is_null() || text_ptr.is_null() { return 0.0; }
+    let ctx = unsafe { &*ctx_ptr };
+    let c_str = unsafe { CStr::from_ptr(text_ptr) };
+    let Ok(text) = c_str.to_str() else { return 0.0; };
+    measure_width(ctx, text)
+}
+
+/// Returns the line height of the current font: ascent + descent + leading.
+/// A reference character is laid out, so the value follows the first available family
+/// in the font list. A line containing fallback fonts may be taller when drawn.
+#[unsafe(no_mangle)]
+pub extern "C" fn get_line_height(ctx_ptr: *mut RenderContext) -> f64 {
+    if ctx_ptr.is_null() { return 0.0; }
+    let ctx = unsafe { &*ctx_ptr };
+    let layout = build_layout(ctx, "M");
+    let Some(line) = layout.lines().next() else { return 0.0; };
+    let m = line.metrics();
+    (m.ascent + m.descent + m.leading) as f64
+}
+
 // -- draw --------------------------------------------------------------------
 
 /// Fills a rectangle using the current fill paint.
@@ -597,21 +634,15 @@ unsafe fn points_to_path(
     Some(path)
 }
 
-fn fill_text_internal(ctx_ptr: *mut RenderContext, text: &str, x: f64, y: f64) -> Point {
-
-    if ctx_ptr.is_null() { return Point { x, y }; }
-    let ctx = unsafe { &mut *ctx_ptr };
-
-    let size = ctx.font_size;
-    let fill_color = ctx.fill_color;
-
+/// Builds a single-line layout of the text with the current font settings.
+fn build_layout(ctx: &RenderContext, text: &str) -> Layout<()> {
     // the shared text engine is locked only while the layout is built;
     // the finished layout owns its data and no longer borrows the contexts
     let mut layout: Layout<()> = {
         let mut guard = lock(&ctx.shared.text);
         let TextResource { font_cx, layout_cx } = &mut *guard;
         let mut builder = layout_cx.ranged_builder(font_cx, text, 1.0, true);
-        builder.push_default(StyleProperty::FontSize(size));
+        builder.push_default(StyleProperty::FontSize(ctx.font_size));
         builder.push_default(StyleProperty::FontFamily(FontFamily::Source(
             Cow::Borrowed(ctx.font_family.as_str()),
         )));
@@ -620,6 +651,23 @@ fn fill_text_internal(ctx_ptr: *mut RenderContext, text: &str, x: f64, y: f64) -
     };
     layout.break_all_lines(None); // no wrapping
     layout.align(Alignment::Start, AlignmentOptions::default());
+    layout
+}
+
+/// Returns the width of the text laid out as a single line.
+/// Trailing whitespace is included, same as the value fill_text() uses for its end point.
+fn measure_width(ctx: &RenderContext, text: &str) -> f64 {
+    if text.is_empty() { return 0.0; }
+    build_layout(ctx, text).full_width() as f64
+}
+
+fn fill_text_internal(ctx_ptr: *mut RenderContext, text: &str, x: f64, y: f64) -> Point {
+
+    if ctx_ptr.is_null() { return Point { x, y }; }
+    let ctx = unsafe { &mut *ctx_ptr };
+
+    let fill_color = ctx.fill_color;
+    let layout = build_layout(ctx, text);
 
     // place the baseline of the first line at y
     let Some(first_line) = layout.lines().next() else { return Point { x, y }; };
@@ -690,3 +738,47 @@ fn create_render_target(device: &wgpu::Device, width: u32, height: u32)
 
     (texture, readback_buffer)
 }
+
+// /// Returns the advance width of a single code point read directly from the font tables.
+// /// Only the families in the font list are searched (no system fallback);
+// /// returns None if none of them has a glyph for the character.
+// fn advance_from_metrics(ctx: &RenderContext, ch: char) -> Option<f64> {
+//     let mut guard = lock(&ctx.shared.text);
+//     let TextResource { font_cx, .. } = &mut *guard;
+//
+//     // parse the comma-separated family list; generic names are resolved by the system
+//     let families: Vec<QueryFamily> = ctx.font_family
+//         .split(',')
+//         .map(|n| n.trim().trim_matches(|c| c == '"' || c == '\''))
+//         .filter(|n| !n.is_empty())
+//         .map(|n| match GenericFamily::parse(n) {
+//             Some(generic) => QueryFamily::Generic(generic),
+//             None => QueryFamily::Named(n),
+//         })
+//         .collect();
+//
+//     let mut query = font_cx.collection.query(&mut font_cx.source_cache);
+//     query.set_families(families);
+//     query.set_attributes(Attributes::default());
+//
+//     let mut result = None;
+//     query.matches_with(|font| {
+//         // skip fonts that cannot be parsed or do not contain the character
+//         let Ok(font_ref) = FontRef::from_index(font.blob.as_ref(), font.index) else {
+//             return QueryStatus::Continue;
+//         };
+//         let Some(glyph_id) = font_ref.charmap().map(ch) else {
+//             return QueryStatus::Continue;
+//         };
+//         // the advance is scaled to font_size (default variation coordinates)
+//         let metrics = font_ref.metrics(Size::new(ctx.font_size), LocationRef::default());
+//         match metrics.average_width(glyph_id) {
+//             Some(advance) => {
+//                 result = Some(advance as f64);
+//                 QueryStatus::Stop
+//             }
+//             None => QueryStatus::Continue,
+//         }
+//     });
+//     result
+// }

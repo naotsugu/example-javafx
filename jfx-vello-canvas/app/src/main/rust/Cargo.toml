@@ -13,6 +13,7 @@ cbindgen = "0.29.4"
 vello = "0.11.0"
 pollster = "1.0.1"
 parley = "0.11.1"
+# skrifa = "0.44.0"
 
 [profile.dev.package."*"]
 debug = 0

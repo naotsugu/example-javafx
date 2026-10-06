@@ -10,6 +10,7 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.StrokeLineCap;
+import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontSmoothingType;
 import java.lang.foreign.Arena;
@@ -119,7 +120,9 @@ public class RenderContext implements AutoCloseable {
             });
         }
     }
-
+    public void setLineJoin(StrokeLineJoin join) {
+        // TODO
+    }
     public void setFont(Font f) {
         if (f != null  && !closed) {
             try (var localArena = Arena.ofConfined()) {
