@@ -132,9 +132,9 @@ pub struct RenderContext {
     shared: Arc<SharedResource>,
 }
 impl RenderContext {
-    /// Builds the Stroke from the current line width and cap.
+    /// Builds the Stroke from the current line width and cap, join.
     fn stroke_style(&self) -> Stroke {
-        Stroke::new(self.line_width).with_caps(self.line_cap)
+        Stroke::new(self.line_width).with_caps(self.line_cap).with_join(self.line_join)
     }
 }
 
@@ -156,10 +156,10 @@ pub extern "C" fn create_render_context(width: u32, height: u32) -> *mut RenderC
         width,
         height,
         scene: Scene::new(),
-        fill_color: Color::from_rgba8(0, 0, 0, 255),
-        stroke_color: Color::from_rgba8(0, 0, 0, 255),
+        fill_color: Color::BLACK,
+        stroke_color: Color::BLACK,
         line_width: 1.,
-        line_cap: Cap::Butt,
+        line_cap: Cap::Square,
         line_join: Join::Miter,
         font_family: "sans-serif".to_string(),
         font_size: 14.0,
