@@ -4,9 +4,7 @@ import com.mammb.code.jfx.canvas.RenderCanvas;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.control.SplitPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
@@ -50,6 +48,7 @@ public class App extends Application {
             gc.setFill(Color.DARKBLUE);
             gc.fillRect(50, 50, 100, 100);
 
+            gc.setFont(Font.font(14));
             gc.setFill(Color.WHITE);
             gc.fillText("Hello Vello Canvas フォント描画品質", 100, 100);
             gc.render();

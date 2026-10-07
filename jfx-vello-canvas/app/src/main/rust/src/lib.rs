@@ -3,7 +3,7 @@ use std::slice;
 use std::ffi::{c_char, CStr};
 use std::sync::{Arc, Mutex, MutexGuard};
 use vello::{
-    kurbo::{Affine, BezPath, Cap, Rect, Stroke, Ellipse, RoundedRect, Line},
+    kurbo::{Affine, BezPath, Join, Cap, Rect, Stroke, Ellipse, RoundedRect, Line},
     peniko::{Color, Fill}, Scene, Glyph};
 use vello::wgpu;
 use parley::{Alignment, AlignmentOptions, FontContext, FontFamily, Layout, LayoutContext, PositionedLayoutItem, StyleProperty};
@@ -125,6 +125,7 @@ pub struct RenderContext {
     stroke_color: Color,
     line_width: f64,
     line_cap: Cap,
+    line_join: Join,
     font_family: String,
     font_size: f32,
     // declared last so it is dropped after the GPU resources above
@@ -159,6 +160,7 @@ pub extern "C" fn create_render_context(width: u32, height: u32) -> *mut RenderC
         stroke_color: Color::from_rgba8(0, 0, 0, 255),
         line_width: 1.,
         line_cap: Cap::Butt,
+        line_join: Join::Miter,
         font_family: "sans-serif".to_string(),
         font_size: 14.0,
         shared,
@@ -307,7 +309,7 @@ pub extern "C" fn set_line_width(ctx_ptr: *mut RenderContext, line_width: f64) {
     ctx.line_width = line_width;
 }
 
-/// Sets the line cap: 0 = butt, 1 = round, 2 = square (same values as Java's BasicStroke).
+/// Sets the line cap: 0 = butt, 1 = round, 2 = square.
 /// Unknown values are ignored.
 #[unsafe(no_mangle)]
 pub extern "C" fn set_line_cap(ctx_ptr: *mut RenderContext, cap: u32) {
@@ -317,6 +319,20 @@ pub extern "C" fn set_line_cap(ctx_ptr: *mut RenderContext, cap: u32) {
         0 => Cap::Butt,
         1 => Cap::Round,
         2 => Cap::Square,
+        _ => return,
+    };
+}
+
+/// Sets the line join: 0 = Bevel, 1 = round, 2 = Miter.
+/// Unknown values are ignored.
+#[unsafe(no_mangle)]
+pub extern "C" fn set_line_join(ctx_ptr: *mut RenderContext, join: u32) {
+    if ctx_ptr.is_null() { return; }
+    let ctx = unsafe { &mut *ctx_ptr };
+    ctx.line_join = match join {
+        0 => Join::Bevel,
+        1 => Join::Round,
+        2 => Join::Miter,
         _ => return,
     };
 }
@@ -743,46 +759,3 @@ fn create_render_target(device: &wgpu::Device, width: u32, height: u32)
     (texture, readback_buffer)
 }
 
-// /// Returns the advance width of a single code point read directly from the font tables.
-// /// Only the families in the font list are searched (no system fallback);
-// /// returns None if none of them has a glyph for the character.
-// fn advance_from_metrics(ctx: &RenderContext, ch: char) -> Option<f64> {
-//     let mut guard = lock(&ctx.shared.text);
-//     let TextResource { font_cx, .. } = &mut *guard;
-//
-//     // parse the comma-separated family list; generic names are resolved by the system
-//     let families: Vec<QueryFamily> = ctx.font_family
-//         .split(',')
-//         .map(|n| n.trim().trim_matches(|c| c == '"' || c == '\''))
-//         .filter(|n| !n.is_empty())
-//         .map(|n| match GenericFamily::parse(n) {
-//             Some(generic) => QueryFamily::Generic(generic),
-//             None => QueryFamily::Named(n),
-//         })
-//         .collect();
-//
-//     let mut query = font_cx.collection.query(&mut font_cx.source_cache);
-//     query.set_families(families);
-//     query.set_attributes(Attributes::default());
-//
-//     let mut result = None;
-//     query.matches_with(|font| {
-//         // skip fonts that cannot be parsed or do not contain the character
-//         let Ok(font_ref) = FontRef::from_index(font.blob.as_ref(), font.index) else {
-//             return QueryStatus::Continue;
-//         };
-//         let Some(glyph_id) = font_ref.charmap().map(ch) else {
-//             return QueryStatus::Continue;
-//         };
-//         // the advance is scaled to font_size (default variation coordinates)
-//         let metrics = font_ref.metrics(Size::new(ctx.font_size), LocationRef::default());
-//         match metrics.average_width(glyph_id) {
-//             Some(advance) => {
-//                 result = Some(advance as f64);
-//                 QueryStatus::Stop
-//             }
-//             None => QueryStatus::Continue,
-//         }
-//     });
-//     result
-// }

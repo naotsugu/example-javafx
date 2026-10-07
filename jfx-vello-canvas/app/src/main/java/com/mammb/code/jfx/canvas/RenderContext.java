@@ -2,7 +2,9 @@ package com.mammb.code.jfx.canvas;
 
 import com.mammb.code.canvas.lib.Point;
 import com.mammb.code.canvas.lib.lib_h;
+import com.sun.javafx.sg.prism.NGCanvas;
 import javafx.geometry.Point2D;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelBuffer;
 import javafx.scene.image.PixelFormat;
@@ -19,6 +21,7 @@ import java.lang.foreign.ValueLayout;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
+import java.util.LinkedList;
 
 public class RenderContext implements AutoCloseable {
 
@@ -36,6 +39,9 @@ public class RenderContext implements AutoCloseable {
     private PixelBuffer<ByteBuffer> pixelBuffer;
     private ImageView imageView;
 
+    private RenderContextState curState;
+    private LinkedList<RenderContextState> stateStack;
+
 
     RenderContext(RenderCanvas canvas, int width, int height) {
 
@@ -52,6 +58,9 @@ public class RenderContext implements AutoCloseable {
                 sceneSegment.asByteBuffer(),
                 PixelFormat.getByteBgraPreInstance());
         imageView = new ImageView(new WritableImage(pixelBuffer));
+
+        curState = new RenderContextState();
+        stateStack = new LinkedList<>();
     }
 
     ImageView getImageView() {
@@ -60,13 +69,6 @@ public class RenderContext implements AutoCloseable {
 
     public RenderCanvas getCanvas() {
         return theCanvas;
-    }
-
-    public Font getFont() {
-        return null; //this.curState.font;
-    }
-    public void setFontSmoothingType(FontSmoothingType var1) {
-        // TODO
     }
 
     public void render() {
@@ -89,48 +91,8 @@ public class RenderContext implements AutoCloseable {
     }
 
     public void clearRect(double x, double y, double w, double h) {
-        if (w != 0 && h != 0) {
+        if (w != 0 && h != 0 && !closed) {
             // TODO
-        }
-    }
-    public void setFill(Paint p) {
-        if (p != null && !closed) {
-            if (p instanceof Color c) {
-                lib_h.set_fill(ctxSegment,
-                        b(c.getRed()), b(c.getGreen()), b(c.getBlue()), b(c.getOpacity()));
-            }
-        }
-    }
-
-    public void setStroke(Paint p) {
-        if (p != null && !closed) {
-            if (p instanceof Color c) {
-                lib_h.set_stroke(ctxSegment,
-                        b(c.getRed()), b(c.getGreen()), b(c.getBlue()), b(c.getOpacity()));
-            }
-        }
-    }
-    public void setLineWidth(double lw) {
-        if (lw > 0 && lw < Double.POSITIVE_INFINITY && !closed) {
-            lib_h.set_line_width(ctxSegment, lw);
-        }
-    }
-    public void setLineCap(StrokeLineCap cap) {
-        if (cap != null && !closed) {
-            lib_h.set_line_cap(ctxSegment, switch (cap) {
-                case SQUARE -> 2; case ROUND -> 1; case BUTT -> 0;
-            });
-        }
-    }
-    public void setLineJoin(StrokeLineJoin join) {
-        // TODO
-    }
-    public void setFont(Font f) {
-        if (f != null  && !closed) {
-            try (var localArena = Arena.ofConfined()) {
-                lib_h.set_font_family(ctxSegment, localArena.allocateFrom(f.getFamily()));
-            }
-            lib_h.set_font_size(ctxSegment, f.getSize());
         }
     }
 
@@ -210,12 +172,167 @@ public class RenderContext implements AutoCloseable {
         }
     }
 
-    // -- helper --------------------------------------------------------------
+    // -- state ---------------------------------------------------------------
 
-    private byte b(double v) {
-        int val = (int) Math.round(v * 255.0);
-        return (byte) val;
+    /**
+     * Sets the current fill paint attribute. The default value is BLACK.
+     * @param p The Paint to be used as the fill Paint or null.
+     */
+    public void setFill(Paint p) {
+        if (p != null  && curState.fill != p && !closed) {
+            curState.fill = p;
+            if (p instanceof Color c) {
+                lib_h.set_fill(ctxSegment,
+                        b(c.getRed()), b(c.getGreen()), b(c.getBlue()), b(c.getOpacity()));
+            }
+        }
     }
+
+    /**
+     * Gets the current fill paint attribute.
+     * @return p The {@code Paint} to be used as the fill {@code Paint}.
+     */
+    public Paint getFill() {
+        return curState.fill;
+    }
+
+    /**
+     * Sets the current stroke paint attribute.
+     * The default value is {@link Color#BLACK BLACK}.
+     * @param p The Paint to be used as the stroke Paint or null.
+     */
+    public void setStroke(Paint p) {
+        if (p != null && curState.stroke != p && !closed) {
+            curState.stroke = p;
+            if (p instanceof Color c) {
+                lib_h.set_stroke(ctxSegment,
+                        b(c.getRed()), b(c.getGreen()), b(c.getBlue()), b(c.getOpacity()));
+            }
+        }
+    }
+
+    /**
+     * Gets the current stroke.
+     * @return the {@code Paint} to be used as the stroke {@code Paint}.
+     */
+    public Paint getStroke() {
+        return curState.stroke;
+    }
+
+    /**
+     * Sets the current line width.
+     * The default value is {@code 1.0}.
+     * @param lw value in the range {0-positive infinity}, with any other
+     *           value being ignored and leaving the value unchanged.
+     */
+    public void setLineWidth(double lw) {
+        if (lw > 0 && lw < Double.POSITIVE_INFINITY && !closed) {
+            if (curState.linewidth != lw) {
+                curState.linewidth = lw;
+                lib_h.set_line_width(ctxSegment, lw);
+            }
+        }
+    }
+
+    /**
+     * Gets the current line width.
+     * The default value is {@code 1.0}.
+     * @return value between 0 and infinity.
+     */
+    public double getLineWidth() {
+        return curState.linewidth;
+    }
+
+    /**
+     * Sets the current stroke line cap.
+     * The default value is {@link StrokeLineCap#SQUARE SQUARE}.
+     * @param cap {@code StrokeLineCap} with a value of
+     * Butt, Round, or Square or null.
+     */
+    public void setLineCap(StrokeLineCap cap) {
+        if (cap != null && curState.linecap != cap && !closed) {
+            lib_h.set_line_cap(ctxSegment, switch (cap) {
+                case SQUARE -> 2; case ROUND -> 1; case BUTT -> 0;
+            });
+        }
+    }
+
+    /**
+     * Gets the current stroke line cap.
+     * The default value is {@link StrokeLineCap#SQUARE SQUARE}.
+     * @return {@code StrokeLineCap} with a value of Butt, Round, or Square.
+     */
+    public StrokeLineCap getLineCap() {
+        return curState.linecap;
+    }
+
+    /**
+     * Sets the current stroke line join.
+     * The default value is {@link StrokeLineJoin#MITER}.
+     * @param join {@code StrokeLineJoin} with a value of Miter, Bevel, or Round or null.
+     */
+    public void setLineJoin(StrokeLineJoin join) {
+        if (join != null && curState.linejoin != join && !closed) {
+            curState.linejoin = join;
+            lib_h.set_line_join(ctxSegment, switch (join) {
+                case BEVEL -> 0; case ROUND -> 1; case MITER -> 2;
+            });
+        }
+    }
+
+    /**
+     * Gets the current stroke line join.
+     * The default value is {@link StrokeLineJoin#MITER}.
+     * @return {@code StrokeLineJoin} with a value of Miter, Bevel, or Round.
+     */
+    public StrokeLineJoin getLineJoin() {
+        return curState.linejoin;
+    }
+
+    /**
+     * Sets the current Font.
+     * The default value is specified by {@link Font#getDefault()}.
+     * @param f the Font or null.
+     */
+    public void setFont(Font f) {
+        if (f != null && curState.font != f && !closed) {
+            curState.font = f;
+            try (var localArena = Arena.ofConfined()) {
+                lib_h.set_font_family(ctxSegment, localArena.allocateFrom(f.getFamily()));
+            }
+            lib_h.set_font_size(ctxSegment, f.getSize());
+        }
+    }
+
+    /**
+     * Gets the current Font.
+     * The default value is specified by {@link Font#getDefault()}.
+     * @return the Font
+     */
+    public Font getFont() {
+        return curState.font;
+    }
+
+    /**
+     * Saves the following attributes onto a stack.
+     */
+    public void save() {
+        stateStack.push(curState.copy());
+    }
+
+    /**
+     * Pops the state off of the stack, setting the following attributes to
+     * their value at the time when that state was pushed onto the stack.
+     * If the stack is empty then nothing is changed.
+     */
+    public void restore() {
+        if (!stateStack.isEmpty()) {
+            RenderContextState savedState = stateStack.pop();
+            savedState.restore(this);
+        }
+    }
+
+    // -- helper --------------------------------------------------------------
 
     /**
      * Rounds the width up to the next multiple of 64 pixels (= 256 bytes per row).
@@ -225,4 +342,10 @@ public class RenderContext implements AutoCloseable {
         int widthAlignment = 256 / 4;
         return (width + widthAlignment - 1) & -widthAlignment;
     }
+
+    private byte b(double v) {
+        int val = (int) Math.round(v * 255.0);
+        return (byte) val;
+    }
+
 }
