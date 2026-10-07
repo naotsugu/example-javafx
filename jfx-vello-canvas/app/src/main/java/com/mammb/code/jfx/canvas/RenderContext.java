@@ -90,49 +90,108 @@ public class RenderContext implements AutoCloseable {
         }
     }
 
-    public void clearRect(double x, double y, double w, double h) {
-        if (w != 0 && h != 0 && !closed) {
-            // TODO
-        }
-    }
-
     // -- draw ----------------------------------------------------------------
 
+    /**
+     * Fills a rectangle using the current fill paint.
+     * @param x the X position of the upper left corner of the rectangle.
+     * @param y the Y position of the upper left corner of the rectangle.
+     * @param w the width of the rectangle.
+     * @param h the height of the rectangle.
+     */
     public void fillRect(double x, double y, double w, double h) {
         if (w != 0 && h != 0 && !closed) {
             lib_h.fill_rect(ctxSegment, x, y, w, h);
         }
     }
+
+    /**
+     * Strokes a rectangle using the current stroke paint.
+     * @param x the X position of the upper left corner of the rectangle.
+     * @param y the Y position of the upper left corner of the rectangle.
+     * @param w the width of the rectangle.
+     * @param h the height of the rectangle.
+     */
     public void strokeRect(double x, double y, double w, double h) {
         if (w != 0 || h != 0 && !closed) {
             lib_h.stroke_rect(ctxSegment, x, y, w, h);
         }
     }
-    public void fillRoundRect(double x, double y, double w, double h, double radius) {
-        if (w != 0 && h != 0 && !closed) {
-            lib_h.fill_round_rect(ctxSegment, x, y, w, h, radius);
-        }
-    }
-    public void strokeRoundRect(double x, double y, double w, double h, double radius) {
-        if (w != 0 && h != 0 && !closed) {
-            lib_h.stroke_round_rect(ctxSegment, x, y, w, h, radius);
-        }
-    }
+
+    /**
+     * Fills an oval using the current fill paint.
+     * @param x the X coordinate of the upper left bound of the oval.
+     * @param y the Y coordinate of the upper left bound of the oval.
+     * @param w the width at the center of the oval.
+     * @param h the height at the center of the oval.
+     */
     public void fillOval(double x, double y, double w, double h) {
         if (w != 0 || h != 0 && !closed) {
             lib_h.fill_oval(ctxSegment, x, y, w, h);
         }
     }
+
+    /**
+     * Strokes an oval using the current stroke paint.
+     * @param x the X coordinate of the upper left bound of the oval.
+     * @param y the Y coordinate of the upper left bound of the oval.
+     * @param w the width at the center of the oval.
+     * @param h the height at the center of the oval.
+     */
     public void strokeOval(double x, double y, double w, double h) {
         if (w != 0 || h != 0 && !closed) {
             lib_h.stroke_oval(ctxSegment, x, y, w, h);
         }
     }
+
+    /**
+     * Fills a rounded rectangle using the current fill paint.
+     * @param x the X coordinate of the upper left bound of the oval.
+     * @param y the Y coordinate of the upper left bound of the oval.
+     * @param w the width at the center of the oval.
+     * @param h the height at the center of the oval.
+     * @param radius the arc of the rectangle corners.
+     */
+    public void fillRoundRect(double x, double y, double w, double h, double radius) {
+        if (w != 0 && h != 0 && !closed) {
+            lib_h.fill_round_rect(ctxSegment, x, y, w, h, radius);
+        }
+    }
+
+    /**
+     * Strokes a rounded rectangle using the current stroke paint.
+     * @param x the X coordinate of the upper left bound of the oval.
+     * @param y the Y coordinate of the upper left bound of the oval.
+     * @param w the width at the center of the oval.
+     * @param h the height at the center of the oval.
+     * @param radius the arc of the rectangle corners.
+     */
+    public void strokeRoundRect(double x, double y, double w, double h, double radius) {
+        if (w != 0 && h != 0 && !closed) {
+            lib_h.stroke_round_rect(ctxSegment, x, y, w, h, radius);
+        }
+    }
+
+    /**
+     * Strokes a line using the current stroke paint.
+     * @param x1 the X coordinate of the starting point of the line.
+     * @param y1 the Y coordinate of the starting point of the line.
+     * @param x2 the X coordinate of the ending point of the line.
+     * @param y2 the Y coordinate of the ending point of the line.
+     */
     public void strokeLine(double x1, double y1, double x2, double y2) {
         if (!closed) {
             lib_h.stroke_oval(ctxSegment, x1, y1, x2, y2);
         }
     }
+
+    /**
+     * Fills a polygon with the given points using the currently set fill paint.
+     * A {@code null} value for any of the arrays will be ignored and nothing will be drawn.
+     * @param xPoints array containing the x coordinates of the polygon's points or null.
+     * @param yPoints array containing the y coordinates of the polygon's points or null.
+     * @param nPoints the number of points that make the polygon.
+     */
     public void fillPolygon(double[] xPoints, double[] yPoints, int nPoints) {
         if (nPoints >= 3 && !closed) {
             try (var localArena = Arena.ofConfined()) {
@@ -143,6 +202,14 @@ public class RenderContext implements AutoCloseable {
             }
         }
     }
+
+    /**
+     * Strokes a polygon with the given points using the currently set stroke paint.
+     * A {@code null} value for any of the arrays will be ignored and nothing will be drawn.
+     * @param xPoints array containing the x coordinates of the polygon's points or null.
+     * @param yPoints array containing the y coordinates of the polygon's points or null.
+     * @param nPoints the number of points that make the polygon.
+     */
     public void strokePolygon(double[] xPoints, double[] yPoints, int nPoints) {
         if (nPoints >= 2 && !closed) {
             try (var localArena = Arena.ofConfined()) {
@@ -153,6 +220,15 @@ public class RenderContext implements AutoCloseable {
             }
         }
     }
+
+    /**
+     * Strokes a polyline with the given points using the currently set stroke
+     * paint attribute.
+     * A {@code null} value for any of the arrays will be ignored and nothing will be drawn.
+     * @param xPoints array containing the x coordinates of the polyline's points or null.
+     * @param yPoints array containing the y coordinates of the polyline's points or null.
+     * @param nPoints the number of points that make the polyline.
+     */
     public void strokePolyline(double[] xPoints, double[] yPoints, int nPoints) {
         if (nPoints >= 2 && !closed) {
             try (var localArena = Arena.ofConfined()) {
@@ -164,6 +240,15 @@ public class RenderContext implements AutoCloseable {
         }
     }
 
+    /**
+     * Fills the given string of text at position x, y
+     * with the current fill paint attribute.
+     * A {@code null} text value will be ignored.
+     * @param text the string of text or null.
+     * @param x position on the x-axis.
+     * @param y position on the y-axis.
+     * @return the bottom-right corner of the drawn text.
+     */
     public Point2D fillText(String text, double x, double y) {
         if (text == null || text.isEmpty() || closed) return new Point2D(x, y);
         try (var localArena = Arena.ofConfined()) {
