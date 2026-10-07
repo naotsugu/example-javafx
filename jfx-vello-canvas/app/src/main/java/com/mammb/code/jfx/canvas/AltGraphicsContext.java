@@ -30,7 +30,6 @@ public class AltGraphicsContext implements AutoCloseable {
     private final MemorySegment sceneSegment;
     private final AltCanvas theCanvas;
     private volatile boolean closed = false;
-    private int viewWidth;
     private int sceneWidth;
     private int sceneHeight;
     private PixelBuffer<ByteBuffer> pixelBuffer;
@@ -42,7 +41,6 @@ public class AltGraphicsContext implements AutoCloseable {
     AltGraphicsContext(AltCanvas canvas, int width, int height) {
 
         theCanvas = canvas;
-        viewWidth = width;
         sceneWidth = alignWidth(width);
         sceneHeight = height;
 
@@ -65,8 +63,10 @@ public class AltGraphicsContext implements AutoCloseable {
 
     void resize(int width, int height) {
         if (!closed) {
+            sceneWidth = alignWidth(width);
+            sceneHeight = height;
             try {
-                lib_h.resize(ctxSegment, width, height);
+                lib_h.resize(ctxSegment, sceneWidth, sceneHeight);
             } finally {
                 Reference.reachabilityFence(this);
             }
