@@ -30,6 +30,7 @@ public class RenderContext implements AutoCloseable {
     private final MemorySegment sceneSegment;
     private final RenderCanvas theCanvas;
     private volatile boolean closed = false;
+    private int viewWidth;
     private int sceneWidth;
     private int sceneHeight;
     private PixelBuffer<ByteBuffer> pixelBuffer;
@@ -39,7 +40,8 @@ public class RenderContext implements AutoCloseable {
     RenderContext(RenderCanvas canvas, int width, int height) {
 
         theCanvas = canvas;
-        sceneWidth = width;
+        viewWidth = width;
+        sceneWidth = alignWidth(width);
         sceneHeight = height;
 
         ctxSegment = lib_h.create_render_context(sceneWidth, sceneHeight);
@@ -215,4 +217,12 @@ public class RenderContext implements AutoCloseable {
         return (byte) val;
     }
 
+    /**
+     * Rounds the width up to the next multiple of 64 pixels (= 256 bytes per row).
+     * e.g. 1000 -> 1024, 1024 -> 1024.
+     */
+    public static int alignWidth(int width) {
+        int widthAlignment = 256 / 4;
+        return (width + widthAlignment - 1) & -widthAlignment;
+    }
 }

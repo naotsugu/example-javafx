@@ -212,7 +212,7 @@ pub extern "C" fn render(ctx_ptr: *mut RenderContext, buffer: *mut u8) {
         ).expect("failed to render texture");
     }
 
-    let padded_row = padded_bytes_per_row(width);
+    let row = row_bytes(width);
     let mut encoder = device.create_command_encoder(
         &wgpu::CommandEncoderDescriptor::default());
     encoder.copy_texture_to_buffer(
@@ -226,7 +226,7 @@ pub extern "C" fn render(ctx_ptr: *mut RenderContext, buffer: *mut u8) {
             buffer: readback_buffer,
             layout: wgpu::TexelCopyBufferLayout {
                 offset: 0,
-                bytes_per_row: Some(padded_row), // was width * 4
+                bytes_per_row: Some(row),
                 rows_per_image: Some(height),
             },
         },
@@ -244,19 +244,14 @@ pub extern "C" fn render(ctx_ptr: *mut RenderContext, buffer: *mut u8) {
     rx.recv().unwrap().unwrap();
     let mapped_data = buffer_slice.get_mapped_range().unwrap();
 
-    // copy row by row: drop the row padding and convert RGBA to BGRA
-    let row_bytes = (width * 4) as usize;
-    let dst_bytes = unsafe { slice::from_raw_parts_mut(buffer, row_bytes * height as usize) };
-    for (src_row, dst_row) in mapped_data
-        .chunks_exact(padded_row as usize)
-        .zip(dst_bytes.chunks_exact_mut(row_bytes))
-    {
-        for (src, dst) in src_row[..row_bytes].chunks_exact(4).zip(dst_row.chunks_exact_mut(4)) {
-            dst[0] = src[2]; // B <- R
-            dst[1] = src[1]; // G <- G
-            dst[2] = src[0]; // R <- B
-            dst[3] = src[3]; // A <- A
-        }
+    // SIMD copy (RGBA -> BGRA)
+    let src_bytes = unsafe { slice::from_raw_parts(mapped_data.as_ptr(), mapped_data.len()) };
+    let dst_bytes = unsafe { slice::from_raw_parts_mut(buffer, mapped_data.len()) };
+    for (src, dst) in src_bytes.chunks_exact(4).zip(dst_bytes.chunks_exact_mut(4)) {
+        dst[0] = src[2]; // B <- R
+        dst[1] = src[1]; // G <- G
+        dst[2] = src[0]; // R <- B
+        dst[3] = src[3]; // A <- A
     }
 
     drop(mapped_data);
@@ -703,14 +698,23 @@ fn fill_text_internal(ctx_ptr: *mut RenderContext, text: &str, x: f64, y: f64) -
     }
 }
 
-/// wgpu requires bytes_per_row of a texture-to-buffer copy to be a multiple of 256.
-fn padded_bytes_per_row(width: u32) -> u32 {
-    (width * 4).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT)
+/// Returns the byte length of one row. wgpu requires bytes_per_row of a
+/// texture-to-buffer copy to be a multiple of 256, so the caller must pass a
+/// width that satisfies this (width * 4 % 256 == 0, i.e. width % 64 == 0).
+fn row_bytes(width: u32) -> u32 {
+    let bytes = width * 4;
+    assert_eq!(bytes % wgpu::COPY_BYTES_PER_ROW_ALIGNMENT, 0,
+               "width ({width}) * 4 must be a multiple of {} bytes",
+               wgpu::COPY_BYTES_PER_ROW_ALIGNMENT);
+    bytes
 }
 
 /// Creates the render target texture and the readback buffer for the given size.
 fn create_render_target(device: &wgpu::Device, width: u32, height: u32)
         -> (wgpu::Texture, wgpu::Buffer) {
+
+    let row = row_bytes(width);
+
     let texture = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("Render Target Texture"),
         size: wgpu::Extent3d {
@@ -730,8 +734,8 @@ fn create_render_target(device: &wgpu::Device, width: u32, height: u32)
 
     let readback_buffer = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("Readback Buffer"),
-        // each row is padded, so the buffer is larger than width * height * 4
-        size: (padded_bytes_per_row(width) * height) as wgpu::BufferAddress,
+        // rows are tightly packed, so the size is exactly width * 4 * height
+        size: row as wgpu::BufferAddress * height as wgpu::BufferAddress,
         usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
         mapped_at_creation: false,
     });
