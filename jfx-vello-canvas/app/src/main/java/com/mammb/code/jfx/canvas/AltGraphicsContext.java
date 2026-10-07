@@ -2,9 +2,7 @@ package com.mammb.code.jfx.canvas;
 
 import com.mammb.code.canvas.lib.Point;
 import com.mammb.code.canvas.lib.lib_h;
-import com.sun.javafx.sg.prism.NGCanvas;
 import javafx.geometry.Point2D;
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelBuffer;
 import javafx.scene.image.PixelFormat;
@@ -14,7 +12,6 @@ import javafx.scene.paint.Paint;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.Font;
-import javafx.scene.text.FontSmoothingType;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
@@ -23,7 +20,7 @@ import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
 
-public class RenderContext implements AutoCloseable {
+public class AltGraphicsContext implements AutoCloseable {
 
     private final NativeGlobal nativeGlobal = NativeGlobal.instance();
     private final Cleaner.Cleanable cleanable;
@@ -31,7 +28,7 @@ public class RenderContext implements AutoCloseable {
     private final Arena arena = Arena.ofShared();
     private final MemorySegment ctxSegment;
     private final MemorySegment sceneSegment;
-    private final RenderCanvas theCanvas;
+    private final AltCanvas theCanvas;
     private volatile boolean closed = false;
     private int viewWidth;
     private int sceneWidth;
@@ -39,11 +36,11 @@ public class RenderContext implements AutoCloseable {
     private PixelBuffer<ByteBuffer> pixelBuffer;
     private ImageView imageView;
 
-    private RenderContextState curState;
-    private LinkedList<RenderContextState> stateStack;
+    private ContextState curState;
+    private LinkedList<ContextState> stateStack;
 
 
-    RenderContext(RenderCanvas canvas, int width, int height) {
+    AltGraphicsContext(AltCanvas canvas, int width, int height) {
 
         theCanvas = canvas;
         viewWidth = width;
@@ -59,7 +56,7 @@ public class RenderContext implements AutoCloseable {
                 PixelFormat.getByteBgraPreInstance());
         imageView = new ImageView(new WritableImage(pixelBuffer));
 
-        curState = new RenderContextState();
+        curState = new ContextState();
         stateStack = new LinkedList<>();
     }
 
@@ -67,7 +64,7 @@ public class RenderContext implements AutoCloseable {
         return imageView;
     }
 
-    public RenderCanvas getCanvas() {
+    public AltCanvas getCanvas() {
         return theCanvas;
     }
 
@@ -412,7 +409,7 @@ public class RenderContext implements AutoCloseable {
      */
     public void restore() {
         if (!stateStack.isEmpty()) {
-            RenderContextState savedState = stateStack.pop();
+            ContextState savedState = stateStack.pop();
             savedState.restore(this);
         }
     }

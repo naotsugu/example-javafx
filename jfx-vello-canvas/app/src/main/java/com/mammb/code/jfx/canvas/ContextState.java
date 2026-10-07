@@ -6,7 +6,7 @@ import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.Font;
 
-class RenderContextState {
+class ContextState {
 
     Paint fill;
     Paint stroke;
@@ -15,7 +15,7 @@ class RenderContextState {
     StrokeLineJoin linejoin;
     Font font;
 
-    RenderContextState() {
+    ContextState() {
         init();
     }
 
@@ -28,7 +28,7 @@ class RenderContextState {
             Font.getDefault());
     }
 
-    RenderContextState(RenderContextState copy) {
+    ContextState(ContextState copy) {
         set(copy.fill,
             copy.stroke,
             copy.linewidth,
@@ -52,11 +52,11 @@ class RenderContextState {
         this.font = font;
     }
 
-    RenderContextState copy() {
-        return new RenderContextState(this);
+    ContextState copy() {
+        return new ContextState(this);
     }
 
-    void restore(RenderContext ctx) {
+    void restore(AltGraphicsContext ctx) {
         ctx.setFill(fill);
         ctx.setStroke(stroke);
         ctx.setLineWidth(linewidth);

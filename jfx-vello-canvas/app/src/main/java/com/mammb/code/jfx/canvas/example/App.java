@@ -1,6 +1,6 @@
 package com.mammb.code.jfx.canvas.example;
 
-import com.mammb.code.jfx.canvas.RenderCanvas;
+import com.mammb.code.jfx.canvas.AltCanvas;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
@@ -18,7 +18,7 @@ public class App extends Application {
     @Override
     public void start(Stage stage) {
 
-        var renderCanvas = new RenderCanvas(WIDTH, HEIGHT);
+        var renderCanvas = new AltCanvas(WIDTH, HEIGHT);
         var canvas = new Canvas(WIDTH, HEIGHT);
 
         HBox hbox = new HBox();
