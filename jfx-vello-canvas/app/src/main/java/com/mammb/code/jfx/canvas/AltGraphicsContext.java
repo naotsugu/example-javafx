@@ -3,7 +3,6 @@ package com.mammb.code.jfx.canvas;
 import com.mammb.code.canvas.lib.Point;
 import com.mammb.code.canvas.lib.lib_h;
 import javafx.geometry.Point2D;
-import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelBuffer;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.WritableImage;

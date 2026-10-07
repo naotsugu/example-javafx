@@ -6,16 +6,14 @@ use vello::{
     kurbo::{Affine, BezPath, Join, Cap, Rect, Stroke, Ellipse, RoundedRect, Line},
     peniko::{Color, Fill}, Scene, Glyph};
 use vello::wgpu;
-use parley::{Alignment, AlignmentOptions, FontContext, FontFamily, Layout, LayoutContext, PositionedLayoutItem, StyleProperty};
+use parley::{Alignment, AlignmentOptions, FontContext, FontFamily, Layout,
+             LayoutContext, PositionedLayoutItem, StyleProperty};
 
 // -- shared resources --------------------------------------------------------
 
 /// A point returned by value to the caller (two f64, same layout as a C struct).
 #[repr(C)]
-pub struct Point {
-    x: f64,
-    y: f64,
-}
+pub struct Point { x: f64, y: f64, }
 
 /// Text resources shared by all RenderContexts.
 /// ranged_builder() needs both contexts as &mut, so they live under one lock.
@@ -209,7 +207,7 @@ pub extern "C" fn render(ctx_ptr: *mut RenderContext, buffer: *mut u8) {
             &vello::RenderParams {
                 base_color: Color::TRANSPARENT,
                 width, height,
-                antialiasing_method: vello::AaConfig::Msaa16,
+                antialiasing_method: vello::AaConfig::Area,
             },
         ).expect("failed to render texture");
     }
