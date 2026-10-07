@@ -34,7 +34,6 @@ public class AltGraphicsContext implements AutoCloseable {
     private int sceneWidth;
     private int sceneHeight;
     private PixelBuffer<ByteBuffer> pixelBuffer;
-    private ImageView imageView;
 
     private ContextState curState;
     private LinkedList<ContextState> stateStack;
@@ -54,18 +53,24 @@ public class AltGraphicsContext implements AutoCloseable {
                 sceneWidth, sceneHeight,
                 sceneSegment.asByteBuffer(),
                 PixelFormat.getByteBgraPreInstance());
-        imageView = new ImageView(new WritableImage(pixelBuffer));
+        theCanvas.setImage(new WritableImage(pixelBuffer));
 
         curState = new ContextState();
         stateStack = new LinkedList<>();
     }
 
-    ImageView getImageView() {
-        return imageView;
-    }
-
     public AltCanvas getCanvas() {
         return theCanvas;
+    }
+
+    void resize(int width, int height) {
+        if (!closed) {
+            try {
+                lib_h.resize(ctxSegment, width, height);
+            } finally {
+                Reference.reachabilityFence(this);
+            }
+        }
     }
 
     public void render() {
