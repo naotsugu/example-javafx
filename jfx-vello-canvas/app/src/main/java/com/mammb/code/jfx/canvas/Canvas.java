@@ -4,20 +4,20 @@ import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.scene.image.ImageView;
 
-public class AltCanvas extends ImageView {
+public class Canvas extends ImageView {
 
     private DoubleProperty width = new SimpleDoubleProperty(0);
     private DoubleProperty height = new SimpleDoubleProperty(0);
 
-    private final AltGraphicsContext ctx;
+    private final GraphicsContext ctx;
 
-    public AltCanvas(int width, int height) {
-        ctx = new AltGraphicsContext(this, width, height);
+    public Canvas(int width, int height) {
+        ctx = new GraphicsContext(this, width, height);
         this.width.set(width);
         this.height.set(height);
     }
 
-    public AltGraphicsContext getGraphicsContext() {
+    public GraphicsContext getGraphicsContext() {
         return ctx;
     }
 

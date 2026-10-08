@@ -56,7 +56,7 @@ class ContextState {
         return new ContextState(this);
     }
 
-    void restore(AltGraphicsContext ctx) {
+    void restore(GraphicsContext ctx) {
         ctx.setFill(fill);
         ctx.setStroke(stroke);
         ctx.setLineWidth(linewidth);

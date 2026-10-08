@@ -19,7 +19,7 @@ import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
 
-public class AltGraphicsContext implements AutoCloseable {
+public class GraphicsContext implements AutoCloseable {
 
     private final NativeGlobal nativeGlobal = NativeGlobal.instance();
     private final Cleaner.Cleanable cleanable;
@@ -27,7 +27,7 @@ public class AltGraphicsContext implements AutoCloseable {
     private final Arena arena = Arena.ofShared();
     private final MemorySegment ctxSegment;
     private final MemorySegment sceneSegment;
-    private final AltCanvas theCanvas;
+    private final Canvas theCanvas;
     private volatile boolean closed = false;
     private int sceneWidth;
     private int sceneHeight;
@@ -37,7 +37,7 @@ public class AltGraphicsContext implements AutoCloseable {
     private LinkedList<ContextState> stateStack;
 
 
-    AltGraphicsContext(AltCanvas canvas, int width, int height) {
+    GraphicsContext(Canvas canvas, int width, int height) {
 
         theCanvas = canvas;
         sceneWidth = alignWidth(width);
@@ -56,7 +56,7 @@ public class AltGraphicsContext implements AutoCloseable {
         stateStack = new LinkedList<>();
     }
 
-    public AltCanvas getCanvas() {
+    public Canvas getCanvas() {
         return theCanvas;
     }
 
