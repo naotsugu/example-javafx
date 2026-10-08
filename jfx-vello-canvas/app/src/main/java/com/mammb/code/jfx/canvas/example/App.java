@@ -17,17 +17,17 @@ public class App extends Application {
     @Override
     public void start(Stage stage) {
 
-        var renderCanvas = new Canvas(WIDTH, HEIGHT);
-        var canvas = new javafx.scene.canvas.Canvas(WIDTH, HEIGHT);
+        var canvas = new Canvas(WIDTH, HEIGHT);
+        var fxCanvas = new javafx.scene.canvas.Canvas(WIDTH, HEIGHT);
 
         HBox hbox = new HBox();
-        hbox.getChildren().addAll(canvas, renderCanvas);
+        hbox.getChildren().addAll(fxCanvas, canvas);
         Scene scene = new Scene(hbox, WIDTH * 2, HEIGHT, Color.TRANSPARENT);
         stage.setScene(scene);
         stage.show();
 
         {
-            var gc = canvas.getGraphicsContext2D();
+            var gc = fxCanvas.getGraphicsContext2D();
             gc.setFill(Color.BLACK);
             gc.fillRect(0, 0, WIDTH, HEIGHT);
 
@@ -40,7 +40,7 @@ public class App extends Application {
         }
 
         {
-            var gc = renderCanvas.getGraphicsContext();
+            var gc = canvas.getGraphicsContext();
             gc.setFill(Color.BLACK);
             gc.fillRect(0, 0, WIDTH, HEIGHT);
 
@@ -49,12 +49,9 @@ public class App extends Application {
 
             gc.setFont(Font.font(14));
             gc.setFill(Color.WHITE);
-            gc.fillText("Hello Vello Canvas フォント描画品質", 100, 100);
+            gc.fillText("Hello FFI Canvas フォント描画品質", 100, 100);
         }
 
     }
 
-    @Override
-    public void stop() {
-    }
 }
