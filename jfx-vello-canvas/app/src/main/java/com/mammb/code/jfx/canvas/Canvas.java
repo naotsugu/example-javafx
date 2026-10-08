@@ -10,15 +10,22 @@ public class Canvas extends ImageView {
     private DoubleProperty height = new SimpleDoubleProperty(0);
 
     private final GraphicsContext ctx;
+    private final RenderPulse renderPulse;
 
     public Canvas(int width, int height) {
         ctx = new GraphicsContext(this, width, height);
+        renderPulse = new RenderPulse(ctx::render);
         this.width.set(width);
         this.height.set(height);
+        renderPulse.start();
     }
 
     public GraphicsContext getGraphicsContext() {
         return ctx;
+    }
+
+    RenderPulse getRenderPulse() {
+        return renderPulse;
     }
 
     public void setSize(int width, int height) {

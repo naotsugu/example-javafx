@@ -21,13 +21,14 @@ public final class NativeGlobal {
         return instance;
     }
 
-    public Cleaner.Cleanable cleaner(Object obj, MemorySegment ctxSegment, Arena arena) {
-        return cleaner.register(obj, new CleanerState(ctxSegment, arena));
+    public Cleaner.Cleanable cleaner(GraphicsContext gc, MemorySegment ctxSegment, Arena arena) {
+        return cleaner.register(gc, new CleanerState(gc.getCanvas().getRenderPulse(), ctxSegment, arena));
     }
 
-    record CleanerState(MemorySegment ctxSegment, Arena arena) implements Runnable {
+    record CleanerState(RenderPulse renderPulse, MemorySegment ctxSegment, Arena arena) implements Runnable {
         @Override
         public void run() {
+            renderPulse.stop();
             if (ctxSegment != null && !ctxSegment.equals(MemorySegment.NULL)) {
                 lib_h.destroy_render_context(ctxSegment);
             }

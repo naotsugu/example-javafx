@@ -50,7 +50,6 @@ public class App extends Application {
             gc.setFont(Font.font(14));
             gc.setFill(Color.WHITE);
             gc.fillText("Hello Vello Canvas フォント描画品質", 100, 100);
-            gc.render();
         }
 
     }

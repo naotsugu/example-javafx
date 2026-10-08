@@ -103,6 +103,7 @@ public class GraphicsContext implements AutoCloseable {
     public void fillRect(double x, double y, double w, double h) {
         if (w != 0 && h != 0 && !closed) {
             lib_h.fill_rect(ctxSegment, x, y, w, h);
+            theCanvas.getRenderPulse().request();
         }
     }
 
@@ -116,6 +117,7 @@ public class GraphicsContext implements AutoCloseable {
     public void strokeRect(double x, double y, double w, double h) {
         if (w != 0 || h != 0 && !closed) {
             lib_h.stroke_rect(ctxSegment, x, y, w, h);
+            theCanvas.getRenderPulse().request();
         }
     }
 
@@ -129,6 +131,7 @@ public class GraphicsContext implements AutoCloseable {
     public void fillOval(double x, double y, double w, double h) {
         if (w != 0 || h != 0 && !closed) {
             lib_h.fill_oval(ctxSegment, x, y, w, h);
+            theCanvas.getRenderPulse().request();
         }
     }
 
@@ -142,6 +145,7 @@ public class GraphicsContext implements AutoCloseable {
     public void strokeOval(double x, double y, double w, double h) {
         if (w != 0 || h != 0 && !closed) {
             lib_h.stroke_oval(ctxSegment, x, y, w, h);
+            theCanvas.getRenderPulse().request();
         }
     }
 
@@ -156,6 +160,7 @@ public class GraphicsContext implements AutoCloseable {
     public void fillRoundRect(double x, double y, double w, double h, double radius) {
         if (w != 0 && h != 0 && !closed) {
             lib_h.fill_round_rect(ctxSegment, x, y, w, h, radius);
+            theCanvas.getRenderPulse().request();
         }
     }
 
@@ -170,6 +175,7 @@ public class GraphicsContext implements AutoCloseable {
     public void strokeRoundRect(double x, double y, double w, double h, double radius) {
         if (w != 0 && h != 0 && !closed) {
             lib_h.stroke_round_rect(ctxSegment, x, y, w, h, radius);
+            theCanvas.getRenderPulse().request();
         }
     }
 
@@ -183,6 +189,7 @@ public class GraphicsContext implements AutoCloseable {
     public void strokeLine(double x1, double y1, double x2, double y2) {
         if (!closed) {
             lib_h.stroke_oval(ctxSegment, x1, y1, x2, y2);
+            theCanvas.getRenderPulse().request();
         }
     }
 
@@ -200,6 +207,7 @@ public class GraphicsContext implements AutoCloseable {
                         localArena.allocateFrom(ValueLayout.JAVA_DOUBLE, xPoints),
                         localArena.allocateFrom(ValueLayout.JAVA_DOUBLE, yPoints),
                         nPoints);
+                theCanvas.getRenderPulse().request();
             }
         }
     }
@@ -218,6 +226,7 @@ public class GraphicsContext implements AutoCloseable {
                         localArena.allocateFrom(ValueLayout.JAVA_DOUBLE, xPoints),
                         localArena.allocateFrom(ValueLayout.JAVA_DOUBLE, yPoints),
                         nPoints);
+                theCanvas.getRenderPulse().request();
             }
         }
     }
@@ -237,6 +246,7 @@ public class GraphicsContext implements AutoCloseable {
                         localArena.allocateFrom(ValueLayout.JAVA_DOUBLE, xPoints),
                         localArena.allocateFrom(ValueLayout.JAVA_DOUBLE, yPoints),
                         nPoints);
+                theCanvas.getRenderPulse().request();
             }
         }
     }
@@ -254,6 +264,7 @@ public class GraphicsContext implements AutoCloseable {
         if (text == null || text.isEmpty() || closed) return new Point2D(x, y);
         try (var localArena = Arena.ofConfined()) {
             MemorySegment end = lib_h.fill_text(localArena, ctxSegment, localArena.allocateFrom(text), x, y);
+            theCanvas.getRenderPulse().request();
             return new Point2D(Point.x(end), Point.y(end));
         }
     }
