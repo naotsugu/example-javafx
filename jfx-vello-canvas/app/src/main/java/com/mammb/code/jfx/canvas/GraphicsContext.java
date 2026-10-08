@@ -429,6 +429,34 @@ public class GraphicsContext implements AutoCloseable {
         }
     }
 
+    /**
+     * Gets the line height of the current font: ascent + descent + leading.
+     * @return the line height of the current font
+     */
+    public double getFontHeight() {
+        return lib_h.get_line_height(ctxSegment);
+    }
+
+    /**
+     * Gets the advance width of a single Unicode code point in the current font.
+     * @param codePoint a Unicode code point
+     * @return the advance width of a single Unicode code point in the current font
+     */
+    public double getAdvance(int codePoint) {
+        return lib_h.get_advance(ctxSegment, codePoint);
+    }
+
+    /**
+     * Gets the advance width of the given text in the current font.
+     * @param text the text
+     * @return the advance width of the given text in the current font
+     */
+    public double getAdvance(String text) {
+        try (var localArena = Arena.ofConfined()) {
+            return lib_h.get_text_advance(ctxSegment, localArena.allocateFrom(text));
+        }
+    }
+
     // -- helper --------------------------------------------------------------
 
     /**
