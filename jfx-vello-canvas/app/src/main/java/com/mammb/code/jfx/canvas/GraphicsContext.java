@@ -208,7 +208,7 @@ public class GraphicsContext implements AutoCloseable {
      */
     public void strokeLine(double x1, double y1, double x2, double y2) {
         if (!closed) {
-            lib_h.stroke_oval(ctxSegment, x1, y1, x2, y2);
+            lib_h.stroke_line(ctxSegment, x1, y1, x2, y2);
             theCanvas.getRenderPulse().request();
         }
     }
@@ -473,7 +473,7 @@ public class GraphicsContext implements AutoCloseable {
         if (f != null && curState.font != f && !closed) {
             curState.font = f;
             try (var localArena = Arena.ofConfined()) {
-                lib_h.set_font_family(ctxSegment, localArena.allocateFrom(f.getFamily()));
+                lib_h.set_font_family(ctxSegment, localArena.allocateFrom(f.getName()));
             }
             lib_h.set_font_size(ctxSegment, f.getSize());
         }

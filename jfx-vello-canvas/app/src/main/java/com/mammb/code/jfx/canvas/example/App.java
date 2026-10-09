@@ -34,9 +34,9 @@ public class App extends Application {
             gc.setFill(Color.DARKBLUE);
             gc.fillRect(50, 50, 100, 100);
 
-            gc.setFont(Font.font(14));
+            gc.setFont(Font.font("Consolas", 14));
             gc.setFill(Color.WHITE);
-            gc.fillText("Hello JavaFX Canvas フォント描画品質", 100, 100);
+            gc.fillText("Hello JavaFX Canvas フォント描画品質000", 100, 100);
         }
 
         {
@@ -47,9 +47,9 @@ public class App extends Application {
             gc.setFill(Color.DARKBLUE);
             gc.fillRect(50, 50, 100, 100);
 
-            gc.setFont(Font.font(14));
+            gc.setFont(Font.font("Consolas", 14));
             gc.setFill(Color.WHITE);
-            gc.fillText("Hello FFI Canvas フォント描画品質", 100, 100);
+            gc.fillText("Hello FFI Canvas フォント描画品質000", 100, 100);
         }
 
     }
