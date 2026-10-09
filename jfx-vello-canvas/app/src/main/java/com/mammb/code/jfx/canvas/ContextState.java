@@ -33,6 +33,7 @@ class ContextState {
     StrokeLineCap linecap;
     StrokeLineJoin linejoin;
     Font font;
+    double fontWeight;
 
     ContextState() {
         init();
@@ -44,7 +45,8 @@ class ContextState {
             1.0,
             StrokeLineCap.SQUARE,
             StrokeLineJoin.MITER,
-            Font.getDefault());
+            Font.getDefault(),
+            700);
     }
 
     ContextState(ContextState copy) {
@@ -53,7 +55,8 @@ class ContextState {
             copy.linewidth,
             copy.linecap,
             copy.linejoin,
-            copy.font);
+            copy.font,
+            copy.fontWeight);
     }
 
     final void set(
@@ -62,13 +65,15 @@ class ContextState {
             double linewidth,
             StrokeLineCap linecap,
             StrokeLineJoin linejoin,
-            Font font) {
+            Font font,
+            double fontWeight) {
         this.fill = fill;
         this.stroke = stroke;
         this.linewidth = linewidth;
         this.linecap = linecap;
         this.linejoin = linejoin;
         this.font = font;
+        this.fontWeight = fontWeight;
     }
 
     ContextState copy() {
@@ -82,6 +87,7 @@ class ContextState {
         ctx.setLineCap(linecap);
         ctx.setLineJoin(linejoin);
         ctx.setFont(font);
+        ctx.setFontWeight(fontWeight);
     }
 
 }

@@ -2,11 +2,10 @@ use std::borrow::Cow;
 use std::slice;
 use std::ffi::{c_char, CStr};
 use std::sync::{Arc, Mutex, MutexGuard};
-use vello::{
-    kurbo::{Affine, BezPath, Join, Cap, Rect, Stroke, Ellipse, RoundedRect, Line},
-    peniko::{Color, Fill, StyleRef}, Scene, Glyph};
+use vello::{kurbo::{Affine, BezPath, Join, Cap, Rect, Stroke, Ellipse, RoundedRect, Line},
+            peniko::{Color, Fill, StyleRef}, Scene, Glyph};
 use vello::wgpu;
-use parley::{Alignment, AlignmentOptions, FontContext, FontFamily, Layout,
+use parley::{Alignment, AlignmentOptions, FontContext, FontFamily, FontWeight, Layout,
              LayoutContext, PositionedLayoutItem, StyleProperty};
 
 // -- shared resources --------------------------------------------------------
@@ -126,6 +125,7 @@ pub struct RenderContext {
     line_join: Join,
     font_family: String,
     font_size: f32,
+    font_weight: f32,
     // declared last so it is dropped after the GPU resources above
     shared: Arc<SharedResource>,
 }
@@ -160,7 +160,8 @@ pub extern "C" fn create_render_context(width: u32, height: u32) -> *mut RenderC
         line_cap: Cap::Square,
         line_join: Join::Miter,
         font_family: "sans-serif".to_string(),
-        font_size: 14.0,
+        font_size: 14.,
+        font_weight: 500., // 400.
         shared,
     };
 
@@ -371,6 +372,17 @@ pub extern "C" fn set_font_size(ctx_ptr: *mut RenderContext, size: f64) {
     if ctx_ptr.is_null() || !size.is_finite() || size <= 0.0 { return; }
     let ctx = unsafe { &mut *ctx_ptr };
     ctx.font_size = size as f32;
+}
+
+/// Sets the font weight on the CSS scale: 100 (thin) to 900 (black).
+/// 400 is normal (the default) and 700 is bold. Out-of-range or non-finite values are ignored.
+/// Fonts that are not variable only have a few weights (often 400 and 700),
+/// so an intermediate value may select the nearest available face.
+#[unsafe(no_mangle)]
+pub extern "C" fn set_font_weight(ctx_ptr: *mut RenderContext, weight: f64) {
+    if ctx_ptr.is_null() || !weight.is_finite() || !(1.0..=1000.0).contains(&weight) { return; }
+    let ctx = unsafe { &mut *ctx_ptr };
+    ctx.font_weight = weight as f32;
 }
 
 // -- measure -----------------------------------------------------------------
@@ -691,6 +703,7 @@ fn build_layout(ctx: &RenderContext, text: &str) -> Layout<()> {
         let TextResource { font_cx, layout_cx } = &mut *guard;
         let mut builder = layout_cx.ranged_builder(font_cx, text, 1.0, true);
         builder.push_default(StyleProperty::FontSize(ctx.font_size));
+        builder.push_default(StyleProperty::FontWeight(FontWeight::new(ctx.font_weight)));
         builder.push_default(StyleProperty::FontFamily(FontFamily::Source(
             Cow::Borrowed(ctx.font_family.as_str()),
         )));

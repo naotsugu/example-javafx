@@ -45,7 +45,7 @@ public class GraphicsContext implements AutoCloseable {
 
     private final Arena arena = Arena.ofShared();
     private final MemorySegment ctxSegment;
-    private final MemorySegment sceneSegment;
+    private MemorySegment sceneSegment;
 
     private final Canvas theCanvas;
     private volatile boolean closed = false;
@@ -65,12 +65,7 @@ public class GraphicsContext implements AutoCloseable {
 
         ctxSegment = lib_h.create_render_context(sceneWidth, sceneHeight);
         cleanable = nativeGlobal.cleaner(this, ctxSegment, arena);
-        sceneSegment = arena.allocate((long) sceneWidth * sceneHeight * 4); // 4bytes[BGRA]
-        pixelBuffer = new PixelBuffer<>(
-                sceneWidth, sceneHeight,
-                sceneSegment.asByteBuffer(),
-                PixelFormat.getByteBgraPreInstance());
-        theCanvas.setImage(new WritableImage(pixelBuffer));
+        initSceneBuffer();
 
         curState = new ContextState();
         stateStack = new LinkedList<>();
@@ -81,15 +76,31 @@ public class GraphicsContext implements AutoCloseable {
     }
 
     void resize(int width, int height) {
-        if (!closed) {
-            sceneWidth = alignWidth(width);
-            sceneHeight = height;
+        if (!closed && width > 0 && height > 0) {
+            int newWidth = alignWidth(width);
+            if (newWidth == sceneWidth && height == sceneHeight) {
+                return;
+            }
             try {
-                lib_h.resize(ctxSegment, sceneWidth, sceneHeight);
+                if (lib_h.resize(ctxSegment, newWidth, height)) {
+                    sceneWidth = newWidth;
+                    sceneHeight = height;
+                    initSceneBuffer();
+                    theCanvas.getRenderPulse().request();
+                }
             } finally {
                 Reference.reachabilityFence(this);
             }
         }
+    }
+
+    private void initSceneBuffer() {
+        sceneSegment = arena.allocate((long) sceneWidth * sceneHeight * 4); // 4bytes[BGRA]
+        pixelBuffer = new PixelBuffer<>(
+                sceneWidth, sceneHeight,
+                sceneSegment.asByteBuffer(),
+                PixelFormat.getByteBgraPreInstance());
+        theCanvas.setImage(new WritableImage(pixelBuffer));
     }
 
     void render() {
@@ -486,6 +497,20 @@ public class GraphicsContext implements AutoCloseable {
      */
     public Font getFont() {
         return curState.font;
+    }
+
+    /**
+     * Sets the font weight on the CSS scale: 100 (thin) to 900 (black).
+     * The default value is {@code 700}.
+     * @param fw the font weight
+     */
+    public void setFontWeight(double fw) {
+        if (fw > 0 && fw <= 1000 && !closed) {
+            if (curState.fontWeight != fw) {
+                curState.fontWeight = fw;
+                lib_h.set_font_weight(ctxSegment, fw);
+            }
+        }
     }
 
     /**
