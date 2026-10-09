@@ -18,6 +18,7 @@ public class App extends Application {
     public void start(Stage stage) {
 
         var canvas = new Canvas(WIDTH, HEIGHT);
+        canvas.setSize(500, 300);
         var fxCanvas = new javafx.scene.canvas.Canvas(WIDTH, HEIGHT);
 
         HBox hbox = new HBox();
