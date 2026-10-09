@@ -302,7 +302,8 @@ public class GraphicsContext implements AutoCloseable {
     public Point2D fillText(String text, double x, double y, double maxWidth) {
         if (maxWidth <= 0 && !closed) return new Point2D(x, y);
         try (var localArena = Arena.ofConfined()) {
-            MemorySegment end = lib_h.stroke_text_max_width(localArena, ctxSegment, localArena.allocateFrom(text), x, y, maxWidth);
+            MemorySegment end = lib_h.stroke_text_max_width(
+                    localArena, ctxSegment, localArena.allocateFrom(text), x, y, maxWidth);
             theCanvas.getRenderPulse().request();
             return new Point2D(Point.x(end), Point.y(end));
         }
@@ -321,7 +322,8 @@ public class GraphicsContext implements AutoCloseable {
     public Point2D strokeText(String text, double x, double y, double maxWidth) {
         if (maxWidth <= 0 && !closed) return new Point2D(x, y);
         try (var localArena = Arena.ofConfined()) {
-            MemorySegment end = lib_h.stroke_text_max_width(localArena, ctxSegment, localArena.allocateFrom(text), x, y, maxWidth);
+            MemorySegment end = lib_h.stroke_text_max_width(
+                    localArena, ctxSegment, localArena.allocateFrom(text), x, y, maxWidth);
             theCanvas.getRenderPulse().request();
             return new Point2D(Point.x(end), Point.y(end));
         }
