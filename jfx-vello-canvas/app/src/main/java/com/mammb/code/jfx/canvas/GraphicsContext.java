@@ -2,6 +2,7 @@ package com.mammb.code.jfx.canvas;
 
 import com.mammb.code.canvas.lib.Point;
 import com.mammb.code.canvas.lib.lib_h;
+import com.sun.javafx.sg.prism.NGCanvas;
 import javafx.geometry.Point2D;
 import javafx.scene.image.PixelBuffer;
 import javafx.scene.image.PixelFormat;
@@ -283,6 +284,44 @@ public class GraphicsContext implements AutoCloseable {
         if (text == null || text.isEmpty() || closed) return new Point2D(x, y);
         try (var localArena = Arena.ofConfined()) {
             MemorySegment end = lib_h.stroke_text(localArena, ctxSegment, localArena.allocateFrom(text), x, y);
+            theCanvas.getRenderPulse().request();
+            return new Point2D(Point.x(end), Point.y(end));
+        }
+    }
+
+    /**
+     * Fills text and includes a maximum width of the string.
+     * If the width of the text extends past max width, then it will be sized
+     * to fit.
+     * @param text the string of text or null.
+     * @param x position on the x-axis.
+     * @param y position on the y-axis.
+     * @param maxWidth  maximum width the text string can have.
+     * @return the bottom-right corner of the drawn text.
+     */
+    public Point2D fillText(String text, double x, double y, double maxWidth) {
+        if (maxWidth <= 0 && !closed) return new Point2D(x, y);
+        try (var localArena = Arena.ofConfined()) {
+            MemorySegment end = lib_h.stroke_text_max_width(localArena, ctxSegment, localArena.allocateFrom(text), x, y, maxWidth);
+            theCanvas.getRenderPulse().request();
+            return new Point2D(Point.x(end), Point.y(end));
+        }
+    }
+
+    /**
+     * Draws text with stroke paint and includes a maximum width of the string.
+     * If the width of the text extends past max width, then it will be sized
+     * to fit.
+     * @param text the string of text or null.
+     * @param x position on the x-axis.
+     * @param y position on the y-axis.
+     * @param maxWidth  maximum width the text string can have.
+     * @return the bottom-right corner of the drawn text.
+     */
+    public Point2D strokeText(String text, double x, double y, double maxWidth) {
+        if (maxWidth <= 0 && !closed) return new Point2D(x, y);
+        try (var localArena = Arena.ofConfined()) {
+            MemorySegment end = lib_h.stroke_text_max_width(localArena, ctxSegment, localArena.allocateFrom(text), x, y, maxWidth);
             theCanvas.getRenderPulse().request();
             return new Point2D(Point.x(end), Point.y(end));
         }

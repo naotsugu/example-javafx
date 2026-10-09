@@ -601,7 +601,24 @@ pub extern "C" fn fill_text(ctx_ptr: *mut RenderContext,
         Ok(s) => s,
         Err(_) => return Point { x, y }, // illegal UTF-8
     };
-    draw_text_internal(ctx_ptr, text, x, y, false)
+    draw_text_internal(ctx_ptr, text, x, y, false, f64::INFINITY)
+}
+
+/// Draws UTF-8 text filled with the current fill paint, like fill_text().
+/// If the text is wider than max_width, it is scaled horizontally to fit
+/// (the left end and the baseline stay at (x, y)).
+/// Nothing is drawn if max_width is not positive or is NaN.
+/// Returns the bottom-right corner of the drawn text (after scaling).
+#[unsafe(no_mangle)]
+pub extern "C" fn fill_text_max_width(ctx_ptr: *mut RenderContext,
+        text_ptr: *const c_char, x: f64, y: f64, max_width: f64) -> Point {
+    if ctx_ptr.is_null() || text_ptr.is_null() { return Point { x, y }; }
+    let c_str = unsafe { CStr::from_ptr(text_ptr) };
+    let text = match c_str.to_str() {
+        Ok(s) => s,
+        Err(_) => return Point { x, y }, // illegal UTF-8
+    };
+    draw_text_internal(ctx_ptr, text, x, y, false, max_width)
 }
 
 /// Draws the outline of UTF-8 text using the current stroke paint and width.
@@ -619,9 +636,26 @@ pub extern "C" fn stroke_text(ctx_ptr: *mut RenderContext,
         Ok(s) => s,
         Err(_) => return Point { x, y }, // illegal UTF-8
     };
-    draw_text_internal(ctx_ptr, text, x, y, true)
+    draw_text_internal(ctx_ptr, text, x, y, true, f64::INFINITY)
 }
 
+/// Draws the outline of UTF-8 text, like stroke_text().
+/// If the text is wider than max_width, it is scaled horizontally to fit
+/// (the left end and the baseline stay at (x, y)).
+/// The scaling is applied to the stroke too, so the line gets thinner horizontally.
+/// Nothing is drawn if max_width is not positive or is NaN.
+/// Returns the bottom-right corner of the text layout (after scaling).
+#[unsafe(no_mangle)]
+pub extern "C" fn stroke_text_max_width(ctx_ptr: *mut RenderContext,
+        text_ptr: *const c_char, x: f64, y: f64, max_width: f64) -> Point {
+    if ctx_ptr.is_null() || text_ptr.is_null() { return Point { x, y }; }
+    let c_str = unsafe { CStr::from_ptr(text_ptr) };
+    let text = match c_str.to_str() {
+        Ok(s) => s,
+        Err(_) => return Point { x, y }, // illegal UTF-8
+    };
+    draw_text_internal(ctx_ptr, text, x, y, true, max_width)
+}
 // -- private -----------------------------------------------------------------
 
 /// Builds a path from separate x / y coordinate arrays.
@@ -678,9 +712,14 @@ fn measure_width(ctx: &RenderContext, text: &str) -> f64 {
 /// Lays out the text and draws its glyphs, filled or stroked.
 /// The fill case uses the fill paint; the stroke case uses the stroke paint,
 /// width, cap and join.
-fn draw_text_internal(ctx_ptr: *mut RenderContext, text: &str, x: f64, y: f64, stroke: bool) -> Point {
+/// If the layout is wider than max_width, it is scaled horizontally around (x, y).
+/// Pass f64::INFINITY for no limit.
+fn draw_text_internal(ctx_ptr: *mut RenderContext, text: &str, x: f64, y: f64,
+        stroke: bool, max_width: f64) -> Point {
 
     if ctx_ptr.is_null() { return Point { x, y }; }
+    // rejects zero, negative and NaN (all comparisons with NaN are false)
+    if !(max_width > 0.0) { return Point { x, y }; }
     let ctx = unsafe { &mut *ctx_ptr };
 
     // choose paint and style; the stroke is built before borrowing the scene mutably
@@ -696,6 +735,14 @@ fn draw_text_internal(ctx_ptr: *mut RenderContext, text: &str, x: f64, y: f64, s
     let Some(first_line) = layout.lines().next() else { return Point { x, y }; };
     let origin_y = y as f32 - first_line.metrics().baseline;
 
+    // horizontal scale to fit max_width; 1.0 when the text already fits
+    let width = layout.full_width() as f64;
+    let scale = if width > max_width { max_width / width } else { 1.0 };
+    // scale around (x, y) so that the left end and the baseline do not move
+    let transform = Affine::translate((x, y))
+        * Affine::scale_non_uniform(scale, 1.0)
+        * Affine::translate((-x, -y));
+
     let scene = &mut ctx.scene;
     for line in layout.lines() {
         for item in line.items() {
@@ -706,7 +753,9 @@ fn draw_text_internal(ctx_ptr: *mut RenderContext, text: &str, x: f64, y: f64, s
             scene
                 .draw_glyphs(run.font())
                 .font_size(run.font_size())
-                .hint(true)
+                .transform(transform)
+                // hinting assumes unscaled glyphs, so it is turned off when squeezed
+                .hint(scale == 1.0)
                 .normalized_coords(run.normalized_coords())
                 .brush(color)
                 .draw(style, glyph_run.glyphs().map(|g| {
@@ -719,9 +768,9 @@ fn draw_text_internal(ctx_ptr: *mut RenderContext, text: &str, x: f64, y: f64, s
     }
 
     // bottom-right corner: full_width() includes trailing whitespace, so the caller
-    // can continue drawing right after the text; the bottom is the layout top + height
+    // can continue drawing right after the text; the width is the scaled one
     Point {
-        x: x + layout.full_width() as f64,
+        x: x + width * scale,
         y: (origin_y + layout.height()) as f64,
     }
 }
