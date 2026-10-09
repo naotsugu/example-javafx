@@ -4,7 +4,7 @@ use std::ffi::{c_char, CStr};
 use std::sync::{Arc, Mutex, MutexGuard};
 use vello::{
     kurbo::{Affine, BezPath, Join, Cap, Rect, Stroke, Ellipse, RoundedRect, Line},
-    peniko::{Color, Fill}, Scene, Glyph};
+    peniko::{Color, Fill, StyleRef}, Scene, Glyph};
 use vello::wgpu;
 use parley::{Alignment, AlignmentOptions, FontContext, FontFamily, Layout,
              LayoutContext, PositionedLayoutItem, StyleProperty};
@@ -407,8 +407,7 @@ pub extern "C" fn get_line_height(ctx_ptr: *mut RenderContext) -> f64 {
     let ctx = unsafe { &*ctx_ptr };
     let layout = build_layout(ctx, "M");
     let Some(line) = layout.lines().next() else { return 0.0; };
-    let m = line.metrics();
-    (m.ascent + m.descent + m.leading) as f64
+    line.metrics().line_height as f64
 }
 
 // -- draw --------------------------------------------------------------------
@@ -589,7 +588,8 @@ pub extern "C" fn stroke_polyline(ctx_ptr: *mut RenderContext,
     );
 }
 
-/// Draws UTF-8 text. (x, y) is the left end of the baseline of the first line.
+/// Draws UTF-8 text filled with the current fill paint.
+/// (x, y) is the left end of the baseline of the first line.
 /// Returns the bottom-right corner of the drawn text.
 /// If nothing is drawn (null pointer, illegal UTF-8, empty text), (x, y) is returned.
 #[unsafe(no_mangle)]
@@ -601,20 +601,25 @@ pub extern "C" fn fill_text(ctx_ptr: *mut RenderContext,
         Ok(s) => s,
         Err(_) => return Point { x, y }, // illegal UTF-8
     };
-    fill_text_internal(ctx_ptr, text, x, y)
+    draw_text_internal(ctx_ptr, text, x, y, false)
 }
 
-/// Draws UTF-8 text given as a pointer and a byte length. (x, y) is the left end of
-/// the baseline of the first line.
-/// Returns the bottom-right corner of the drawn text.
+/// Draws the outline of UTF-8 text using the current stroke paint and width.
+/// Cap and join are also applied, same as the other stroke operations.
+/// (x, y) is the left end of the baseline of the first line.
+/// Returns the bottom-right corner of the text layout (the stroke width is not included),
+/// so it is the same point fill_text() returns for the same text.
 /// If nothing is drawn (null pointer, illegal UTF-8, empty text), (x, y) is returned.
 #[unsafe(no_mangle)]
-pub extern "C" fn fill_seg_text(ctx_ptr: *mut RenderContext,
-        text: *const u8, len: u32, x: f64, y: f64) -> Point {
-    if ctx_ptr.is_null() || text.is_null() { return Point { x, y }; }
-    let bytes = unsafe { slice::from_raw_parts(text, len as usize) };
-    let Ok(text) = std::str::from_utf8(bytes) else { return Point { x, y }; };
-    fill_text_internal(ctx_ptr, text, x, y)
+pub extern "C" fn stroke_text(ctx_ptr: *mut RenderContext,
+        text_ptr: *const c_char, x: f64, y: f64) -> Point {
+    if ctx_ptr.is_null() || text_ptr.is_null() { return Point { x, y }; }
+    let c_str = unsafe { CStr::from_ptr(text_ptr) };
+    let text = match c_str.to_str() {
+        Ok(s) => s,
+        Err(_) => return Point { x, y }, // illegal UTF-8
+    };
+    draw_text_internal(ctx_ptr, text, x, y, true)
 }
 
 // -- private -----------------------------------------------------------------
@@ -670,12 +675,21 @@ fn measure_width(ctx: &RenderContext, text: &str) -> f64 {
     build_layout(ctx, text).full_width() as f64
 }
 
-fn fill_text_internal(ctx_ptr: *mut RenderContext, text: &str, x: f64, y: f64) -> Point {
+/// Lays out the text and draws its glyphs, filled or stroked.
+/// The fill case uses the fill paint; the stroke case uses the stroke paint,
+/// width, cap and join.
+fn draw_text_internal(ctx_ptr: *mut RenderContext, text: &str, x: f64, y: f64, stroke: bool) -> Point {
 
     if ctx_ptr.is_null() { return Point { x, y }; }
     let ctx = unsafe { &mut *ctx_ptr };
 
-    let fill_color = ctx.fill_color;
+    // choose paint and style; the stroke is built before borrowing the scene mutably
+    let stroke_style = ctx.stroke_style();
+    let (color, style): (Color, StyleRef) = if stroke {
+        (ctx.stroke_color, StyleRef::from(&stroke_style))
+    } else {
+        (ctx.fill_color, StyleRef::from(Fill::NonZero))
+    };
     let layout = build_layout(ctx, text);
 
     // place the baseline of the first line at y
@@ -694,8 +708,8 @@ fn fill_text_internal(ctx_ptr: *mut RenderContext, text: &str, x: f64, y: f64) -
                 .font_size(run.font_size())
                 .hint(true)
                 .normalized_coords(run.normalized_coords())
-                .brush(fill_color)
-                .draw(Fill::NonZero, glyph_run.glyphs().map(|g| {
+                .brush(color)
+                .draw(style, glyph_run.glyphs().map(|g| {
                     // g.x / g.y are offsets inside the run; y points up in parley
                     let glyph = Glyph { id: g.id, x: cursor + g.x, y: baseline - g.y };
                     cursor += g.advance;

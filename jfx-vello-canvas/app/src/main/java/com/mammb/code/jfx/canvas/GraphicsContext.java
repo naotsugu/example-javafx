@@ -27,6 +27,7 @@ public class GraphicsContext implements AutoCloseable {
     private final Arena arena = Arena.ofShared();
     private final MemorySegment ctxSegment;
     private final MemorySegment sceneSegment;
+
     private final Canvas theCanvas;
     private volatile boolean closed = false;
     private int sceneWidth;
@@ -72,7 +73,7 @@ public class GraphicsContext implements AutoCloseable {
         }
     }
 
-    public void render() {
+    void render() {
         if (!closed) {
             try {
                 lib_h.render(ctxSegment, sceneSegment);
@@ -264,6 +265,24 @@ public class GraphicsContext implements AutoCloseable {
         if (text == null || text.isEmpty() || closed) return new Point2D(x, y);
         try (var localArena = Arena.ofConfined()) {
             MemorySegment end = lib_h.fill_text(localArena, ctxSegment, localArena.allocateFrom(text), x, y);
+            theCanvas.getRenderPulse().request();
+            return new Point2D(Point.x(end), Point.y(end));
+        }
+    }
+
+    /**
+     * Draws the given string of text at position x, y
+     * with the current stroke paint attribute.
+     * A {@code null} text value will be ignored.
+     * @param text the string of text or null.
+     * @param x position on the x-axis.
+     * @param y position on the y-axis.
+     * @return the bottom-right corner of the drawn text.
+     */
+    public Point2D strokeText(String text, double x, double y) {
+        if (text == null || text.isEmpty() || closed) return new Point2D(x, y);
+        try (var localArena = Arena.ofConfined()) {
+            MemorySegment end = lib_h.stroke_text(localArena, ctxSegment, localArena.allocateFrom(text), x, y);
             theCanvas.getRenderPulse().request();
             return new Point2D(Point.x(end), Point.y(end));
         }
@@ -463,7 +482,7 @@ public class GraphicsContext implements AutoCloseable {
      * Rounds the width up to the next multiple of 64 pixels (= 256 bytes per row).
      * e.g. 1000 -> 1024, 1024 -> 1024.
      */
-    public static int alignWidth(int width) {
+    private static int alignWidth(int width) {
         int widthAlignment = 256 / 4;
         return (width + widthAlignment - 1) & -widthAlignment;
     }
