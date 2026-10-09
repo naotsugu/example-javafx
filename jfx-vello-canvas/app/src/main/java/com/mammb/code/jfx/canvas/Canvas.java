@@ -31,6 +31,18 @@ public class Canvas extends ImageView {
     private final GraphicsContext ctx;
     private final RenderPulse renderPulse;
 
+    /**
+     * Creates an empty instance of Canvas.
+     */
+    public Canvas() {
+        this(0, 0);
+    }
+
+    /**
+     * Creates a new instance of Canvas with the given size.
+     * @param width width of the canvas
+     * @param height height of the canvas
+     */
     public Canvas(int width, int height) {
         ctx = new GraphicsContext(this, width, height);
         renderPulse = new RenderPulse(ctx::render);
@@ -55,6 +67,7 @@ public class Canvas extends ImageView {
 
     public final void setWidth(double value) {
         width.set(value);
+        ctx.resize((int) value, (int) getHeight());
     }
 
     public final double getWidth() {
@@ -63,6 +76,7 @@ public class Canvas extends ImageView {
 
     public final void setHeight(double value) {
         height.set(value);
+        ctx.resize((int) getWidth(), (int) value);
     }
 
     public final double getHeight() {

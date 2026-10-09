@@ -17,6 +17,7 @@ package com.mammb.code.jfx.canvas;
 
 import com.mammb.code.canvas.lib.Point;
 import com.mammb.code.canvas.lib.lib_h;
+import com.sun.javafx.sg.prism.NGCanvas;
 import javafx.geometry.Point2D;
 import javafx.scene.image.PixelBuffer;
 import javafx.scene.image.PixelFormat;
@@ -26,6 +27,7 @@ import javafx.scene.paint.Paint;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontSmoothingType;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
@@ -358,6 +360,20 @@ public class GraphicsContext implements AutoCloseable {
         }
     }
 
+    /**
+     * Clears a portion of the canvas with a transparent color value.
+     * @param x X position of the upper left corner of the rectangle.
+     * @param y Y position of the upper left corner of the rectangle.
+     * @param w width of the rectangle.
+     * @param h height of the rectangle.
+     */
+    public void clearRect(double x, double y, double w, double h) {
+        if (w != 0 && h != 0 && !closed) {
+            lib_h.clear_rect(ctxSegment, x, y, w, h);
+            theCanvas.getRenderPulse().request();
+        }
+    }
+
     // -- state ---------------------------------------------------------------
 
     /**
@@ -497,6 +513,22 @@ public class GraphicsContext implements AutoCloseable {
      */
     public Font getFont() {
         return curState.font;
+    }
+
+    /**
+     * Sets the current Font Smoothing Type.
+     * @param fontsmoothing the {@link FontSmoothingType} or null
+     */
+    public void setFontSmoothingType(FontSmoothingType fontsmoothing) {
+        // do nothing
+    }
+
+    /**
+     * Gets the current Font Smoothing Type.
+     * @return the {@link FontSmoothingType}
+     */
+    public FontSmoothingType getFontSmoothingType() {
+        return FontSmoothingType.GRAY;
     }
 
     /**

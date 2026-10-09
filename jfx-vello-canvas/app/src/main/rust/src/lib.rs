@@ -3,7 +3,7 @@ use std::slice;
 use std::ffi::{c_char, CStr};
 use std::sync::{Arc, Mutex, MutexGuard};
 use vello::{kurbo::{Affine, BezPath, Join, Cap, Rect, Stroke, Ellipse, RoundedRect, Line},
-            peniko::{Color, Fill, StyleRef}, Scene, Glyph};
+            peniko::{BlendMode, Color, Compose, Fill, Mix, StyleRef}, Scene, Glyph};
 use vello::wgpu;
 use parley::{Alignment, AlignmentOptions, FontContext, FontFamily, FontWeight, Layout,
              LayoutContext, PositionedLayoutItem, StyleProperty};
@@ -668,6 +668,37 @@ pub extern "C" fn stroke_text_max_width(ctx_ptr: *mut RenderContext,
     };
     draw_text_internal(ctx_ptr, text, x, y, true, max_width)
 }
+
+/// Clears a rectangle to transparent black.
+/// The current fill paint is ignored: the pixels inside the rectangle
+/// (including what was drawn earlier in this frame) become fully transparent.
+#[unsafe(no_mangle)]
+pub extern "C" fn clear_rect(ctx_ptr: *mut RenderContext,
+        x: f64, y: f64, width: f64, height: f64) {
+    if ctx_ptr.is_null() { return; }
+    let ctx = unsafe { &mut *ctx_ptr };
+    let rect = Rect::new(x, y, x + width, y + height);
+
+    // a layer whose blend mode is Clear erases the backdrop inside the clip shape;
+    // the color drawn inside does not matter, but the layer must not be empty
+    // so that the clip is actually composited
+    ctx.scene.push_layer(
+        Fill::NonZero,
+        BlendMode::new(Mix::Normal, Compose::Clear),
+        1.0,
+        Affine::IDENTITY,
+        &rect,
+    );
+    ctx.scene.fill(
+        Fill::NonZero,
+        Affine::IDENTITY,
+        Color::BLACK,
+        None,
+        &rect,
+    );
+    ctx.scene.pop_layer();
+}
+
 // -- private -----------------------------------------------------------------
 
 /// Builds a path from separate x / y coordinate arrays.
