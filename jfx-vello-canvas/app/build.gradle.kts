@@ -157,7 +157,7 @@ tasks.named("compileJava") {
     dependsOn(updateVersion)
 }
 
-val updateVersion by tasks.registering {
+val updateVersion = tasks.register("updateVersion") {
     description = "Updates the version in Version.java"
 
     val target = layout.projectDirectory

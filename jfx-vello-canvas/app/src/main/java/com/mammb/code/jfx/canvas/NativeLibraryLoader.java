@@ -29,7 +29,8 @@ import java.nio.file.StandardCopyOption;
  */
 final class NativeLibraryLoader {
 
-    private static final String LIB_PATH_KEY = "com.mammb.nativeLibraryPath";
+    public static final String LIB_PATH_KEY = "com.mammb.nativeLibraryPath";
+    public static final String FORCE_EXTRACT_KEY = "com.mammb.nativeLibraryForceExtract";
 
     /** The logger. */
     private static final System.Logger log = System.getLogger(NativeLibraryLoader.class.getName());
@@ -67,16 +68,18 @@ final class NativeLibraryLoader {
             return Path.of(uri);
         } else {
             // "jar" (packaged inside a jar) or "jrt" (packaged inside a jlink'ed runtime image module)
-            return extractToTempFile(uri.toURL(), mappedName);
+            return extractLibrary(uri.toURL(), mappedName);
         }
     }
 
-    private static Path extractToTempFile(URL url, String mappedName) throws IOException {
+    private static Path extractLibrary(URL url, String mappedName) throws IOException {
+        Path lib = libraryDir().resolve(mappedName);
+        if (!System.getProperty(FORCE_EXTRACT_KEY, "").equals("true") && Files.exists(lib)) {
+            return lib;
+        }
         try (InputStream in = url.openStream()) {
-            Path tempFile = libraryDir().resolve(mappedName);
-            Files.copy(in, tempFile, StandardCopyOption.REPLACE_EXISTING);
-            tempFile.toFile().deleteOnExit();
-            return tempFile;
+            Files.copy(in, lib, StandardCopyOption.REPLACE_EXISTING);
+            return lib;
         }
     }
 
