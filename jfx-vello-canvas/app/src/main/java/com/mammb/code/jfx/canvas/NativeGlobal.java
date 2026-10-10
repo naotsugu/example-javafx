@@ -31,7 +31,7 @@ final class NativeGlobal {
 
     private NativeGlobal() {
         // init native library
-        NativeLibraryLoader.loadByName("lib");
+        NativeLibraryLoader.loadByName("lib-" + Version.val);
         // hook release to the native shared resources
         Runtime.getRuntime().addShutdownHook(new Thread(lib_h::release_shared_resources));
     }

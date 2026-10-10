@@ -42,11 +42,6 @@ javafx {
     modules("javafx.controls")
 }
 
-sourceSets.main {
-    java.srcDir(jextractOutDir)
-    resources.srcDir(nativeResDir)
-}
-
 application {
     mainClass = "com.mammb.code.jfx.canvas.example.Main"
     applicationDefaultJvmArgs = listOf(
@@ -139,7 +134,7 @@ tasks.register<Exec>("jextract") {
         val replacement = "static final SymbolLookup SYMBOL_LOOKUP = " +
                 "SymbolLookup.libraryLookup(" +
                 "java.nio.file.Path.of(System.getProperty(\"com.mammb.nativeLibraryPath\"))" +
-                ".resolve(System.mapLibraryName(\"lib\")), LIBRARY_ARENA)"
+                ".resolve(System.mapLibraryName(\"lib-$version\")), LIBRARY_ARENA)"
 
         val target = outDir.walkTopDown().firstOrNull { it.name == "lib_h_1.java" || it.name == "lib_h.java" }
             ?: throw GradleException("lib_h_1.java not found under $outDir")
@@ -159,6 +154,38 @@ tasks.named("processResources") {
 
 tasks.named("compileJava") {
     dependsOn("jextract")
+}
+
+val updateVersion by tasks.registering {
+    description = "Generates Version.java into the build directory"
+
+    val versionString = providers.provider { project.version.toString() }
+    val outputDir = layout.buildDirectory.dir("generated/sources/version/java")
+
+    inputs.property("version", versionString)
+    outputs.dir(outputDir)
+
+    doLast {
+        val file = outputDir.get()
+            .file("com/mammb/code/jfx/canvas/Version.java").asFile
+        file.parentFile.mkdirs()
+        file.writeText(
+            """
+            package com.mammb.code.jfx.canvas;
+            /** Generated file. Do not edit. */
+            public final class Version {
+                private Version() { }
+                public static final String val = "${versionString.get()}";
+            }
+            """.trimIndent() + "\n"
+        )
+    }
+}
+
+sourceSets.main {
+    java.srcDir(jextractOutDir)
+    java.srcDir(updateVersion)
+    resources.srcDir(nativeResDir)
 }
 
 //tasks.named<JavaExec>("run") {
