@@ -15,6 +15,9 @@ val nativeResDir = layout.buildDirectory.dir("nativeResources").get().asFile
 val jextractUrl = "https://download.java.net/java/early_access/jextract/25/2/"
 val jextractOutDir = layout.buildDirectory.dir("generated/main/java").get().asFile
 
+version = "0.1.0"
+group = "com.mammb"
+
 plugins {
     application
     id("org.openjfx.javafxplugin") version "0.1.0"
@@ -75,6 +78,7 @@ tasks.register<Copy>("processNativeResources") {
         else -> throw Error("Unsupported OS: $os")
     })
     into(nativeResDir)
+    rename("(.+)\\.(.+)", "$1-$version.$2")
 }
 
 tasks.register<Exec>("cargoClean") {
