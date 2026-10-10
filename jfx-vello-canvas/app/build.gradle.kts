@@ -154,37 +154,38 @@ tasks.named("processResources") {
 
 tasks.named("compileJava") {
     dependsOn("jextract")
+    dependsOn(updateVersion)
 }
 
 val updateVersion by tasks.registering {
-    description = "Generates Version.java into the build directory"
+    description = "Updates the version in Version.java"
 
+    val target = layout.projectDirectory
+        .file("src/main/java/com/mammb/code/jfx/canvas/Version.java")
     val versionString = providers.provider { project.version.toString() }
-    val outputDir = layout.buildDirectory.dir("generated/sources/version/java")
-
     inputs.property("version", versionString)
-    outputs.dir(outputDir)
+    outputs.file(target)
 
     doLast {
-        val file = outputDir.get()
-            .file("com/mammb/code/jfx/canvas/Version.java").asFile
-        file.parentFile.mkdirs()
-        file.writeText(
-            """
-            package com.mammb.code.jfx.canvas;
-            /** Generated file. Do not edit. */
-            public final class Version {
-                private Version() { }
-                public static final String val = "${versionString.get()}";
-            }
-            """.trimIndent() + "\n"
-        )
+        val file = target.asFile
+        if (!file.exists()) throw GradleException("${file.name} not found at ${file.absolutePath}")
+
+        val content = file.readText()
+        // Match only the version constant definition
+        val regex = Regex("""(String\s+val\s*=\s*")[^"]*(")""")
+        if (!regex.containsMatchIn(content)) {
+            throw GradleException("Version val definition not found in ${file.name}")
+        }
+
+        val updated = content.replace(regex) {
+            "${it.groupValues[1]}${versionString.get()}${it.groupValues[2]}"
+        }
+        if (content != updated) file.writeText(updated)
     }
 }
 
 sourceSets.main {
     java.srcDir(jextractOutDir)
-    java.srcDir(updateVersion)
     resources.srcDir(nativeResDir)
 }
 
