@@ -7,7 +7,7 @@ use vello::{kurbo::{Affine, BezPath, Join, Cap, Rect, Stroke, Ellipse, RoundedRe
 use vello::wgpu;
 use parley::{Alignment, AlignmentOptions, FontContext, FontFamily, FontWeight, Layout,
              LayoutContext, PositionedLayoutItem, StyleProperty};
-
+use vello::peniko::Blob;
 // -- shared resources --------------------------------------------------------
 
 /// A point returned by value to the caller (two f64, same layout as a C struct).
@@ -60,7 +60,7 @@ impl SharedResource {
             &device,
             vello::RendererOptions {
                 use_cpu: false,
-                antialiasing_support: vello::AaSupport::all(),
+                antialiasing_support: vello::AaSupport::area_only(),
                 num_init_threads: None,
                 pipeline_cache: None,
             },
@@ -340,6 +340,39 @@ pub extern "C" fn set_line_join(ctx_ptr: *mut RenderContext, join: u32) {
         2 => Join::Miter,
         _ => return,
     };
+}
+
+/// Loads a font file (TTF, OTF, TTC, OTC) and registers it in the shared font collection.
+/// Returns the number of font faces registered, or 0 on failure
+/// (null pointer, illegal UTF-8, unreadable file, or no valid font in the data).
+/// The family name(s) of the registered font are written to name_buf as a NUL-terminated
+/// UTF-8 string, so the caller can pass it to set_font_family().
+/// If the file holds several families (a collection file), the names are separated by '\n'.
+/// name_buf may be null (the names are not returned). If name_cap is too small,
+/// the name is truncated at a character boundary. On failure an empty string is written.
+/// The collection is shared, so the font is visible to all RenderContexts
+/// and stays registered until release_shared_resources() is called.
+#[unsafe(no_mangle)]
+pub extern "C" fn load_font_file(path_ptr: *const c_char,
+                                 name_buf: *mut u8, name_cap: usize) -> u32 {
+    unsafe { write_c_string("", name_buf, name_cap); }
+    if path_ptr.is_null() { return 0; }
+    let c_str = unsafe { CStr::from_ptr(path_ptr) };
+    let Ok(path) = c_str.to_str() else { return 0; }; // illegal UTF-8
+    let Ok(data) = std::fs::read(path) else { return 0; };
+    register_font_bytes(data, name_buf, name_cap)
+}
+
+/// Registers font data held in memory, like load_font_file().
+/// The data is copied, so the caller may free its buffer after this call.
+/// Returns the number of font faces registered, or 0 on failure.
+#[unsafe(no_mangle)]
+pub extern "C" fn load_font_data(data_ptr: *const u8, len: usize,
+                                 name_buf: *mut u8, name_cap: usize) -> u32 {
+    unsafe { write_c_string("", name_buf, name_cap); }
+    if data_ptr.is_null() || len == 0 { return 0; }
+    let data = unsafe { slice::from_raw_parts(data_ptr, len) }.to_vec();
+    register_font_bytes(data, name_buf, name_cap)
 }
 
 /// Sets the font families as a comma-separated list, e.g. "Segoe UI, Meiryo, sans-serif".
@@ -765,6 +798,40 @@ fn build_layout(ctx: &RenderContext, text: &str) -> Layout<()> {
 fn measure_width(ctx: &RenderContext, text: &str) -> f64 {
     if text.is_empty() { return 0.0; }
     build_layout(ctx, text).full_width() as f64
+}
+
+/// Registers font data in the shared collection and returns the number of faces added.
+/// The family names are written to the optional output buffer.
+fn register_font_bytes(data: Vec<u8>, name_buf: *mut u8, name_cap: usize) -> u32 {
+    let shared = acquire_shared();
+    let names: Vec<String>;
+    let faces: u32;
+    {
+        // the font collection is shared, so it must be locked while it is modified
+        let mut text = lock(&shared.text);
+        let registered = text.font_cx.collection.register_fonts(Blob::from(data), None);
+        faces = registered.iter().map(|(_, f)| f.len() as u32).sum();
+        // copy the names out, so nothing borrows the collection after the lock is released
+        names = registered
+            .iter()
+            .filter_map(|(id, _)| text.font_cx.collection.family_name(*id).map(str::to_string))
+            .collect();
+    }
+    unsafe { write_c_string(&names.join("\n"), name_buf, name_cap); }
+    faces
+}
+
+/// Copies a string into a caller-provided buffer as a NUL-terminated UTF-8 string.
+/// The string is truncated at a character boundary if the buffer is too small.
+/// Does nothing if the buffer is null or has no room.
+/// The caller must guarantee that out_ptr is valid for out_cap bytes.
+unsafe fn write_c_string(s: &str, out_ptr: *mut u8, out_cap: usize) {
+    if out_ptr.is_null() || out_cap == 0 { return; }
+    let mut n = s.len().min(out_cap - 1);
+    while !s.is_char_boundary(n) { n -= 1; }
+    let dst = unsafe { slice::from_raw_parts_mut(out_ptr, out_cap) };
+    dst[..n].copy_from_slice(&s.as_bytes()[..n]);
+    dst[n] = 0;
 }
 
 /// Lays out the text and draws its glyphs, filled or stroked.
