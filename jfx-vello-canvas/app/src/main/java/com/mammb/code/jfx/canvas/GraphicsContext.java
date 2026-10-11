@@ -35,7 +35,10 @@ import java.lang.foreign.ValueLayout;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.IntStream;
 
 /**
  * The GraphicsContext.
@@ -492,6 +495,16 @@ public class GraphicsContext implements AutoCloseable {
      */
     public StrokeLineJoin getLineJoin() {
         return curState.linejoin;
+    }
+
+    public List<String> loadFont(Path path) {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment name = arena.allocate(256);
+            int faces = lib_h.load_font_file(
+                    arena.allocateFrom(path.toAbsolutePath().toString()),
+                    name, name.byteSize());
+            return IntStream.range(0, faces).mapToObj(name::getString).toList();
+        }
     }
 
     /**
