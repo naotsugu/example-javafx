@@ -28,6 +28,7 @@ import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontSmoothingType;
+import javafx.scene.text.FontWeight;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
@@ -497,13 +498,8 @@ public class GraphicsContext implements AutoCloseable {
      * @param f the Font or null.
      */
     public void setFont(Font f) {
-        if (f != null && curState.font != f && !closed) {
-            curState.font = f;
-            try (var localArena = Arena.ofConfined()) {
-                lib_h.set_font_family(ctxSegment, localArena.allocateFrom(f.getName()));
-            }
-            lib_h.set_font_size(ctxSegment, f.getSize());
-        }
+        setFontFamily(f.getFamily());
+        setFontSize(f.getSize());
     }
 
     /**
@@ -512,7 +508,50 @@ public class GraphicsContext implements AutoCloseable {
      * @return the Font
      */
     public Font getFont() {
-        return curState.font;
+        return Font.font(
+                curState.fontFamily,
+                FontWeight.findByWeight((int) curState.fontWeight),
+                curState.fontSize);
+    }
+
+    /**
+     * Sets the font family.
+     * @param f the font family.
+     */
+    public void setFontFamily(String f) {
+        if (f != null && !curState.fontFamily.equals(f) && !closed) {
+            curState.fontFamily = f;
+            try (var localArena = Arena.ofConfined()) {
+                lib_h.set_font_family(ctxSegment, localArena.allocateFrom(f));
+            }
+        }
+    }
+
+    /**
+     * Gets the font family.
+     * @return the font family
+     */
+    public String getFontFamily() {
+        return curState.fontFamily;
+    }
+
+    /**
+     * Sets the font size.
+     * @param s the font size.
+     */
+    public void setFontSize(double s) {
+        if (s > 0 && curState.fontSize != s && !closed) {
+            curState.fontSize = s;
+            lib_h.set_font_size(ctxSegment, s);
+        }
+    }
+
+    /**
+     * Gets the font size.
+     * @return the font size
+     */
+    public double getFontSize() {
+        return curState.fontSize;
     }
 
     /**
