@@ -15,9 +15,9 @@
  */
 package com.mammb.code.jfx.canvas;
 
+import com.mammb.code.canvas.lib.Metrics;
 import com.mammb.code.canvas.lib.Point;
 import com.mammb.code.canvas.lib.lib_h;
-import com.sun.javafx.sg.prism.NGCanvas;
 import javafx.geometry.Point2D;
 import javafx.scene.image.PixelBuffer;
 import javafx.scene.image.PixelFormat;
@@ -55,6 +55,8 @@ public class GraphicsContext implements AutoCloseable {
     private int sceneWidth;
     private int sceneHeight;
     private PixelBuffer<ByteBuffer> pixelBuffer;
+
+    private LineMetrics metrics;
 
     private ContextState curState;
     private LinkedList<ContextState> stateStack;
@@ -523,6 +525,7 @@ public class GraphicsContext implements AutoCloseable {
             curState.fontFamily = f;
             try (var localArena = Arena.ofConfined()) {
                 lib_h.set_font_family(ctxSegment, localArena.allocateFrom(f));
+                metrics = null;
             }
         }
     }
@@ -543,6 +546,7 @@ public class GraphicsContext implements AutoCloseable {
         if (s > 0 && curState.fontSize != s && !closed) {
             curState.fontSize = s;
             lib_h.set_font_size(ctxSegment, s);
+            metrics = null;
         }
     }
 
@@ -580,6 +584,7 @@ public class GraphicsContext implements AutoCloseable {
             if (curState.fontWeight != fw) {
                 curState.fontWeight = fw;
                 lib_h.set_font_weight(ctxSegment, fw);
+                metrics = null;
             }
         }
     }
@@ -604,11 +609,22 @@ public class GraphicsContext implements AutoCloseable {
     }
 
     /**
-     * Gets the line height of the current font: ascent + descent + leading.
-     * @return the line height of the current font
+     * Gets the line metrics of the current font.
+     * @return the line metrics
      */
-    public double getFontHeight() {
-        return lib_h.get_line_height(ctxSegment);
+    public LineMetrics getMetrics() {
+        if (closed) return null;
+        if (metrics != null) return metrics;
+        try (var localArena = Arena.ofConfined()) {
+            MemorySegment ret = lib_h.get_line_metrics(localArena, ctxSegment);
+            return metrics = new LineMetrics(
+                    Metrics.ascent(ret),
+                    Metrics.descent(ret),
+                    Metrics.leading(ret),
+                    Metrics.line_height(ret),
+                    Metrics.baseline(ret),
+                    Metrics.advance(ret));
+        }
     }
 
     /**

@@ -14,6 +14,12 @@ use parley::{Alignment, AlignmentOptions, FontContext, FontFamily, FontWeight, L
 #[repr(C)]
 pub struct Point { x: f64, y: f64, }
 
+#[repr(C)]
+#[derive(Default)]
+pub struct Metrics {
+    ascent: f64, descent: f64, leading: f64, line_height: f64, baseline: f64, advance: f64,
+}
+
 /// Text resources shared by all RenderContexts.
 /// ranged_builder() needs both contexts as &mut, so they live under one lock.
 struct TextResource {
@@ -410,16 +416,24 @@ pub extern "C" fn get_text_advance(ctx_ptr: *mut RenderContext, text_ptr: *const
     measure_width(ctx, text)
 }
 
-/// Returns the line height of the current font: ascent + descent + leading.
+/// Returns the line metrics of the current font.
 /// A reference character is laid out, so the value follows the first available family
 /// in the font list. A line containing fallback fonts may be taller when drawn.
 #[unsafe(no_mangle)]
-pub extern "C" fn get_line_height(ctx_ptr: *mut RenderContext) -> f64 {
-    if ctx_ptr.is_null() { return 0.0; }
+pub extern "C" fn get_line_metrics(ctx_ptr: *mut RenderContext) -> Metrics {
+    if ctx_ptr.is_null() { return Metrics::default(); }
     let ctx = unsafe { &*ctx_ptr };
     let layout = build_layout(ctx, "M");
-    let Some(line) = layout.lines().next() else { return 0.0; };
-    line.metrics().line_height as f64
+    let Some(line) = layout.lines().next() else { return Metrics::default(); };
+    let metrics = line.metrics();
+    Metrics {
+        ascent: metrics.ascent as f64,
+        descent: metrics.descent as f64,
+        leading: metrics.leading as f64,
+        line_height: metrics.line_height as f64,
+        baseline: metrics.baseline as f64,
+        advance: metrics.advance as f64,
+    }
 }
 
 // -- draw --------------------------------------------------------------------

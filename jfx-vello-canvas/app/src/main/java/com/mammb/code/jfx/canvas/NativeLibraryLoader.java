@@ -79,6 +79,7 @@ final class NativeLibraryLoader {
         }
         try (InputStream in = url.openStream()) {
             Files.copy(in, lib, StandardCopyOption.REPLACE_EXISTING);
+            lib.toFile().deleteOnExit();
             return lib;
         }
     }
@@ -87,11 +88,12 @@ final class NativeLibraryLoader {
         String libDirStr = System.getProperty(LIB_PATH_KEY, "");
         if (!libDirStr.isBlank()) {
             Path path = Path.of(libDirStr);
+            Files.createDirectories(path);
             if (Files.isDirectory(path) && Files.isWritable(path)) {
                 return path;
             }
         }
-        Path tempDir = Files.createTempDirectory("native-lib-");
+        Path tempDir = Files.createTempDirectory("native-canvas-lib-");
         tempDir.toFile().deleteOnExit();
         return tempDir;
     }
